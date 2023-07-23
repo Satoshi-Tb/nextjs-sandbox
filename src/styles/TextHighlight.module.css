@@ -1,0 +1,16 @@
+.main {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+.textarea {
+  border: 1px solid black;
+  padding: 10px;
+  width: 500px;
+}
+
+.textarea p {
+  padding: 0;
+  margin: 0;
+}
