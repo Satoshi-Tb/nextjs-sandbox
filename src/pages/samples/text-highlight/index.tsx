@@ -13,13 +13,22 @@ const WordHighLight = () => {
   const sampleText =
     "吾輩は猫である。名前はまだない。どこで生れたか<b>頓（とん）と</b>見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪（どうあく）な種族であったそうだ。この書生というのは時々我々を捕（つかま）えて煮て食うという話である。しかしその当時は何という考（かんがえ）もなかったから別段恐しいとも思わなかった。";
   const [keywd, setKeywd] = useState("");
+  const [highlightColor, setHighlightColor] = useState("yellow");
   const [isHighlight, setIsHighlight] = useState(false);
+
   const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKeywd(event.target.value);
   };
+
   const handleOnClick = () => {
     setIsHighlight(!isHighlight);
   };
+
+  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    //console.log(event);
+    setHighlightColor(event.target.value);
+  };
+
   // 置換オプションを作成
   const options: HTMLReactParserOptions = {
     replace: (domNode) => {
@@ -34,7 +43,7 @@ const WordHighLight = () => {
         const highlighted = parts.reduce((prev, curr, i) => {
           if (i !== 0)
             prev.push(
-              <span style={{ backgroundColor: "yellow" }}>{keywd}</span>
+              <span style={{ backgroundColor: highlightColor }}>{keywd}</span>
             );
           prev.push(curr);
           return prev;
@@ -84,6 +93,11 @@ const WordHighLight = () => {
           onChange={handleInput}
         />
         <button onClick={handleOnClick}>ハイライト</button>
+        <select onChange={handleSelectChange}>
+          <option value="yellow">黄色</option>
+          <option value="green">緑色</option>
+          <option value="red">赤色</option>
+        </select>
       </div>
       <div className={styles.textarea}>
         <p>{parse(sampleText, options)}</p>
