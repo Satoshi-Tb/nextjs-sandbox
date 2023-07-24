@@ -10,8 +10,11 @@ import { useState } from "react";
 
 // reactElementをレンダリング
 const WordHighLight = () => {
-  const sampleText =
-    "吾輩は猫である。名前はまだない。どこで生れたか<b>頓（とん）と</b>見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪（どうあく）な種族であったそうだ。この書生というのは時々我々を捕（つかま）えて煮て食うという話である。しかしその当時は何という考（かんがえ）もなかったから別段恐しいとも思わなかった。";
+  const sampleText = `
+React (リアクト) は、Meta（旧Facebook）とコミュニティによって開発されているユーザインタフェース構築のためのJavaScriptライブラリである。React.jsまたはReactJSの名称でも知られている。
+Reactはシングルページアプリケーションやモバイルアプリケーションの開発におけるベースとして使用することができる。複雑なReactアプリケーションでは通常、状態管理・ルーティング・APIとの対話のための追加のライブラリが必要となる。
+Next.js（ネクストジェイエス）は、Node.js上に構築されたオープンソースの<span style='text-decoration: solid underline purple 4px;'>Webアプリケーションフレームワーク</span>であり、サーバーサイドスクリプトや静的Webサイトの生成などの、ReactベースのWebアプリケーション機能を有効にする。
+  `;
   const [keywd, setKeywd] = useState("");
   const [highlightColor, setHighlightColor] = useState("yellow");
   const [isHighlight, setIsHighlight] = useState(false);
@@ -95,7 +98,7 @@ const WordHighLight = () => {
         <button onClick={handleOnClick}>ハイライト</button>
         <select onChange={handleSelectChange}>
           <option value="yellow">黄色</option>
-          <option value="green">緑色</option>
+          <option value="lime">緑色</option>
           <option value="red">赤色</option>
         </select>
       </div>
