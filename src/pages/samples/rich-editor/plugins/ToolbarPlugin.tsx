@@ -1,7 +1,11 @@
-import { FC, useState, useCallback } from "react";
+import { FC, useState, useCallback, useEffect } from "react";
 import { TbH1, TbH2, TbH3 } from "react-icons/tb/index";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { HeadingTagType, $createHeadingNode } from "@lexical/rich-text";
+import {
+  HeadingTagType,
+  $createHeadingNode,
+  $isHeadingNode,
+} from "@lexical/rich-text";
 import { $wrapNodes } from "@lexical/selection";
 import { $getSelection, $isRangeSelection } from "lexical";
 
@@ -33,6 +37,33 @@ export const ToolbarPlugin: FC = () => {
     },
     [blockType, editor]
   );
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
+
+        const anchorNode = selection.anchor.getNode();
+        const targetNode =
+          anchorNode.getKey() === "root"
+            ? anchorNode
+            : anchorNode.getTopLevelElementOrThrow();
+
+        if ($isHeadingNode(targetNode)) {
+          const tag = targetNode.getTag();
+          setBlockType(tag);
+        } else {
+          const nodeType = targetNode.getType();
+          if (nodeType in SupportedBlockType) {
+            setBlockType(nodeType as BlockType);
+          } else {
+            setBlockType("paragraph");
+          }
+        }
+      });
+    });
+  }, [editor]);
 
   return (
     <div>
