@@ -3,6 +3,7 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { AutoFocusPlugin } from "@/pages/samples/rich-editor/plugins/AutoFocusPlugin";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
 
 const initialConfig: ComponentProps<typeof LexicalComposer>["initialConfig"] = {
@@ -44,6 +45,7 @@ export default function Editor(): JSX.Element {
         />
       </div>
       <AutoFocusPlugin />
+      <HistoryPlugin />
     </LexicalComposer>
   );
 }
