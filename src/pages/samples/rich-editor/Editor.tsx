@@ -5,10 +5,13 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { AutoFocusPlugin } from "@/pages/samples/rich-editor/plugins/AutoFocusPlugin";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
+import { nodes } from "./nodes";
+import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 
 const initialConfig: ComponentProps<typeof LexicalComposer>["initialConfig"] = {
   namespace: "MyEditor",
   onError: (error) => console.error(error),
+  nodes: nodes,
 };
 
 export default function Editor(): JSX.Element {
@@ -25,6 +28,7 @@ export default function Editor(): JSX.Element {
           margin: "5px",
         }}
       >
+        <ToolbarPlugin />
         <RichTextPlugin
           contentEditable={<ContentEditable style={{ outline: "none" }} />}
           placeholder={
