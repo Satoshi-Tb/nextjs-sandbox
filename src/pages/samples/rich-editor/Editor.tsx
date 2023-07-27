@@ -2,6 +2,7 @@ import { ComponentProps, FC } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { AutoFocusPlugin } from "@/pages/samples/rich-editor/plugins/AutoFocusPlugin";
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
 
 const initialConfig: ComponentProps<typeof LexicalComposer>["initialConfig"] = {
@@ -9,7 +10,7 @@ const initialConfig: ComponentProps<typeof LexicalComposer>["initialConfig"] = {
   onError: (error) => console.error(error),
 };
 
-export const Editor: FC = () => {
+export default function Editor(): JSX.Element {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div
@@ -42,6 +43,7 @@ export const Editor: FC = () => {
           ErrorBoundary={LexicalErrorBoundary}
         />
       </div>
+      <AutoFocusPlugin />
     </LexicalComposer>
   );
-};
+}
