@@ -7,6 +7,7 @@ import parse, {
 } from "html-react-parser";
 import { useState } from "react";
 import KeywordHighlighter from "./KeywordHighlighter";
+import { useModal } from "../ui/useModal";
 
 const kewdInputCount = 3;
 
@@ -17,6 +18,8 @@ React (リアクト) は、Meta（旧Facebook）とコミュニティによっ�
 Reactはシングルページアプリケーションやモバイルアプリケーションの開発におけるベースとして使用することができる。複雑なReactアプリケーションでは通常、状態管理・ルーティング・APIとの対話のための追加のライブラリが必要となる。
 Next.js（ネクストジェイエス）は、Node.js上に構築されたオープンソースの<span style='text-decoration: solid underline purple 4px;'>Webアプリケーションフレームワーク</span>であり、サーバーサイドスクリプトや静的Webサイトの生成などの、ReactベースのWebアプリケーション機能を有効にする。
   `;
+
+  const { Modal } = useModal({});
 
   const [keywds, setKeywds] = useState(
     [...Array(kewdInputCount)].map((a) => "")
@@ -83,6 +86,9 @@ Next.js（ネクストジェイエス）は、Node.js上に構築されたオー
           setKeyword={setKeyword}
         />
       ))}
+      <Modal>
+        <h2>Content from children</h2>
+      </Modal>
     </>
   );
 };
