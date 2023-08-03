@@ -19,7 +19,7 @@ Reactはシングルページアプリケーションやモバイルアプリケ
 Next.js（ネクストジェイエス）は、Node.js上に構築されたオープンソースの<span style='text-decoration: solid underline purple 4px;'>Webアプリケーションフレームワーク</span>であり、サーバーサイドスクリプトや静的Webサイトの生成などの、ReactベースのWebアプリケーション機能を有効にする。
   `;
 
-  const { Modal } = useModal({});
+  const { Modal, openModal, closeModal } = useModal({});
 
   const [keywds, setKeywds] = useState(
     [...Array(kewdInputCount)].map((a) => "")
@@ -86,8 +86,20 @@ Next.js（ネクストジェイエス）は、Node.js上に構築されたオー
           setKeyword={setKeyword}
         />
       ))}
+      <button onClick={openModal}>ダイアログを開く</button>
       <Modal>
-        <h2>Content from children</h2>
+        <div
+          style={{
+            backgroundColor: "white",
+            width: "300px",
+            height: "200px",
+            padding: "1em",
+            borderRadius: "15px",
+          }}
+        >
+          <h2>Content from children</h2>
+          <button onClick={closeModal}>閉じる</button>
+        </div>
       </Modal>
     </>
   );
