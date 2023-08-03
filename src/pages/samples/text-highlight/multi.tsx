@@ -19,7 +19,7 @@ Reactはシングルページアプリケーションやモバイルアプリケ
 Next.js（ネクストジェイエス）は、Node.js上に構築されたオープンソースの<span style='text-decoration: solid underline purple 4px;'>Webアプリケーションフレームワーク</span>であり、サーバーサイドスクリプトや静的Webサイトの生成などの、ReactベースのWebアプリケーション機能を有効にする。
   `;
 
-  const { Modal, openModal, closeModal } = useModal({});
+  const { Modal, openModal, closeModal, show } = useModal({});
 
   const [keywds, setKeywds] = useState(
     [...Array(kewdInputCount)].map((a) => "")
@@ -75,32 +75,34 @@ Next.js（ネクストジェイエス）は、Node.js上に構築されたオー
 
   return (
     <>
-      <div style={{ border: "1px solid black", width: "500px" }}>
-        <p>{parse(sampleText, replaceOption)}</p>
-      </div>
-      {[...Array(kewdInputCount)].map((_, i) => (
-        <KeywordHighlighter
-          key={i}
-          index={i}
-          setHighlight={setHighlightColor}
-          setKeyword={setKeyword}
-        />
-      ))}
-      <button onClick={openModal}>ダイアログを開く</button>
-      <Modal>
-        <div
-          style={{
-            backgroundColor: "white",
-            width: "300px",
-            height: "200px",
-            padding: "1em",
-            borderRadius: "15px",
-          }}
-        >
-          <h2>Content from children</h2>
-          <button onClick={closeModal}>閉じる</button>
+      <div style={{ padding: "10px", height: "1500px" }}>
+        <div style={{ border: "1px solid black", width: "500px" }}>
+          <p>{parse(sampleText, replaceOption)}</p>
         </div>
-      </Modal>
+        {[...Array(kewdInputCount)].map((_, i) => (
+          <KeywordHighlighter
+            key={i}
+            index={i}
+            setHighlight={setHighlightColor}
+            setKeyword={setKeyword}
+          />
+        ))}
+        <button onClick={openModal}>ダイアログを開く</button>
+        <Modal show={show}>
+          <div
+            style={{
+              backgroundColor: "white",
+              width: "300px",
+              height: "200px",
+              padding: "1em",
+              borderRadius: "15px",
+            }}
+          >
+            <h2>Content from children</h2>
+            <button onClick={closeModal}>閉じる</button>
+          </div>
+        </Modal>
+      </div>
     </>
   );
 };

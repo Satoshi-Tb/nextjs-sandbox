@@ -1,9 +1,15 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import {
+  disableBodyScroll,
+  enableBodyScroll,
+  clearAllBodyScrollLocks,
+} from "body-scroll-lock";
 
 type useModalProps = {};
 
 type ModalProps = {
+  show: boolean;
   children: ReactNode;
 };
 
@@ -18,7 +24,26 @@ export const useModal = ({}: useModalProps) => {
     setShow(false);
   };
 
-  const Modal = ({ children }: ModalProps) => {
+  const Modal = ({ show, children }: ModalProps) => {
+    const contentRef = useRef(null);
+
+    useEffect(() => {
+      if (contentRef.current === null) return;
+
+      //TODO scroll固定。うまくいかない。
+      if (show) {
+        disableBodyScroll(contentRef.current, {
+          reserveScrollBarGap: true,
+        });
+      } else {
+        enableBodyScroll(contentRef.current);
+      }
+
+      return () => {
+        clearAllBodyScrollLocks();
+      };
+    }, [show, contentRef]);
+
     if (!show) return null;
     return createPortal(
       <div
@@ -44,10 +69,12 @@ export const useModal = ({}: useModalProps) => {
             opacity: "0.5",
           }}
         ></div>
-        <div style={{ position: "relative" }}>{children}</div>
+        <div style={{ position: "relative" }} ref={contentRef}>
+          {children}
+        </div>
       </div>,
       document.getElementById("__next") as HTMLElement
     );
   };
-  return { Modal, openModal, closeModal };
+  return { Modal, openModal, closeModal, show };
 };
