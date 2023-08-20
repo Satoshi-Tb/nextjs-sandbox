@@ -1,4 +1,10 @@
-import { Editor, EditorState, RichUtils, convertFromRaw } from "draft-js";
+import {
+  Editor,
+  EditorState,
+  RichUtils,
+  convertFromRaw,
+  convertToRaw,
+} from "draft-js";
 import React, { useState, useEffect } from "react";
 import { createHighlightDecorator } from "./decolators/HighlightDecorator";
 
@@ -55,6 +61,18 @@ const SearchHighlighter = () => {
     }
   };
 
+  const handleSave = async () => {
+    await onSave(editorState.getCurrentContent());
+  };
+
+  const onSave = async (
+    contentState: Draft.DraftModel.ImmutableData.ContentState
+  ) => {
+    const object = convertToRaw(contentState);
+    const data = JSON.stringify(object);
+    console.log(data);
+  };
+
   return (
     <div>
       <div>
@@ -65,6 +83,7 @@ const SearchHighlighter = () => {
           onChange={handleKeywordChange}
         />
         <button onClick={handleHighlightSelection}>選択部分をハイライト</button>
+        <button onClick={handleSave}>保存</button>
       </div>
       <Editor
         editorState={editorState}
