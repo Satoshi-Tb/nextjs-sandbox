@@ -154,7 +154,7 @@ function Marker() {
           <label htmlFor="checkEditMode">ライン編集</label>
           {highlightColors.map((color, i) => {
             return (
-              <div>
+              <div key={i}>
                 {/* checked属性に式を定義する */}
                 <input
                   type="radio"
