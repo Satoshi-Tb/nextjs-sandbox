@@ -1,49 +1,62 @@
-import useSWR from "swr";
-import { fetcher } from "@/utils/fetcher";
-import { useUser } from "@/hooks/useUser";
-import { json } from "stream/consumers";
+import { useState, ChangeEvent } from "react";
+import { useUser } from "./useUser";
+import { setuid } from "process";
 
-interface Post {
-  userId: number;
-  id: number;
-  title: string;
-  body: string;
-}
-
-interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  phone: string;
-  website: string;
-}
-
+// トップレベルコンポーネント
 export const SwrSample = () => {
-  const { data, error, isLoading } = useSWR(
-    "https://jsonplaceholder.typicode.com/postss",
-    fetcher,
-    {
-      shouldRetryOnError: true, // エラー時の再試行を許可
-      retryCount: 5, // 再試行の回数を指定
-      retryDelay: 3000, // 再試行の間隔を3秒に設定
-    }
+  const [userId, setUserId] = useState("");
+  const [key, setKey] = useState("");
+
+  const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
+    setUserId(event.target.value);
+  };
+
+  const handleClick = () => {
+    setKey(userId);
+  };
+
+  // データをレンダリングする
+  return (
+    <>
+      <Header userId={key} />
+      <Content userId={key} />
+      <input type="text" value={userId} onChange={handleInput} />
+      <button onClick={handleClick}>更新</button>
+    </>
   );
+};
 
-  const { user: uData, isError: uError, isLoading: uIsLoading } = useUser("1");
+// 子コンポーネント1
+type ContentProps = {
+  userId: string;
+};
+const Content = ({ userId }: ContentProps) => {
+  const { user, error: userError, isLoading: userLoading } = useUser(userId);
 
-  console.log(error);
-  //console.log(uError);
-
-  if (error || uError) {
+  if (userError) {
     return <div>failed to load</div>;
   }
-  if (isLoading || uIsLoading) return <div>loading...</div>;
+  if (userLoading) return <div>loading...</div>;
 
-  //console.log(data);
-  //console.log(uData);
-  const jData = data as Post[];
-  const user = uData as User;
-  // データをレンダリングする
-  return <div>hello {user.name}!</div>;
+  return <div>My name is {user.name}</div>;
+};
+
+// 子コンポーネント2
+type HeaderProps = {
+  userId: string;
+};
+const Header = ({ userId }: HeaderProps) => {
+  const { user, error: userError, isLoading: userLoading } = useUser(userId);
+
+  if (userError) {
+    return <div>failed to load</div>;
+  }
+  if (userLoading) return <div>loading...</div>;
+
+  return (
+    <div>
+      <h1>Welecome {user.name}&apos;s Page</h1>
+      <hr />
+    </div>
+  );
 };
