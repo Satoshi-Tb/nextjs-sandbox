@@ -19,7 +19,7 @@ interface User {
   website: string;
 }
 
-function Profile() {
+export const SwrSample = () => {
   const { data, error, isLoading } = useSWR(
     "https://jsonplaceholder.typicode.com/postss",
     fetcher,
@@ -46,6 +46,4 @@ function Profile() {
   const user = uData as User;
   // データをレンダリングする
   return <div>hello {user.name}!</div>;
-}
-
-export default Profile;
+};

@@ -15,6 +15,9 @@ function Home() {
           <Link href="/samples/rhf/sample3">react-hook-form sample3</Link>
         </li>
         <li>
+          <Link href="/samples/swr/sample">swr sample</Link>
+        </li>
+        <li>
           <Link href="/samples/rich-editor">rich-editor</Link>
         </li>
         <li>
