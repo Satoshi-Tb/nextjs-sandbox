@@ -7,10 +7,15 @@ async function sendRequest(
   url: any,
   { arg }: { arg: { user: string; email: string } }
 ) {
-  return fetch(url, {
-    method: "PATCH",
-    body: JSON.stringify(arg),
-  }).then((res) => res.json());
+  const res = await fetch(url, { method: "PATCH", body: JSON.stringify(arg) });
+
+  // レスポンスをパースして投げようとします。
+  if (!res.ok) {
+    const error = new Error("An error occurred while fetching the data.");
+    throw error;
+  }
+
+  return res.json();
 }
 
 // トップレベルコンポーネント
@@ -38,6 +43,12 @@ export const SwrSample = () => {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (inName === "" || inEmail === "") {
+      alert("名前、またはemailが未入力です");
+      return;
+    }
+
     setKey(userId);
     try {
       const result = await trigger({ user: "johndoe", email: "aaa@xyz" });
@@ -64,15 +75,13 @@ export const SwrSample = () => {
     <>
       <Header userId={key} />
       <Content userId={key} />
-      <div
-        style={{
-          width: "20vh",
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <input type="text" value={userId} onChange={handleInput} />
+      <div>
+        <input
+          type="text"
+          value={userId}
+          onChange={handleInput}
+          style={{ marginRight: 10 }}
+        />
         <button onClick={handleClick}>検索</button>
       </div>
       <form style={{ marginTop: 10 }} onSubmit={handleSubmit}>
