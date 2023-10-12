@@ -2,6 +2,7 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import { useUser } from "./useUser";
 import Link from "next/link";
 import useSWRMutation from "swr/mutation";
+import { useSWRConfig } from "swr";
 
 async function sendRequest(
   url: any,
@@ -18,19 +19,26 @@ async function sendRequest(
   return res.json();
 }
 
+async function updateUser(arg: { user: string; email: string }) {
+  console.log("update! user=%o, email=%o", arg.user, arg.email);
+}
+
 // トップレベルコンポーネント
 export const SwrSample = () => {
-  const [userId, setUserId] = useState("");
+  const [inUserId, setInUserId] = useState("");
   const [key, setKey] = useState("");
   const [inName, setInName] = useState("");
   const [inEmail, setInEmail] = useState("");
+  const [inName2, setInName2] = useState("");
+  const [inEmail2, setInEmail2] = useState("");
 
+  // フォーム１　イベントハンドラー
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
-    setUserId(event.target.value);
+    setInUserId(event.target.value);
   };
 
   const handleClick = () => {
-    setKey(userId);
+    setKey(inUserId);
   };
 
   const handleInputName = (event: ChangeEvent<HTMLInputElement>) => {
@@ -44,13 +52,14 @@ export const SwrSample = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (inName === "" || inEmail === "") {
-      alert("名前、またはemailが未入力です");
+    if (inUserId === "" || inName === "" || inEmail === "") {
+      alert("ユーザーID、または名前、またはemailが未入力です");
       return;
     }
 
-    setKey(userId);
+    setKey(inUserId);
     try {
+      //TODO ローカルキャッシュ書き換えしているか？
       const result = await trigger({ user: "johndoe", email: "aaa@xyz" });
       if (result) {
         console.log("result: %o", result);
@@ -70,6 +79,25 @@ export const SwrSample = () => {
     sendRequest
   );
 
+  // フォーム２ハンドラー
+  const { mutate } = useSWRConfig(); // mutator準備
+  const handleInputName2 = (event: ChangeEvent<HTMLInputElement>) => {
+    setInName2(event.target.value);
+  };
+
+  const handleInputEmail2 = (event: ChangeEvent<HTMLInputElement>) => {
+    setInEmail2(event.target.value);
+  };
+
+  const handleSubmit2 = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // update emulation
+    await updateUser({ user: inName2, email: inEmail2 });
+    const userUserKey = `https://jsonplaceholder.typicode.com/users/${key}`;
+    console.log("upduserUserKey:%o", userUserKey);
+    mutate(userUserKey);
+  };
+
   // データをレンダリングする
   return (
     <>
@@ -78,28 +106,51 @@ export const SwrSample = () => {
       <div>
         <input
           type="text"
-          value={userId}
+          value={inUserId}
           onChange={handleInput}
           style={{ marginRight: 10 }}
         />
         <button onClick={handleClick}>検索</button>
       </div>
-      <form style={{ marginTop: 10 }} onSubmit={handleSubmit}>
-        <div>
-          <label style={{ marginRight: 10 }}>name</label>
-          <input
-            style={{ marginRight: 10 }}
-            type="text"
-            value={inName}
-            onChange={handleInputName}
-          />
-          <label style={{ marginRight: 10 }}>email</label>
-          <input type="text" value={inEmail} onChange={handleInputEmail} />
-        </div>
 
-        <button type="submit" disabled={isMutating}>
-          更新
-        </button>
+      <form style={{ marginTop: 10 }} onSubmit={handleSubmit}>
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <div style={{ marginRight: 10 }}>
+            <label style={{ marginRight: 10 }}>name</label>
+            <input
+              style={{ marginRight: 10 }}
+              type="text"
+              value={inName}
+              onChange={handleInputName}
+            />
+            <label style={{ marginRight: 10 }}>email</label>
+            <input type="text" value={inEmail} onChange={handleInputEmail} />
+          </div>
+
+          <button type="submit" disabled={isMutating}>
+            更新（SWRMutation）
+          </button>
+        </div>
+      </form>
+
+      <form style={{ marginTop: 10 }} onSubmit={handleSubmit2}>
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <div style={{ marginRight: 10 }}>
+            <label style={{ marginRight: 10 }}>name</label>
+            <input
+              style={{ marginRight: 10 }}
+              type="text"
+              value={inName2}
+              onChange={handleInputName2}
+            />
+            <label style={{ marginRight: 10 }}>email</label>
+            <input type="text" value={inEmail2} onChange={handleInputEmail2} />
+          </div>
+
+          <button type="submit" disabled={false}>
+            更新（SWR & mutate）
+          </button>
+        </div>
       </form>
       <Footer />
     </>
