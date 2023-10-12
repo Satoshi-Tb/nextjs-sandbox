@@ -23,6 +23,9 @@ function Home() {
         <li>
           <Link href="/samples/text-highlight">text-highlith</Link>
         </li>
+        <li>
+          <Link href="/samples/popup/parent">popup</Link>
+        </li>
       </ul>
     </div>
   );
