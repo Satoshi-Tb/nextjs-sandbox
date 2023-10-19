@@ -26,6 +26,9 @@ function Home() {
         <li>
           <Link href="/samples/popup/parent">popup</Link>
         </li>
+        <li>
+          <Link href="/samples/grid/sample1">grid</Link>
+        </li>
       </ul>
     </div>
   );
