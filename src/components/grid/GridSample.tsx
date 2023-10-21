@@ -1,5 +1,12 @@
 import React, { useState, useCallback } from "react";
-import { DataGrid } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridFilterModel,
+  GridToolbar,
+  gridExpandedSortedRowEntriesSelector,
+  gridPaginatedVisibleSortedGridRowIdsSelector,
+  useGridApiRef,
+} from "@mui/x-data-grid";
 
 const rawData = [
   { id: 1, category: "果物", item: "りんご" },
@@ -21,6 +28,8 @@ const INITIAL_PAGE_SIZE = 5;
 export const GridSample = () => {
   const [pageSize, setPageSize] = useState(INITIAL_PAGE_SIZE);
 
+  const apiRef = useGridApiRef();
+
   const processedData = rawData.map((data, index, arr) => {
     const isDuplicate =
       index !== 0 && data.category === arr[index - 1].category;
@@ -41,8 +50,18 @@ export const GridSample = () => {
 
   return (
     <div style={{ height: 400, width: "100%" }}>
+      <button
+        onClick={() => {
+          // API REFの利用はDataGrid Pro以上のみ
+          // const rows = gridExpandedSortedRowEntriesSelector(apiRef);
+          // console.log("rows", rows);
+        }}
+      >
+        gridPaginatedVisibleSortedGridRowIdsSelector
+      </button>
       <DataGrid
         rows={processedData}
+        slots={{ toolbar: GridToolbar }}
         initialState={{
           pagination: { paginationModel: { pageSize: INITIAL_PAGE_SIZE } },
         }}
@@ -63,8 +82,12 @@ export const GridSample = () => {
         ]}
         pageSizeOptions={[5, 10, 25]}
         onPaginationModelChange={(model) => {
-          console.log("paginationmodel", model);
+          console.log("onPaginationModelChange", model);
           setPageSize(model.pageSize);
+        }}
+        onFilterModelChange={(model) => {
+          console.log("onFilterModelChange", model);
+          console.log("rows", processedData);
         }}
       />
     </div>
