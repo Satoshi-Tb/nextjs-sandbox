@@ -14,7 +14,8 @@ const kewdInputCount = 3;
 // reactElementをレンダリング
 const WordHighLightMulti = () => {
   const sampleText = `
-React (リアクト) は、Meta（旧Facebook）とコミュニティによって開発されているユーザインタフェース構築のためのJavaScriptライブラリである。React.jsまたはReactJSの名称でも知られている。
+React (リアクト) は、Meta（旧Facebook）とコミュニティによって開発されているユーザインタフェース構築のためのJavaScriptライブラリである。React.jsまたはReactJSの名称でも知られている。現在のversionは18。
+<img src="https://www.j-platpat.inpit.go.jp/gazette_work/domestic/A/419289000/419289100/419289140/419289141/7239EB7A6A04F265EADF0B7910FBA631E4E0BFE2EACC7203C2F97822A65C5B3A/text/JPA 419289141_i_000004.jpg?version=202408280639"></img>
 Reactはシングルページアプリケーションやモバイルアプリケーションの開発におけるベースとして使用することができる。複雑なReactアプリケーションでは通常、状態管理・ルーティング・APIとの対話のための追加のライブラリが必要となる。
 Next.js（ネクストジェイエス）は、Node.js上に構築されたオープンソースの<span style='text-decoration: solid underline purple 4px;'>Webアプリケーションフレームワーク</span>であり、サーバーサイドスクリプトや静的Webサイトの生成などの、ReactベースのWebアプリケーション機能を有効にする。
   `;
@@ -75,34 +76,57 @@ Next.js（ネクストジェイエス）は、Node.js上に構築されたオー
 
   return (
     <>
-      <div style={{ padding: "10px", height: "1500px" }}>
-        <div style={{ border: "1px solid black", width: "500px" }}>
-          <p>{parse(sampleText, replaceOption)}</p>
-        </div>
-        {[...Array(kewdInputCount)].map((_, i) => (
-          <KeywordHighlighter
-            key={i}
-            index={i}
-            setHighlight={setHighlightColor}
-            setKeyword={setKeyword}
-          />
-        ))}
-        <button onClick={openModal}>ダイアログを開く</button>
-        <Modal show={show}>
+      <div style={{ display: "flex" }}>
+        <div>
+          <div>《ハイライトあり》</div>
           <div
             style={{
-              backgroundColor: "white",
-              width: "300px",
-              height: "200px",
-              padding: "1em",
-              borderRadius: "15px",
+              border: "1px solid black",
+              width: "600px",
+              background: "white",
+              margin: "10px",
             }}
           >
-            <h2>Content from children</h2>
-            <button onClick={closeModal}>閉じる</button>
+            <p>{parse(sampleText, replaceOption)}</p>
           </div>
-        </Modal>
+        </div>
+        <div>
+          <div>《原文》</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "600px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <p>{sampleText}</p>
+          </div>
+        </div>
       </div>
+      {[...Array(kewdInputCount)].map((_, i) => (
+        <KeywordHighlighter
+          key={i}
+          index={i}
+          setHighlight={setHighlightColor}
+          setKeyword={setKeyword}
+        />
+      ))}
+      <button onClick={openModal}>ダイアログを開く</button>
+      <Modal show={show}>
+        <div
+          style={{
+            backgroundColor: "white",
+            width: "300px",
+            height: "200px",
+            padding: "1em",
+            borderRadius: "15px",
+          }}
+        >
+          <h2>Content from children</h2>
+          <button onClick={closeModal}>閉じる</button>
+        </div>
+      </Modal>
     </>
   );
 };

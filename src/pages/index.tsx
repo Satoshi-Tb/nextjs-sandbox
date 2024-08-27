@@ -21,7 +21,12 @@ function Home() {
           <Link href="/samples/rich-editor">rich-editor</Link>
         </li>
         <li>
-          <Link href="/samples/text-highlight">text-highlith</Link>
+          <Link href="/samples/text-highlight">text-highlight & marker</Link>
+        </li>
+        <li>
+          <Link href="/samples/text-highlight/multi">
+            text-highlight (multi)
+          </Link>
         </li>
         <li>
           <Link href="/samples/popup/parent">popup</Link>
