@@ -29,6 +29,11 @@ function Home() {
           </Link>
         </li>
         <li>
+          <Link href="/samples/text-highlight/sample3">
+            text-highlight sample3
+          </Link>
+        </li>
+        <li>
           <Link href="/samples/popup/parent">popup</Link>
         </li>
         <li>
