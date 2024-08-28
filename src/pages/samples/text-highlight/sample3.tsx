@@ -29,7 +29,8 @@ const HighLightSample3 = () => {
     <div>
       <h1>Hello, World!</h1>
       <p>
-      This is a sample HTML string with some text to <u>highlight</u>. Let's highlight the words 'highlight' and 'ハイライト' and 'version'.
+      This is a sample HTML string with some text to <u>highlight</u>. Let's highlight the words 'highlight' and 'ハイライト' and 'version'.<br/>
+      Ignore upper/lower case: Version, VERSION
       <img src="https://www.j-platpat.inpit.go.jp/gazette_work/domestic/A/419289000/419289100/419289140/419289141/7239EB7A6A04F265EADF0B7910FBA631E4E0BFE2EACC7203C2F97822A65C5B3A/text/JPA 419289141_i_000004.jpg?version=202408280639"></img>
       </p>
     </div>
@@ -48,11 +49,18 @@ const HighLightSample3 = () => {
   return (
     <>
       <h2>ハイライト - タグ内の文字も変換可能</h2>
-      <div>【ハイライト化】</div>
-      <div>{parse(htmlString, options)}</div>
+      <h4>ハイライト設定</h4>
+      {highlightSettings.map((item, i) => (
+        <div>
+          {i}:{item.text}, {item.color}
+        </div>
+      ))}
       <hr />
       <div>【ハイライト前】</div>
       <div>{htmlString}</div>
+      <hr />
+      <div>【ハイライト化】</div>
+      <div>{parse(htmlString, options)}</div>
     </>
   );
 };
