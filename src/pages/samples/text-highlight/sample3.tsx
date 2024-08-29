@@ -10,7 +10,10 @@ const highlightSettings = [
 ];
 
 // 半角文字列に変換する関数
-// TODO 全角カナ対応
+// TODO 全角カナ、記号対応
+// ・カナ、記号を含めると、対応は難しい。変換用のコードマップ作成が必要
+// https://qiita.com/spm84/items/4ea8c53ac3aafcd4d66c
+// ・濁点・半濁点付きカナ（パ⇔ﾊﾟ、バ⇔ﾊﾞなど）は、半角⇔全角で文字数が変わるので、置換に対応できない。ﾊﾞ⇔ハ"みたいな感じで分割状態での全角半角にしないと厳しい
 const toHalfWidth = (str: string) =>
   str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (ch) =>
     String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
@@ -21,7 +24,9 @@ const highlightText = (text: string) => {
   let highlightedText = text;
 
   // ハイライト設定分、テキストを置換
-  // TODO 複数適用すると、2回目のループでハイライト用の<span>タグが置換対象になってしまう。この単純なやり方で実施する場合、ハイライトタグ名は検索対象外の文字列にしないとダメ。
+  // TODO 複数適用すると、2回目のループでハイライト用の<span>タグが置換対象になってしまう。
+  // この単純なやり方で実施する場合、ハイライトタグ名は検索対象外の文字列にしないとダメ。
+  // 例えばハイライトキーワードの最低文字数を3文字にし、ハイライトタグ（コンポーネント）の名前を、適当な2文字以下の名前にするなど
   highlightSettings.forEach(({ text: searchText, color }) => {
     const normalizedSearchText = toHalfWidth(searchText).toLowerCase(); // キーワードのノーマライズ
     const normalizedInputText = toHalfWidth(highlightedText).toLowerCase(); // 対象文字列のノーマライズ
