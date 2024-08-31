@@ -1,5 +1,6 @@
 import React from "react";
 import parse, { HTMLReactParserOptions, Text } from "html-react-parser";
+import Link from "next/link";
 
 // ハイライト設定
 const highlightSettings = [
@@ -114,6 +115,9 @@ const HighLightSample3 = () => {
       <hr />
       <div>【ハイライト化】</div>
       <div>{parse(htmlString, options)}</div>
+      <div style={{ marginTop: "20px" }}>
+        <Link href="/">Homeに戻る</Link>
+      </div>
     </>
   );
 };
