@@ -52,19 +52,71 @@ const HighLightSample4 = () => {
 
   return (
     <div>
-      <div>《原文》</div>
-      <div>{htmlString}</div>
+      <div style={{ textDecoration: "underline" }}>オリジナルHTML</div>
+      <div style={{ display: "flex" }}>
+        <div>
+          <div style={{ padding: "5px" }}>Plain HTML</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "700px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <div style={{ padding: "5px" }}>{htmlString}</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ padding: "5px" }}>HTML</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "700px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <div style={{ padding: "5px" }}>{parse(htmlString)}</div>
+          </div>
+        </div>
+      </div>
       <hr />
-      <div>{parse(htmlString)}</div>
-      <hr />
-
-      <div>《タグ除去》</div>
-      <div>{renderToString(parsedHtml as ReactElement)}</div>
-      <hr />
-      <div>{parsedHtml}</div>
-      <hr />
-      <div style={{ marginTop: "20px" }}>
-        <Link href="/">Homeに戻る</Link>
+      <div style={{ textDecoration: "underline" }}>タグ除去</div>
+      <div style={{ display: "flex" }}>
+        <div>
+          <div style={{ padding: "5px" }}>Plain HTML</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "700px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <div style={{ padding: "5px" }}>
+              {renderToString(parsedHtml as ReactElement)}
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style={{ padding: "5px" }}>HTML</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "700px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <div style={{ padding: "5px" }}>{parsedHtml}</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: "flex" }}>
+        <div style={{ marginTop: "20px" }}>
+          <Link href="/">Homeに戻る</Link>
+        </div>
       </div>
     </div>
   );
