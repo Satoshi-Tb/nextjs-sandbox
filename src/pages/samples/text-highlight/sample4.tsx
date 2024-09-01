@@ -302,6 +302,13 @@ const HighLightSample4 = () => {
 
   return (
     <div>
+      <h4>ハイライト設定</h4>
+      {highlightSettings.map((item, i) => (
+        <div>
+          {i}:{item.keyword}, {item.color}
+        </div>
+      ))}
+      <br />
       <DisplayCard key={1} title="オリジナルHTML" planeHtml={htmlString} />
       <hr />
       <DisplayCard
