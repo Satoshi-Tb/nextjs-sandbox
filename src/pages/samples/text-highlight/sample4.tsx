@@ -69,7 +69,9 @@ const optHighlight1: HTMLReactParserOptions = {
   },
 };
 
+// mainコンポーネント
 const HighLightSample4 = () => {
+  // 原文
   const htmlString = `
   <p>
   <b>ChatGPT</b>（チャットジーピーティー、英語: Chat Generative Pre-trained Transformer）[1]は、OpenAIが2022年11月に公開した人工知能チャットボットであり、生成AIの一種。
@@ -78,113 +80,81 @@ const HighLightSample4 = () => {
   </p>
     `;
 
-  // HTML文字列をパースしてから処理
-  const parsedHtml = parse(htmlString, optTagStrip);
-
-  const highlightedHtml = parse(htmlString, optHighlight1);
-
   return (
     <div>
-      <div style={{ textDecoration: "underline" }}>オリジナルHTML</div>
-      <div style={{ display: "flex" }}>
-        <div>
-          <div style={{ padding: "5px" }}>Plain HTML</div>
-          <div
-            style={{
-              border: "1px solid black",
-              width: "700px",
-              background: "white",
-              margin: "10px",
-            }}
-          >
-            <div style={{ padding: "5px" }}>{htmlString}</div>
-          </div>
-        </div>
-        <div>
-          <div style={{ padding: "5px" }}>HTML</div>
-          <div
-            style={{
-              border: "1px solid black",
-              width: "700px",
-              background: "white",
-              margin: "10px",
-            }}
-          >
-            <div style={{ padding: "5px" }}>{parse(htmlString)}</div>
-          </div>
-        </div>
-      </div>
+      <DisplayCard key={1} title="オリジナルHTML" planeHtml={htmlString} />
       <hr />
-      <div style={{ textDecoration: "underline" }}>タグ除去</div>
-      <div style={{ display: "flex" }}>
-        <div>
-          <div style={{ padding: "5px" }}>Plain HTML</div>
-          <div
-            style={{
-              border: "1px solid black",
-              width: "700px",
-              background: "white",
-              margin: "10px",
-            }}
-          >
-            <div style={{ padding: "5px" }}>
-              {renderToString(parsedHtml as ReactElement)}
-            </div>
-          </div>
-        </div>
-        <div>
-          <div style={{ padding: "5px" }}>HTML</div>
-          <div
-            style={{
-              border: "1px solid black",
-              width: "700px",
-              background: "white",
-              margin: "10px",
-            }}
-          >
-            <div style={{ padding: "5px" }}>{parsedHtml}</div>
-          </div>
-        </div>
-      </div>
+      <DisplayCard
+        key={2}
+        title="タグ除去"
+        planeHtml={htmlString}
+        parseOptions={optTagStrip}
+      />
       <hr />
-      <div style={{ textDecoration: "underline" }}>ハイライト</div>
-      <div>単一ワードのみ/完全一致（大文字小文字や、全角半角対応なし）</div>
-      <div style={{ display: "flex" }}>
-        <div>
-          <div style={{ padding: "5px" }}>Plain HTML</div>
-          <div
-            style={{
-              border: "1px solid black",
-              width: "700px",
-              background: "white",
-              margin: "10px",
-            }}
-          >
-            <div style={{ padding: "5px" }}>
-              {renderToString(highlightedHtml as ReactElement)}
-            </div>
-          </div>
-        </div>
-        <div>
-          <div style={{ padding: "5px" }}>HTML</div>
-          <div
-            style={{
-              border: "1px solid black",
-              width: "700px",
-              background: "white",
-              margin: "10px",
-            }}
-          >
-            <div style={{ padding: "5px" }}>{highlightedHtml}</div>
-          </div>
-        </div>
-      </div>
+      <DisplayCard
+        key={3}
+        title="ハイライト"
+        description="単一ワードのみ/完全一致（大文字小文字や、全角半角対応なし）"
+        planeHtml={htmlString}
+        parseOptions={optHighlight1}
+      />
       <div style={{ display: "flex" }}>
         <div style={{ marginTop: "20px" }}>
           <Link href="/">Homeに戻る</Link>
         </div>
       </div>
     </div>
+  );
+};
+
+// 表示用レイアウトコンポーネント
+type DisplayCardProps = {
+  title: string;
+  description?: string;
+  planeHtml: string;
+  parseOptions?: HTMLReactParserOptions;
+};
+const DisplayCard = ({
+  title,
+  description,
+  planeHtml,
+  parseOptions,
+}: DisplayCardProps) => {
+  return (
+    <>
+      <div style={{ textDecoration: "underline" }}>{title}</div>
+      {description && <div>{description}</div>}
+      <div style={{ display: "flex" }}>
+        <div>
+          <div style={{ padding: "5px" }}>Plain HTML</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "700px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <div style={{ padding: "5px" }}>{planeHtml}</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ padding: "5px" }}>HTML</div>
+          <div
+            style={{
+              border: "1px solid black",
+              width: "700px",
+              background: "white",
+              margin: "10px",
+            }}
+          >
+            <div style={{ padding: "5px" }}>
+              {parse(planeHtml, parseOptions)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
