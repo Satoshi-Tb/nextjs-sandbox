@@ -40,35 +40,36 @@ const highlightSettings: HighlightSetting[] = [
 ];
 
 // ハイライトサンプル1
-const optHighlight1: HTMLReactParserOptions = {
-  replace: (domNode: DOMNode) => {
-    // console.dir(domNode, { depth: null });
-    // Textノードを処理
-    if (domNode instanceof Text) {
-      const text = domNode.data;
+const optHighlight1 = (setting: HighlightSetting): HTMLReactParserOptions => {
+  return {
+    replace: (domNode: DOMNode) => {
+      // console.dir(domNode, { depth: null });
+      // Textノードを処理
+      if (domNode instanceof Text) {
+        const text = domNode.data;
 
-      // キーワードで元のtextを分割し、キーワードをハイライトタグでラップしたJSXオブジェクトを追加しながら
-      // JSXまたはstringの配列を構築する
-      const jsxElements = text
-        .split(highlightSetting.keyword)
-        .reduce((prev, curr, i) => {
-          if (i !== 0) {
-            prev.push(
-              <span style={{ backgroundColor: highlightSetting.color }}>
-                {highlightSetting.keyword}
-              </span>
-            );
-          }
-          prev.push(curr);
-          return prev;
-        }, [] as (string | JSX.Element)[]);
+        // キーワードで元のtextを分割し、キーワードをハイライトタグでラップしたJSXオブジェクトを追加しながら
+        // JSXまたはstringの配列を構築する
+        const jsxElements = text
+          .split(setting.keyword)
+          .reduce((prev, curr, i) => {
+            if (i !== 0) {
+              prev.push(
+                <span style={{ backgroundColor: setting.color }}>
+                  {setting.keyword}
+                </span>
+              );
+            }
+            prev.push(curr);
+            return prev;
+          }, [] as (string | JSX.Element)[]);
 
-      return <>{jsxElements}</>;
-    }
-    return;
-  },
+        return <>{jsxElements}</>;
+      }
+      return;
+    },
+  };
 };
-
 // 英数字全角→半角英数
 const toHalfWidth = (str: string) =>
   str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (ch) =>
@@ -263,37 +264,43 @@ const highlightText = (
 };
 
 // ハイライトサンプル2
-const optHighlight2: HTMLReactParserOptions = {
-  replace: (domNode: DOMNode) => {
-    // console.dir(domNode, { depth: null });
-    // Textノードを処理
-    if (domNode instanceof Text) {
-      return <>{highlightText(domNode.data, highlightSetting)}</>;
-    }
-    return;
-  },
+const optHighlight2 = (setting: HighlightSetting): HTMLReactParserOptions => {
+  return {
+    replace: (domNode: DOMNode) => {
+      // console.dir(domNode, { depth: null });
+      // Textノードを処理
+      if (domNode instanceof Text) {
+        return <>{highlightText(domNode.data, setting)}</>;
+      }
+      return;
+    },
+  };
 };
 
 // ハイライトサンプル3
-const optHighlight3: HTMLReactParserOptions = {
-  replace: (domNode: DOMNode) => {
-    // console.dir(domNode, { depth: null });
-    // Textノードを処理
-    if (domNode instanceof Text) {
-      let result: (string | JSX.Element)[] = [domNode.data];
-      console.log(`initial state:`, result);
-      highlightSettings.forEach((s, idx) => {
-        result = result.flatMap((elm) => {
-          if (typeof elm !== "string") return elm;
-          return highlightText(elm, s);
+const optHighlight3 = (
+  settings: HighlightSetting[]
+): HTMLReactParserOptions => {
+  return {
+    replace: (domNode: DOMNode) => {
+      // console.dir(domNode, { depth: null });
+      // Textノードを処理
+      if (domNode instanceof Text) {
+        let result: (string | JSX.Element)[] = [domNode.data];
+        console.log(`initial state:`, result);
+        settings.forEach((s, idx) => {
+          result = result.flatMap((elm) => {
+            if (typeof elm !== "string") return elm;
+            return highlightText(elm, s);
+          });
+          console.log(`hilight key:${idx}: ${s.keyword}`, result);
         });
-        console.log(`hilight key:${idx}: ${s.keyword}`, result);
-      });
-      console.log(`terminate state:`, result);
-      return <>{result}</>;
-    }
-    return;
-  },
+        console.log(`terminate state:`, result);
+        return <>{result}</>;
+      }
+      return;
+    },
+  };
 };
 
 // mainコンポーネント
@@ -323,7 +330,7 @@ const HighLightSample4 = () => {
         title="ハイライトその１"
         description="単一ワードのみ/完全一致（大文字小文字や、全角半角対応なし）"
         planeHtml={htmlString}
-        parseOptions={optHighlight1}
+        parseOptions={optHighlight1(highlightSetting)}
       />
       <hr />
       <DisplayCard
@@ -331,7 +338,7 @@ const HighLightSample4 = () => {
         title="ハイライトその２"
         description="単一ワードのみ/大文字小文字、全角半角区別なし"
         planeHtml={htmlString}
-        parseOptions={optHighlight2}
+        parseOptions={optHighlight2(highlightSetting)}
       />
       <hr />
       <DisplayCard
@@ -339,7 +346,7 @@ const HighLightSample4 = () => {
         title="ハイライトその３"
         description="複数ワード可/キーワード重複対応なし/大文字小文字、全角半角区別なし"
         planeHtml={htmlString}
-        parseOptions={optHighlight3}
+        parseOptions={optHighlight3(highlightSettings)}
       />
       <div style={{ display: "flex" }}>
         <div style={{ marginTop: "20px" }}>
