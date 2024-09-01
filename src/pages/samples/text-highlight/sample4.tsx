@@ -29,10 +29,15 @@ const optTagStrip: HTMLReactParserOptions = {
 
 // ハイライト設定
 const highlightSetting: HighlightSetting = {
-  keyword: "GPT",
+  keyword: "gpt",
   color: "yellow",
 };
-const highlightSettings = [highlightSetting, { keyword: "open", color: "red" }];
+const highlightSettings: HighlightSetting[] = [
+  highlightSetting,
+  { keyword: "open", color: "red" },
+  { keyword: "openai", color: "lightgreen" },
+  { keyword: "ちゃっと", color: "lightblue" },
+];
 
 // ハイライトサンプル1
 const optHighlight1: HTMLReactParserOptions = {
@@ -212,50 +217,80 @@ const normalizeText = (src: string) => {
   return result;
 };
 
+// textにハイライトタグを設定して、JSXエレメントの配列として返す
+const highlightText = (
+  text: string,
+  setting: HighlightSetting
+): (string | JSX.Element)[] => {
+  // キーワード検索のため、キーワードと検索対象文字列をノーマライズ
+  const normalizedSearchText = normalizeText(setting.keyword);
+  const normalizedInputText = normalizeText(text);
+
+  // キーワードヒット位置を取得
+  const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
+
+  let match;
+  const matchResult: { index: number; len: number }[] = []; // 検索結果(検索ヒット位置と、キーワード文字数)
+
+  // ノーマライズ結果に対して、全ての検索ヒット位置を取得
+  while ((match = regex.exec(normalizedInputText)) !== null) {
+    // console.log(
+    //   `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
+    // );
+    matchResult.push({
+      index: match.index,
+      len: normalizedSearchText.length,
+    });
+  }
+
+  // 検索結果無しの場合、元のテキストをそのまま返す
+  if (matchResult.length === 0) return [text];
+
+  // 元の文書から検索ヒット位置に該当するワードを抽出し、ハイライトタグを付与
+  const jsxElements: (string | JSX.Element)[] = [];
+  let ptr = 0;
+  matchResult.forEach((m) => {
+    jsxElements.push(text.slice(ptr, m.index));
+    jsxElements.push(
+      <span style={{ backgroundColor: setting.color }}>
+        {text.slice(m.index, m.index + m.len)}
+      </span>
+    );
+    ptr = m.index + m.len;
+  });
+  jsxElements.push(text.slice(ptr));
+  return jsxElements;
+};
+
 // ハイライトサンプル2
 const optHighlight2: HTMLReactParserOptions = {
   replace: (domNode: DOMNode) => {
     // console.dir(domNode, { depth: null });
     // Textノードを処理
     if (domNode instanceof Text) {
-      const textOrg = domNode.data;
+      return <>{highlightText(domNode.data, highlightSetting)}</>;
+    }
+    return;
+  },
+};
 
-      // キーワード検索のため、キーワードと検索対象文字列をノーマライズ
-      const normalizedSearchText = normalizeText(highlightSetting.keyword);
-      const normalizedInputText = normalizeText(textOrg);
-
-      // キーワードヒット位置を取得
-      const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
-
-      let match;
-      const matchResult: { index: number; len: number }[] = []; // 検索結果(検索ヒット位置と、キーワード文字数)
-
-      // ノーマライズ結果に対して、全ての検索ヒット位置を取得
-      while ((match = regex.exec(normalizedInputText)) !== null) {
-        // console.log(
-        //   `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
-        // );
-        matchResult.push({
-          index: match.index,
-          len: normalizedSearchText.length,
+// ハイライトサンプル3
+const optHighlight3: HTMLReactParserOptions = {
+  replace: (domNode: DOMNode) => {
+    // console.dir(domNode, { depth: null });
+    // Textノードを処理
+    if (domNode instanceof Text) {
+      let result: (string | JSX.Element)[] = [domNode.data];
+      console.log(`initial state:`, result);
+      highlightSettings.forEach((s, idx) => {
+        result = result.flatMap((elm) => {
+          if (typeof elm !== "string") return elm;
+          return highlightText(elm, s);
         });
-      }
-
-      // 元の文書から検索ヒット位置に該当するワードを抽出し、ハイライトタグを付与
-      const jsxElements: (string | JSX.Element)[] = [];
-      let ptr = 0;
-      matchResult.forEach((m) => {
-        jsxElements.push(textOrg.slice(ptr, m.index));
-        jsxElements.push(
-          <span style={{ backgroundColor: highlightSetting.color }}>
-            {textOrg.slice(m.index, m.index + m.len)}
-          </span>
-        );
-        ptr = m.index + m.len;
+        console.log(`hilight key:${idx}: ${s.keyword}`, result);
       });
-      jsxElements.push(textOrg.slice(ptr));
-
-      return <>{jsxElements}</>;
+      console.log(`terminate state:`, result);
+      return <>{result}</>;
     }
     return;
   },
@@ -297,6 +332,14 @@ const HighLightSample4 = () => {
         description="単一ワードのみ/大文字小文字、全角半角区別なし"
         planeHtml={htmlString}
         parseOptions={optHighlight2}
+      />
+      <hr />
+      <DisplayCard
+        key={5}
+        title="ハイライトその３"
+        description="複数ワード可/キーワード重複対応なし/大文字小文字、全角半角区別なし"
+        planeHtml={htmlString}
+        parseOptions={optHighlight3}
       />
       <div style={{ display: "flex" }}>
         <div style={{ marginTop: "20px" }}>
