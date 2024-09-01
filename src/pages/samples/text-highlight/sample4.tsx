@@ -280,20 +280,77 @@ const optHighlight3 = (
       // Textノードを処理
       if (domNode instanceof Text) {
         let result: (string | JSX.Element)[] = [domNode.data];
-        console.log(`initial state:`, result);
+        // console.log(`initial state:`, result);
         settings.forEach((s, idx) => {
           result = result.flatMap((elm) => {
             if (typeof elm !== "string") return elm;
             return highlightText(elm, s);
           });
-          console.log(`hilight key:${idx}: ${s.keyword}`, result);
+          // console.log(`hilight key:${idx}: ${s.keyword}`, result);
         });
-        console.log(`terminate state:`, result);
+        // console.log(`terminate state:`, result);
         return <>{result}</>;
       }
       return;
     },
   };
+};
+
+// 再帰処理調査用
+const keywords: string[] = ["React", "act"];
+const highlightWrap = (text: string, keyword: string) => (
+  <span style={{ backgroundColor: "yellow" }} key={keyword}>
+    {text}
+  </span>
+);
+
+const highlightKeywords = (
+  node: DOMNode,
+  remainingKeywords: string[]
+): false | void | object | JSX.Element | null | undefined => {
+  if (node instanceof Text) {
+    let parts: (string | JSX.Element)[] = [node.data];
+
+    // 残りのキーワードを順次処理
+    remainingKeywords.forEach((keyword) => {
+      parts = parts.flatMap((part) => {
+        if (typeof part === "string") {
+          const regex = new RegExp(`(${keyword})`, "gi");
+          return part
+            .split(regex)
+            .map((subPart, index) =>
+              regex.test(subPart) ? highlightWrap(subPart, keyword) : subPart
+            );
+        }
+        return part;
+      });
+    });
+    return parts;
+  }
+
+  if (node instanceof Element && node.type === "tag" && node.children) {
+    return React.createElement(
+      node.name,
+      node.attribs,
+      domToReact(
+        node.children.map((child) =>
+          highlightKeywords(child, remainingKeywords)
+        )
+      )
+    );
+  }
+
+  return node;
+};
+
+const htmlString2 =
+  "<div>Hello, <span>React and HTML parsing is fun!</span></div>";
+const parsedResult = parse(htmlString2, {
+  replace: (node) => highlightKeywords(node, keywords),
+});
+
+const HighlightedComponent = () => {
+  return <div>{parsedResult}</div>;
 };
 
 // mainコンポーネント
@@ -341,6 +398,8 @@ const HighLightSample4 = () => {
         planeHtml={htmlString}
         parseOptions={optHighlight3(highlightSettings)}
       />
+      <hr />
+      <HighlightedComponent />
       <div style={{ display: "flex" }}>
         <div style={{ marginTop: "20px" }}>
           <Link href="/">Homeに戻る</Link>
