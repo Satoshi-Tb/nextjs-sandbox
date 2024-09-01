@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from "react";
+import React from "react";
 import parse, {
   DOMNode,
   HTMLReactParserOptions,
@@ -7,24 +7,10 @@ import parse, {
   domToReact,
 } from "html-react-parser";
 import Link from "next/link";
-import { renderToString } from "react-dom/server";
 
 type HighlightSetting = {
   keyword: string;
   color: string;
-};
-
-// オプションサンプル：タグ除去
-const optTagStrip: HTMLReactParserOptions = {
-  replace: (domNode: DOMNode) => {
-    // console.dir(domNode, { depth: null });
-    // DOMNodeがElement（タグ）である場合、除去(<></>に置換)
-    if (domNode instanceof Element && domNode.type === "tag") {
-      // 再帰的に子要素を処理する
-      return <>{domToReact(domNode.children, optTagStrip)}</>;
-    }
-    return;
-  },
 };
 
 // ハイライト設定
@@ -317,13 +303,6 @@ const HighLightSample4 = () => {
   return (
     <div>
       <DisplayCard key={1} title="オリジナルHTML" planeHtml={htmlString} />
-      <hr />
-      <DisplayCard
-        key={2}
-        title="タグ除去"
-        planeHtml={htmlString}
-        parseOptions={optTagStrip}
-      />
       <hr />
       <DisplayCard
         key={3}
