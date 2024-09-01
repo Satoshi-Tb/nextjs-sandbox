@@ -20,8 +20,8 @@ const highlightSetting: HighlightSetting = {
 };
 const highlightSettings: HighlightSetting[] = [
   highlightSetting,
-  { keyword: "open", color: "red" },
-  { keyword: "openai", color: "lightgreen" },
+  { keyword: "openai", color: "red" },
+  { keyword: "open", color: "lightgreen" },
   { keyword: "ちゃっと", color: "lightblue" },
 ];
 
@@ -301,7 +301,7 @@ const HighLightSample4 = () => {
   // 原文
   const htmlString = `
   <p>
-  <b>ChatGPT</b>（チャットジーピーティー、英語: Chat Generative Pre-trained Transformer）[1]は、OpenAIが2022年11月に公開した人工知能チャットボットであり、生成AIの一種。
+  <b><u>ChatGPT</u></b>（チャットジーピーティー、英語: Chat Generative Pre-trained Transformer）[1]は、<span style="background-color: gray;">OpenAI</span>が2022年11月に公開した人工知能チャットボットであり、生成AIの一種。
   GPTの原語のGenerative Pre-trained Transformerとは、「生成可能な事前学習済み変換器」という意味である[2]。OpenAIの<a href="/wiki/GPT-3" title="GPT-3">GPT-3</a>ファミリーの大規模な言語モデルに基づいて構築されており、教師あり学習と強化学習の両方の手法を使って転移学習され、機械学習のサブセットである深層学習を使って開発されている[3]。Gptモデルにはgpt 3.5, ＧＰＴ4等がある。
   <img src="//upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/150px-ChatGPT_logo.svg.png" decoding="async" width="150" height="150" class="mw-file-element" srcset="//upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/225px-ChatGPT_logo.svg.png 1.5x, //upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/300px-ChatGPT_logo.svg.png 2x" data-file-width="512" data-file-height="512">
   </p>
