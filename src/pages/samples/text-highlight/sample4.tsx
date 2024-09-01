@@ -27,17 +27,6 @@ const optTagStrip: HTMLReactParserOptions = {
   },
 };
 
-// オプションサンプル：タグ置換
-// テキストノードをハイライトする関数
-const highlightText = (text: string, keyword: string, color: string) => {
-  const regexp = new RegExp(`(${keyword})`, "gi");
-  return text.replace(
-    regexp,
-    (match) =>
-      `<span style="background-color: ${color}; font-weight: bold;">${match}</span>`
-  );
-};
-
 // ハイライト設定
 const highlightSetting: HighlightSetting = {
   keyword: "GPT",
