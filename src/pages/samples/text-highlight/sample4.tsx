@@ -41,9 +41,7 @@ const optHighlight1 = (setting: HighlightSetting): HTMLReactParserOptions => {
           .reduce((prev, curr, i) => {
             if (i !== 0) {
               prev.push(
-                <span style={{ backgroundColor: setting.color }}>
-                  {setting.keyword}
-                </span>
+                <Highlight text={setting.keyword} color={setting.color} />
               );
             }
             prev.push(curr);
@@ -204,6 +202,14 @@ const normalizeText = (src: string) => {
   return result;
 };
 
+type HighlightProps = {
+  text: string;
+  color: string;
+};
+const Highlight = ({ text, color }: HighlightProps) => (
+  <span style={{ backgroundColor: color }}>{text}</span>
+);
+
 // textにハイライトタグを設定して、JSXエレメントの配列として返す
 const highlightText = (
   text: string,
@@ -239,9 +245,10 @@ const highlightText = (
   matchResult.forEach((m) => {
     jsxElements.push(text.slice(ptr, m.index));
     jsxElements.push(
-      <span style={{ backgroundColor: setting.color }}>
-        {text.slice(m.index, m.index + m.len)}
-      </span>
+      <Highlight
+        text={text.slice(m.index, m.index + m.len)}
+        color={setting.color}
+      />
     );
     ptr = m.index + m.len;
   });
