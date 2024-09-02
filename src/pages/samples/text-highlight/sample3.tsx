@@ -14,6 +14,8 @@ const highlightSettings = [
   { text: "ハイライト", color: "green" },
   { text: "high", color: "red" },
   { text: "version", color: "lightblue" },
+  { text: "span", color: "lime" },
+  { text: "style", color: "lime" },
 ];
 
 // 半角文字列に変換する関数
@@ -37,14 +39,14 @@ const addHighlight = (keyword: string, color: string, target: string) => {
   let resultStr = "";
   let ptr = 0;
   const matchResult: { index: number; len: number }[] = []; // 検索結果(検索ヒット位置と、キーワード文字数)
-  console.log("target", target);
-  console.log("search key", normalizedSearchText);
+  // console.log("target", target);
+  // console.log("search key", normalizedSearchText);
 
   // ノーマライズ結果に対して、全ての検索ヒット位置を取得
   while ((match = regex.exec(normalizedInputText)) !== null) {
-    console.log(
-      `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
-    );
+    // console.log(
+    //   `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
+    // );
     matchResult.push({
       index: match.index,
       len: normalizedSearchText.length,
@@ -69,11 +71,16 @@ const highlightText = (text: string) => {
   let highlightedText = text;
 
   // ハイライト設定分、テキストを置換
-  // TODO 複数適用すると、2回目のループでハイライト用の<span>タグが置換対象になってしまう。
-  // この単純なやり方で実施する場合、ハイライトタグ名は検索対象外の文字列にしないとダメ。
-  // 例えばハイライトキーワードの最低文字数を3文字にし、ハイライトタグ（コンポーネント）の名前を、適当な2文字以下の名前にするなど
   highlightSettings.forEach(({ text: searchText, color }) => {
-    highlightedText = addHighlight(searchText, color, highlightedText);
+    //console.log("split!", highlightedText.split(/(<[^>]+>)/));
+    highlightedText = highlightedText
+      .split(/(<[^>]+>)/)
+      .filter(Boolean)
+      .map((chunk) => {
+        if (chunk.includes("<")) return chunk;
+        return addHighlight(searchText, color, chunk);
+      })
+      .join("");
   });
   return highlightedText;
 };
@@ -108,6 +115,7 @@ const HighLightSample3 = () => {
       <p>
       This is a sample HTML string with some text to <u>highlight</u>. Let's highlight the words 'highlight' and 'ハイライト' and 'version'.<br/>Ignore upper/lower case: Version, VERSION, ｖｅｒｓｉｏｎ, ＶerＳION
       <img src="https://www.j-platpat.inpit.go.jp/gazette_work/domestic/A/419289000/419289100/419289140/419289141/7239EB7A6A04F265EADF0B7910FBA631E4E0BFE2EACC7203C2F97822A65C5B3A/text/JPA 419289141_i_000004.jpg?version=202408280639"></img>
+      タグ文字列、例えば<span style="text-decoration: underline;">&amp;lt;span&amp;gt;や&amp;lt;style&amp;gt;といった文字列はハイライト対象から無視されます</span>
       </p>
     </div>
   `;
