@@ -26,6 +26,44 @@ const toHalfWidth = (str: string) =>
     String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
   );
 
+//
+const addHighlight = (keyword: string, color: string, target: string) => {
+  const normalizedSearchText = toHalfWidth(keyword).toLowerCase(); // キーワードのノーマライズ
+  const normalizedInputText = toHalfWidth(target).toLowerCase(); // 対象文字列のノーマライズ
+
+  const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
+
+  let match;
+  let resultStr = "";
+  let ptr = 0;
+  const matchResult: { index: number; len: number }[] = []; // 検索結果(検索ヒット位置と、キーワード文字数)
+  console.log("target", target);
+  console.log("search key", normalizedSearchText);
+
+  // ノーマライズ結果に対して、全ての検索ヒット位置を取得
+  while ((match = regex.exec(normalizedInputText)) !== null) {
+    console.log(
+      `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
+    );
+    matchResult.push({
+      index: match.index,
+      len: normalizedSearchText.length,
+    });
+  }
+
+  matchResult.forEach((m, i) => {
+    resultStr += target.slice(ptr, m.index);
+    resultStr +=
+      `<span style="background-color: ${color}; font-weight: bold;">` +
+      target.slice(m.index, m.index + m.len) +
+      "</span>";
+    ptr = m.index + m.len;
+  });
+
+  resultStr += target.slice(ptr);
+  return resultStr;
+};
+
 // 指定された文字列に基づいてHTMLテキストをハイライトする関数
 const highlightText = (text: string) => {
   let highlightedText = text;
@@ -35,42 +73,7 @@ const highlightText = (text: string) => {
   // この単純なやり方で実施する場合、ハイライトタグ名は検索対象外の文字列にしないとダメ。
   // 例えばハイライトキーワードの最低文字数を3文字にし、ハイライトタグ（コンポーネント）の名前を、適当な2文字以下の名前にするなど
   highlightSettings.forEach(({ text: searchText, color }) => {
-    const normalizedSearchText = toHalfWidth(searchText).toLowerCase(); // キーワードのノーマライズ
-    const normalizedInputText = toHalfWidth(highlightedText).toLowerCase(); // 対象文字列のノーマライズ
-
-    const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
-
-    let match;
-    let resultStr = "";
-    let ptr = 0;
-    const matchResult: { index: number; len: number }[] = []; // 検索結果(検索ヒット位置と、キーワード文字数)
-    console.log("target", highlightedText);
-    console.log("search key", normalizedSearchText);
-
-    // ノーマライズ結果に対して、全ての検索ヒット位置を取得
-    while ((match = regex.exec(normalizedInputText)) !== null) {
-      console.log(
-        `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
-      );
-      matchResult.push({
-        index: match.index,
-        len: normalizedSearchText.length,
-      });
-    }
-
-    matchResult.forEach((m, i) => {
-      resultStr += highlightedText.slice(ptr, m.index);
-      resultStr +=
-        `<span style="background-color: ${color}; font-weight: bold;">` +
-        highlightedText.slice(m.index, m.index + m.len) +
-        "</span>";
-      ptr = m.index + m.len;
-    });
-
-    resultStr += highlightedText.slice(ptr);
-    console.log("match result", matchResult);
-    console.log("highlight result", resultStr);
-    highlightedText = resultStr;
+    highlightedText = addHighlight(searchText, color, highlightedText);
   });
   return highlightedText;
 };
