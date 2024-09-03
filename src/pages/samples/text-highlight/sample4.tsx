@@ -65,7 +65,7 @@ const Highlight = ({ text, color }: HighlightProps) => (
 );
 
 // textにハイライトタグを設定して、JSXエレメントの配列として返す
-const highlightText = (
+const highlightedNodes = (
   text: string,
   setting: HighlightSetting
 ): (string | JSX.Element)[] => {
@@ -99,10 +99,9 @@ const highlightText = (
   matchResult.forEach((m) => {
     jsxElements.push(text.slice(ptr, m.index));
     jsxElements.push(
-      <Highlight
-        text={text.slice(m.index, m.index + m.len)}
-        color={setting.color}
-      />
+      <span style={{ backgroundColor: setting.color }}>
+        {text.slice(m.index, m.index + m.len)}
+      </span>
     );
     ptr = m.index + m.len;
   });
@@ -117,7 +116,7 @@ const optHighlight2 = (setting: HighlightSetting): HTMLReactParserOptions => {
       // console.dir(domNode, { depth: null });
       // Textノードを処理
       if (domNode instanceof Text) {
-        return <>{highlightText(domNode.data, setting)}</>;
+        return <>{highlightedNodes(domNode.data, setting)}</>;
       }
       return;
     },
@@ -138,7 +137,7 @@ const optHighlight3 = (
         settings.forEach((s, idx) => {
           result = result.flatMap((elm) => {
             if (typeof elm !== "string") return elm;
-            return highlightText(elm, s);
+            return highlightedNodes(elm, s);
           });
           // console.log(`hilight key:${idx}: ${s.keyword}`, result);
         });
