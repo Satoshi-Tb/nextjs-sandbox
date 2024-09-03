@@ -9,14 +9,19 @@ import parse, {
 import Link from "next/link";
 import { normalizeForHighlight } from "@/utils/stringUtil";
 
+type HighlightSetting = {
+  keyword: string;
+  color: string;
+};
+
 // ハイライト設定
-const highlightSettings = [
-  { text: "highlight", color: "yellow" },
-  { text: "ハイライト", color: "green" },
-  { text: "high", color: "red" },
-  { text: "version", color: "lightblue" },
-  { text: "span", color: "lime" },
-  { text: "style", color: "lime" },
+const highlightSettings: HighlightSetting[] = [
+  { keyword: "highlight", color: "yellow" },
+  { keyword: "ハイライト", color: "green" },
+  { keyword: "high", color: "red" },
+  { keyword: "version", color: "lightblue" },
+  { keyword: "span", color: "lime" },
+  { keyword: "style", color: "lime" },
 ];
 
 // 指定されたテキストのキーワード文言に、ハイライトタグ（spanタグ）を設定する
@@ -58,27 +63,31 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
 };
 
 // 特定の文字列をハイライトするためのカスタム変換関数
-const optHighlighSample: HTMLReactParserOptions = {
-  replace: (domNode) => {
-    if (domNode instanceof Text) {
-      let highlightedText = domNode.data;
+const optHighlightSample = (
+  settings: HighlightSetting[]
+): HTMLReactParserOptions => {
+  return {
+    replace: (domNode) => {
+      if (domNode instanceof Text) {
+        let highlightedText = domNode.data;
 
-      // ハイライト設定分、テキストを置換
-      highlightSettings.forEach(({ text: searchText, color }) => {
-        //console.log("split!", highlightedText.split(/(<[^>]+>)/));
-        highlightedText = highlightedText
-          .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
-          .filter(Boolean)
-          .map((chunk) => {
-            if (chunk.includes("<")) return chunk; // タグは処理しない
-            return applyHighlight(searchText, color, chunk); // テキストにはハイライト用タグをセット
-          })
-          .join("");
-      });
+        // ハイライト設定分、テキストを置換
+        settings.forEach(({ keyword: searchText, color }) => {
+          //console.log("split!", highlightedText.split(/(<[^>]+>)/));
+          highlightedText = highlightedText
+            .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
+            .filter(Boolean)
+            .map((chunk) => {
+              if (chunk.includes("<")) return chunk; // タグは処理しない
+              return applyHighlight(searchText, color, chunk); // テキストにはハイライト用タグをセット
+            })
+            .join("");
+        });
 
-      return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
-    }
-  },
+        return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
+      }
+    },
+  };
 };
 
 // オプションサンプル：タグ除去
@@ -112,7 +121,7 @@ const HighLightSample3 = () => {
       <h4>ハイライト設定</h4>
       {highlightSettings.map((item, i) => (
         <div>
-          {i}:{item.text}, {item.color}
+          {i}:{item.keyword}, {item.color}
         </div>
       ))}
       <br />
@@ -129,7 +138,7 @@ const HighLightSample3 = () => {
         key={3}
         title="ハイライト化（文字列置換）"
         planeHtml={htmlString}
-        parseOptions={optHighlighSample}
+        parseOptions={optHighlightSample(highlightSettings)}
       />
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
