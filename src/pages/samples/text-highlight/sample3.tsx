@@ -7,6 +7,7 @@ import parse, {
   domToReact,
 } from "html-react-parser";
 import Link from "next/link";
+import { normalizeForHighlight } from "@/utils/stringUtil";
 
 // ハイライト設定
 const highlightSettings = [
@@ -30,8 +31,8 @@ const toHalfWidth = (str: string) =>
 
 //
 const addHighlight = (keyword: string, color: string, target: string) => {
-  const normalizedSearchText = toHalfWidth(keyword).toLowerCase(); // キーワードのノーマライズ
-  const normalizedInputText = toHalfWidth(target).toLowerCase(); // 対象文字列のノーマライズ
+  const normalizedSearchText = normalizeForHighlight(keyword); // キーワードのノーマライズ
+  const normalizedInputText = normalizeForHighlight(target); // 対象文字列のノーマライズ
 
   const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
 
