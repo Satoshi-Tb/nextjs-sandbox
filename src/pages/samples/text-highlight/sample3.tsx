@@ -19,20 +19,10 @@ const highlightSettings = [
   { text: "style", color: "lime" },
 ];
 
-// 半角文字列に変換する関数
-// TODO 全角カナ、記号対応
-// ・カナ、記号を含めると、対応は難しい。変換用のコードマップ作成が必要
-// https://qiita.com/spm84/items/4ea8c53ac3aafcd4d66c
-// ・濁点・半濁点付きカナ（パ⇔ﾊﾟ、バ⇔ﾊﾞなど）は、半角⇔全角で文字数が変わるので、置換に対応できない。ﾊﾞ⇔ハ"みたいな感じで分割状態での全角半角にしないと厳しい
-const toHalfWidth = (str: string) =>
-  str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (ch) =>
-    String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
-  );
-
-//
-const addHighlight = (keyword: string, color: string, target: string) => {
+// 指定されたテキストのキーワード文言に、ハイライトタグ（spanタグ）を設定する
+const applyHighlight = (keyword: string, color: string, text: string) => {
   const normalizedSearchText = normalizeForHighlight(keyword); // キーワードのノーマライズ
-  const normalizedInputText = normalizeForHighlight(target); // 対象文字列のノーマライズ
+  const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
 
   const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
 
@@ -55,42 +45,37 @@ const addHighlight = (keyword: string, color: string, target: string) => {
   }
 
   matchResult.forEach((m, i) => {
-    resultStr += target.slice(ptr, m.index);
+    resultStr += text.slice(ptr, m.index);
     resultStr +=
       `<span style="background-color: ${color}; font-weight: bold;">` +
-      target.slice(m.index, m.index + m.len) +
+      text.slice(m.index, m.index + m.len) +
       "</span>";
     ptr = m.index + m.len;
   });
 
-  resultStr += target.slice(ptr);
+  resultStr += text.slice(ptr);
   return resultStr;
-};
-
-// 指定された文字列に基づいてHTMLテキストをハイライトする関数
-const highlightText = (text: string) => {
-  let highlightedText = text;
-
-  // ハイライト設定分、テキストを置換
-  highlightSettings.forEach(({ text: searchText, color }) => {
-    //console.log("split!", highlightedText.split(/(<[^>]+>)/));
-    highlightedText = highlightedText
-      .split(/(<[^>]+>)/)
-      .filter(Boolean)
-      .map((chunk) => {
-        if (chunk.includes("<")) return chunk;
-        return addHighlight(searchText, color, chunk);
-      })
-      .join("");
-  });
-  return highlightedText;
 };
 
 // 特定の文字列をハイライトするためのカスタム変換関数
 const optHighlighSample: HTMLReactParserOptions = {
   replace: (domNode) => {
-    if (domNode.type === "text") {
-      const highlightedText = highlightText((domNode as Text).data);
+    if (domNode instanceof Text) {
+      let highlightedText = domNode.data;
+
+      // ハイライト設定分、テキストを置換
+      highlightSettings.forEach(({ text: searchText, color }) => {
+        //console.log("split!", highlightedText.split(/(<[^>]+>)/));
+        highlightedText = highlightedText
+          .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
+          .filter(Boolean)
+          .map((chunk) => {
+            if (chunk.includes("<")) return chunk; // タグは処理しない
+            return applyHighlight(searchText, color, chunk); // テキストにはハイライト用タグをセット
+          })
+          .join("");
+      });
+
       return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
     }
   },
