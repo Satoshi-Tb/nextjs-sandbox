@@ -10,6 +10,49 @@ export const toFullWidth = (str: string) =>
     return String.fromCharCode(s.charCodeAt(0) + 0xfee0);
   });
 
+// 全角記号(ASCII)→半角記号
+export const synmbolFullToHalf = (str: string) => {
+  const kanaMap: { [key: string]: string } = {
+    "　": " ",
+    "！": "!",
+    "”": '"',
+    "“": '"',
+    "＃": "#",
+    "＄": "$",
+    "％": "%",
+    "＆": "&",
+    "’": "'",
+    "（": "(",
+    "）": ")",
+    "＊": "*",
+    "＋": "+",
+    "，": ",",
+    "－": "-",
+    "．": ".",
+    "￥": "\\",
+    "／": "\\",
+    "；": ";",
+    "＜": "<",
+    "＝": "=",
+    "＞": ">",
+    "？": "?",
+    "＠": "@",
+    "［": "[",
+    "＼": "\\",
+    "］": "]",
+    "＾": "^",
+    "＿": "_",
+    "‘": "`",
+    "｛": "{",
+    "｜": "|",
+    "｝": "}",
+    "～": "~",
+  };
+
+  const reg = new RegExp("(" + Object.keys(kanaMap).join("|") + ")", "g");
+  return str.replace(reg, (match) => kanaMap[match] || match);
+};
+
 // カタカナ→ひらがな
 export const kanaToHira = (str: string) =>
   str.replace(/[\u30a1-\u30f6]/g, function (s) {
@@ -139,8 +182,12 @@ export const kanaHalfToFull = (str: string) => {
 // →パフォーマンスで参考になることがあれば
 export const normalizeForHighlight = (src: string) => {
   let result = src;
+  // ASCII文字列は半角
   result = toHalfWidth(result);
+  result = synmbolFullToHalf(result);
   result = result.toLowerCase();
+
+  // ASCII以外の文字は全角
   result = kanaHalfToFull(result);
   result = kanaToHira(result);
   return result;
