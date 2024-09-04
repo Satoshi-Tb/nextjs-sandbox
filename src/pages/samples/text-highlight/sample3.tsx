@@ -9,13 +9,14 @@ import parse, {
 import Link from "next/link";
 import { normalizeForHighlight } from "@/utils/stringUtil";
 
-type HighlightSetting = {
+type HighlightParam = {
   keyword: string;
   color: string;
+  enable?: boolean; // キーワードごとにON/OFFしたい場合など
 };
 
 // ハイライト設定
-const highlightSettings: HighlightSetting[] = [
+const highlightParams: HighlightParam[] = [
   { keyword: "highlight", color: "yellow" },
   { keyword: "ハイライト", color: "green" },
   { keyword: "high", color: "red" },
@@ -25,6 +26,7 @@ const highlightSettings: HighlightSetting[] = [
 ];
 
 // 指定されたテキストのキーワード文言に、ハイライトタグ（spanタグ）を設定する
+// TODO <>のハイライトができない。&lt;、&gt;でもダメ。記号も全角変換したほうがよいか。その場合、"や\の扱いどうするか要検討
 const applyHighlight = (keyword: string, color: string, text: string) => {
   const normalizedSearchText = normalizeForHighlight(keyword); // キーワードのノーマライズ
   const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
@@ -37,7 +39,8 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
   let match;
   let resultStr = "";
   let ptr = 0;
-  const matchResult: { index: number; len: number }[] = []; // 検索結果(検索ヒット位置と、キーワード文字数)
+  // 検索結果(検索ヒット位置と、キーワード文字数)
+  const matchResult: { index: number; len: number }[] = [];
   // console.log("target", target);
   // console.log("search key", normalizedSearchText);
 
@@ -46,20 +49,27 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
     // console.log(
     //   `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
     // );
-    matchResult.push({
-      index: match.index,
-      len: normalizedSearchText.length,
-    });
-  }
-
-  matchResult.forEach((m, i) => {
-    resultStr += text.slice(ptr, m.index);
+    resultStr += text.slice(ptr, match.index);
     resultStr +=
       `<span style="background-color: ${color}; font-weight: bold;">` +
-      text.slice(m.index, m.index + m.len) +
+      text.slice(match.index, match.index + normalizedSearchText.length) +
       "</span>";
-    ptr = m.index + m.len;
-  });
+    ptr = match.index + normalizedSearchText.length;
+    // ptr = match.index + normalizedSearchText.length;
+    //   matchResult.push({
+    //     index: match.index,
+    //     len: normalizedSearchText.length,
+    //   });
+  }
+
+  // matchResult.forEach((m, i) => {
+  //   resultStr += text.slice(ptr, m.index);
+  //   resultStr +=
+  //     `<span style="background-color: ${color}; font-weight: bold;">` +
+  //     text.slice(m.index, m.index + m.len) +
+  //     "</span>";
+  //   ptr = m.index + m.len;
+  // });
 
   resultStr += text.slice(ptr);
   return resultStr;
@@ -67,7 +77,7 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
 
 // 特定の文字列をハイライトするためのカスタム変換関数
 const optHighlightSample = (
-  settings: HighlightSetting[]
+  settings: HighlightParam[]
 ): HTMLReactParserOptions => {
   return {
     replace: (domNode) => {
@@ -120,7 +130,7 @@ const HighLightSample3 = () => {
 
   const testString1 =
     "ロボット/ロボツト/ロホット/ろぼっと/ろぼつと/ろほっと/ﾛﾎﾞｯﾄ/ﾛﾎﾞﾂﾄ/ﾛﾎｯﾄ";
-  const testSettings1: HighlightSetting[] = [
+  const testSettings1: HighlightParam[] = [
     { keyword: "ロボット", color: "yellow" },
     { keyword: "ロボツト", color: "yellow" },
     { keyword: "ロホット", color: "yellow" },
@@ -133,7 +143,7 @@ const HighLightSample3 = () => {
   ];
 
   const testString2 = "ABC!\\ /abc!\\ /Abc!\\ /ａｂｃ！￥　/ＡＢＣ！／　";
-  const testSettings2: HighlightSetting[] = [
+  const testSettings2: HighlightParam[] = [
     { keyword: "ABC!\\ ", color: "yellow" },
     { keyword: "abc!\\ ", color: "yellow" },
     { keyword: "abC!\\ ", color: "yellow" },
@@ -233,7 +243,7 @@ const HighLightSample3 = () => {
     <>
       <h2>html-react-parseのテスト</h2>
       <h4>ハイライト設定</h4>
-      {highlightSettings.map((item, i) => (
+      {highlightParams.map((item, i) => (
         <div>
           {i}:{item.keyword}, {item.color}
         </div>
@@ -252,28 +262,28 @@ const HighLightSample3 = () => {
         key={3}
         title="ハイライト化（文字列置換）"
         planeHtml={htmlString}
-        parseOptions={optHighlightSample(highlightSettings)}
+        parseOptions={optHighlightSample(highlightParams)}
       />
       {testSettings1.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
-          <Highlight key={i} text={testString1} settings={[s]} />
+          <HighlightKeywords key={i} text={testString1} highlightParams={[s]} />
         </>
       ))}
       {testSettings2.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
-          <Highlight key={i} text={testString2} settings={[s]} />
+          <HighlightKeywords key={i} text={testString2} highlightParams={[s]} />
         </>
       ))}
       {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
-          <Highlight
-            key={i}
-            text={symbolTestString}
-            settings={[{ keyword: s, color: "yellow" }]}
-          />
+          <>
+            {parseAndHighlight(symbolTestString, [
+              { keyword: s, color: "yellow" },
+            ])}
+          </>
         </>
       ))}
       <div style={{ marginTop: "20px" }}>
@@ -284,19 +294,59 @@ const HighLightSample3 = () => {
 };
 
 // ハイライトコンポーネントサンプル
-type HighlighteComponentProps = {
+type HighlightKeywordsProps = {
   text: string;
-  settings?: HighlightSetting[];
+  highlightParams?: HighlightParam[];
   enableHighlight?: boolean;
 };
-const Highlight = ({
+/**
+ * ハイライト用コンポーネントサンプル。parseを利用するため、すべてのタグ文字列がHTMLタグとして解釈される点に注意
+ */
+const HighlightKeywords = ({
   text,
-  settings = [],
+  highlightParams = [],
   enableHighlight = true,
-}: HighlighteComponentProps) => {
+}: HighlightKeywordsProps) => {
   return (
-    <>{enableHighlight ? parse(text, optHighlightSample(settings)) : text}</>
+    <>
+      {enableHighlight
+        ? parse(text, optHighlightSample(highlightParams))
+        : text}
+    </>
   );
+};
+
+/**
+ * または関数のみ
+ * こちらのほうがparse利用が分かりやすい。こちらの方がよいか
+ */
+const parseAndHighlight = (
+  text: string,
+  highlightParams: HighlightParam[],
+  hilightEnable: boolean = true
+) => {
+  return parse(text, {
+    replace: (domNode) => {
+      if (hilightEnable && domNode instanceof Text) {
+        let highlightedText = domNode.data;
+
+        // ハイライト設定分、テキストを置換
+        highlightParams.forEach(({ keyword, color }) => {
+          //console.log("split!", highlightedText.split(/(<[^>]+>)/));
+          highlightedText = highlightedText
+            .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
+            .filter(Boolean)
+            .map((chunk) => {
+              if (chunk.includes("<")) return chunk; // タグは処理しない
+              return applyHighlight(keyword, color, chunk); // テキストにはハイライト用タグをセット
+            })
+            .join("");
+        });
+
+        return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
+      }
+    },
+  });
 };
 
 // 表示用レイアウトコンポーネント
