@@ -166,6 +166,48 @@ export const kanaHalfToFull = (str: string) => {
   return str.replace(reg, (match) => kanaMap[match] || match);
 };
 
+export const synmbolFullToHalf = (str: string) => {
+  const kanaMap: { [key: string]: string } = {
+    "　": " ",
+    "！": "!",
+    "”": '"',
+    "“": '"',
+    "＃": "#",
+    "＄": "$",
+    "％": "%",
+    "＆": "&",
+    "’": "'",
+    "（": "(",
+    "）": ")",
+    "＊": "*",
+    "＋": "+",
+    "，": ",",
+    "－": "-",
+    "．": ".",
+    "／": "\\",
+    "￥": "\\",
+    "；": ";",
+    "＜": "<",
+    "＝": "=",
+    "＞": ">",
+    "？": "?",
+    "＠": "@",
+    "［": "[",
+    "＼": "\\",
+    "］": "]",
+    "＾": "^",
+    "＿": "_",
+    "‘": "`",
+    "｛": "{",
+    "｜": "|",
+    "｝": "}",
+    "～": "~",
+  };
+
+  const reg = new RegExp("(" + Object.keys(kanaMap).join("|") + ")", "g");
+  return str.replace(reg, (match) => kanaMap[match] || match);
+};
+
 // ・キーワードハイライト処理用の文字列ノーマライズ関数
 //   英数字：大文字→小文字＆全角→半角
 //   上記以外（カタカナ、ひらがな、記号）：半角→全角＆カタカナ→ひらがな
