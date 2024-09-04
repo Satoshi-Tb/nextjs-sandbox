@@ -115,6 +115,31 @@ const HighLightSample3 = () => {
     </div>
   `;
 
+  const testString1 =
+    "ロボット/ロボツト/ロホット/ろぼっと/ろぼつと/ろほっと/ﾛﾎﾞｯﾄ/ﾛﾎﾞﾂﾄ/ﾛﾎｯﾄ";
+  const testSettings1: HighlightSetting[] = [
+    { keyword: "ロボット", color: "yellow" },
+    { keyword: "ロボツト", color: "yellow" },
+    { keyword: "ロホット", color: "yellow" },
+    { keyword: "ろぼっと", color: "yellow" },
+    { keyword: "ろぼつと", color: "yellow" },
+    { keyword: "ろほっと", color: "yellow" },
+    { keyword: "ﾛﾎﾞｯﾄ", color: "yellow" },
+    { keyword: "ﾛﾎﾞﾂﾄ", color: "yellow" },
+    { keyword: "ﾛﾎｯﾄ", color: "yellow" },
+  ];
+
+  const testString2 = "ABC!/abc!/Abc!/ａｂｃ！/ＡＢＣ！";
+  const testSettings2: HighlightSetting[] = [
+    { keyword: "ABC!", color: "yellow" },
+    { keyword: "abc!", color: "yellow" },
+    { keyword: "abC!", color: "yellow" },
+    { keyword: "ＡＢＣ！", color: "yellow" },
+    { keyword: "ａｂｃ！", color: "yellow" },
+    { keyword: "ａｂｃ!", color: "yellow" },
+    { keyword: "ABC！", color: "yellow" },
+  ];
+
   return (
     <div>
       <h2>html-react-parseのテスト</h2>
@@ -140,10 +165,38 @@ const HighLightSample3 = () => {
         planeHtml={htmlString}
         parseOptions={optHighlightSample(highlightSettings)}
       />
+      {testSettings1.map((s, i) => (
+        <>
+          <h4>キーワード：{s.keyword}</h4>
+          <Highlight key={i} text={testString1} settings={[s]} />
+        </>
+      ))}
+      {testSettings2.map((s, i) => (
+        <>
+          <h4>キーワード：{s.keyword}</h4>
+          <Highlight key={i} text={testString2} settings={[s]} />
+        </>
+      ))}
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
       </div>
     </div>
+  );
+};
+
+// ハイライトコンポーネントサンプル
+type HighlighteComponentProps = {
+  text: string;
+  settings?: HighlightSetting[];
+  enableHighlight?: boolean;
+};
+const Highlight = ({
+  text,
+  settings = [],
+  enableHighlight = true,
+}: HighlighteComponentProps) => {
+  return (
+    <>{enableHighlight ? parse(text, optHighlightSample(settings)) : text}</>
   );
 };
 
