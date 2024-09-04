@@ -29,7 +29,10 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
   const normalizedSearchText = normalizeForHighlight(keyword); // キーワードのノーマライズ
   const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
 
-  const regex = new RegExp(`(${normalizedSearchText})`, "g"); // 正規表現構築
+  const regex = new RegExp(
+    `(${normalizedSearchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, // 正規表現構築時に、特殊文字をエスケープする
+    "g"
+  ); // 正規表現構築
 
   let match;
   let resultStr = "";
@@ -129,19 +132,105 @@ const HighLightSample3 = () => {
     { keyword: "ﾛﾎｯﾄ", color: "yellow" },
   ];
 
-  const testString2 = "ABC!/abc!/Abc!/ａｂｃ！/ＡＢＣ！";
+  const testString2 = "ABC!\\ /abc!\\ /Abc!\\ /ａｂｃ！￥　/ＡＢＣ！／　";
   const testSettings2: HighlightSetting[] = [
-    { keyword: "ABC!", color: "yellow" },
-    { keyword: "abc!", color: "yellow" },
-    { keyword: "abC!", color: "yellow" },
-    { keyword: "ＡＢＣ！", color: "yellow" },
-    { keyword: "ａｂｃ！", color: "yellow" },
-    { keyword: "ａｂｃ!", color: "yellow" },
-    { keyword: "ABC！", color: "yellow" },
+    { keyword: "ABC!\\ ", color: "yellow" },
+    { keyword: "abc!\\ ", color: "yellow" },
+    { keyword: "abC!\\ ", color: "yellow" },
+    { keyword: "ＡＢＣ！￥　", color: "yellow" },
+    { keyword: "ａｂｃ！／ ", color: "yellow" },
+    { keyword: "ａｂｃ!\\　", color: "yellow" },
+    { keyword: "ABC！￥ ", color: "yellow" },
   ];
 
+  const alphaNumTest = [
+    "a",
+    "b",
+    "c",
+    "A",
+    "B",
+    "C",
+    "ｂ",
+    "ｃ",
+    "0",
+    "1",
+    "０",
+    "１",
+  ];
+
+  const symbolTest = [
+    "　",
+    "！",
+    "”",
+    "“",
+    "＃",
+    "＄",
+    "％",
+    "＆",
+    "’",
+    "（",
+    "）",
+    "＊",
+    "＋",
+    "，",
+    "－",
+    "．",
+    "￥",
+    "／",
+    "；",
+    "＜",
+    "＝",
+    "＞",
+    "？",
+    "＠",
+    "［",
+    "＼",
+    "］",
+    "＾",
+    "＿",
+    "‘",
+    "｛",
+    "｜",
+    "｝",
+    "～",
+    " ",
+    "!",
+    '"',
+    "#",
+    "$",
+    "%",
+    "&",
+    "'",
+    "(",
+    ")",
+    "*",
+    "+",
+    ",",
+    "-",
+    ".",
+    "\\",
+    ";",
+    "<",
+    "=",
+    ">",
+    "?",
+    "@",
+    "[",
+    "]",
+    "^",
+    "_",
+    "`",
+    "{",
+    "|",
+    "}",
+    "~",
+    "&lt;",
+    "&gt;",
+  ];
+  const symbolTestString = symbolTest.join(" ");
+
   return (
-    <div>
+    <>
       <h2>html-react-parseのテスト</h2>
       <h4>ハイライト設定</h4>
       {highlightSettings.map((item, i) => (
@@ -177,10 +266,20 @@ const HighLightSample3 = () => {
           <Highlight key={i} text={testString2} settings={[s]} />
         </>
       ))}
+      {symbolTest.map((s, i) => (
+        <>
+          <h4>キーワード：{s}</h4>
+          <Highlight
+            key={i}
+            text={symbolTestString}
+            settings={[{ keyword: s, color: "yellow" }]}
+          />
+        </>
+      ))}
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
       </div>
-    </div>
+    </>
   );
 };
 
