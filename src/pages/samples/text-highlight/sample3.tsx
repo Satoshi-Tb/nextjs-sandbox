@@ -9,14 +9,14 @@ import parse, {
 import Link from "next/link";
 import { normalizeForHighlight } from "@/utils/stringUtil";
 
-type HighlightParam = {
+type HighlightSetting = {
   keyword: string;
   color: string;
   enable?: boolean; // キーワードごとにON/OFFしたい場合など
 };
 
 // ハイライト設定
-const highlightParams: HighlightParam[] = [
+const sampleHighlightSettings: HighlightSetting[] = [
   { keyword: "highlight", color: "yellow" },
   { keyword: "ハイライト", color: "green" },
   { keyword: "high", color: "red" },
@@ -77,7 +77,7 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
 
 // 特定の文字列をハイライトするためのカスタム変換関数
 const optHighlightSample = (
-  settings: HighlightParam[]
+  settings: HighlightSetting[]
 ): HTMLReactParserOptions => {
   return {
     replace: (domNode) => {
@@ -130,7 +130,7 @@ const HighLightSample3 = () => {
 
   const testString1 =
     "ロボット/ロボツト/ロホット/ろぼっと/ろぼつと/ろほっと/ﾛﾎﾞｯﾄ/ﾛﾎﾞﾂﾄ/ﾛﾎｯﾄ";
-  const testSettings1: HighlightParam[] = [
+  const testSettings1: HighlightSetting[] = [
     { keyword: "ロボット", color: "yellow" },
     { keyword: "ロボツト", color: "yellow" },
     { keyword: "ロホット", color: "yellow" },
@@ -143,7 +143,7 @@ const HighLightSample3 = () => {
   ];
 
   const testString2 = "ABC!\\ /abc!\\ /Abc!\\ /ａｂｃ！￥　/ＡＢＣ！／　";
-  const testSettings2: HighlightParam[] = [
+  const testSettings2: HighlightSetting[] = [
     { keyword: "ABC!\\ ", color: "yellow" },
     { keyword: "abc!\\ ", color: "yellow" },
     { keyword: "abC!\\ ", color: "yellow" },
@@ -243,7 +243,7 @@ const HighLightSample3 = () => {
     <>
       <h2>html-react-parseのテスト</h2>
       <h4>ハイライト設定</h4>
-      {highlightParams.map((item, i) => (
+      {sampleHighlightSettings.map((item, i) => (
         <div>
           {i}:{item.keyword}, {item.color}
         </div>
@@ -262,18 +262,18 @@ const HighLightSample3 = () => {
         key={3}
         title="ハイライト化（文字列置換）"
         planeHtml={htmlString}
-        parseOptions={optHighlightSample(highlightParams)}
+        parseOptions={optHighlightSample(sampleHighlightSettings)}
       />
       {testSettings1.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
-          <HighlightKeywords key={i} text={testString1} highlightParams={[s]} />
+          <HighlightKeywords key={i} text={testString1} settings={[s]} />
         </>
       ))}
       {testSettings2.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
-          <HighlightKeywords key={i} text={testString2} highlightParams={[s]} />
+          <HighlightKeywords key={i} text={testString2} settings={[s]} />
         </>
       ))}
       {symbolTest.map((s, i) => (
@@ -296,7 +296,7 @@ const HighLightSample3 = () => {
 // ハイライトコンポーネントサンプル
 type HighlightKeywordsProps = {
   text: string;
-  highlightParams?: HighlightParam[];
+  settings?: HighlightSetting[];
   enableHighlight?: boolean;
 };
 /**
@@ -304,15 +304,11 @@ type HighlightKeywordsProps = {
  */
 const HighlightKeywords = ({
   text,
-  highlightParams = [],
+  settings = [],
   enableHighlight = true,
 }: HighlightKeywordsProps) => {
   return (
-    <>
-      {enableHighlight
-        ? parse(text, optHighlightSample(highlightParams))
-        : text}
-    </>
+    <>{enableHighlight ? parse(text, optHighlightSample(settings)) : text}</>
   );
 };
 
@@ -322,7 +318,7 @@ const HighlightKeywords = ({
  */
 const parseAndHighlight = (
   text: string,
-  highlightParams: HighlightParam[],
+  settings: HighlightSetting[],
   hilightEnable: boolean = true
 ) => {
   return parse(text, {
@@ -331,7 +327,7 @@ const parseAndHighlight = (
         let highlightedText = domNode.data;
 
         // ハイライト設定分、テキストを置換
-        highlightParams.forEach(({ keyword, color }) => {
+        settings.forEach(({ keyword, color }) => {
           //console.log("split!", highlightedText.split(/(<[^>]+>)/));
           highlightedText = highlightedText
             .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
