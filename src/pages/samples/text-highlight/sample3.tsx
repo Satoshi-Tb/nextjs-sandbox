@@ -81,12 +81,16 @@ const optHighlightSample = (
 ): HTMLReactParserOptions => {
   return {
     replace: (domNode) => {
+      console.log("domNode", domNode);
       if (domNode instanceof Text) {
         let highlightedText = domNode.data;
 
         // ハイライト設定分、テキストを置換
         settings.forEach(({ keyword: searchText, color }) => {
-          //console.log("split!", highlightedText.split(/(<[^>]+>)/));
+          console.log("highlightedText", {
+            org: highlightedText,
+            splited: highlightedText.split(/(<[^>]+>)/),
+          });
           highlightedText = highlightedText
             .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
             .filter(Boolean)
@@ -114,6 +118,20 @@ const optTagStrip: HTMLReactParserOptions = {
     }
     return;
   },
+};
+
+const EscapeHtml = ({ htmlString }: { htmlString: string }) => {
+  // エスケープ文字をそのまま処理するために変換を行わないオプション
+  const options: HTMLReactParserOptions = {
+    replace: (node: DOMNode) => {
+      console.log("node", node);
+      if (node instanceof Text) {
+        return <>{node.data}</>; // エスケープ文字をそのまま表示する
+      }
+    },
+  };
+
+  return <>{parse(htmlString, options)}</>;
 };
 
 const HighLightSample3 = () => {
@@ -220,9 +238,9 @@ const HighLightSample3 = () => {
     ".",
     "\\",
     ";",
-    "<",
+    //    ">",
+    //    "<",
     "=",
-    ">",
     "?",
     "@",
     "[",
@@ -234,10 +252,36 @@ const HighLightSample3 = () => {
     "|",
     "}",
     "~",
-    "&lt;",
-    "&gt;",
+    // "&lt;",
+    // "&gt;",
   ];
   const symbolTestString = symbolTest.join(" ");
+
+  // 結論：半角タグ文字はマッチに使えない。がんばったら、&lt;をマッチ文字にできるが、ややこしいから禁止にした方がよい
+
+  // ケース1:対象文字列中にタグ文字で囲まれた文字列がある場合、タグ文字を含めて、タグ内部の文言はハイライト対象にできない
+  // 理由：タグ文字含めて、HTMLタグ解釈されるため。タグ分解の正規表現の精度を上げれば回避できるが、一律NGにした方がよい。
+  //  そもそも生のタグ文字はデータに含まれていないはず。-> 入力チェック制限にした方が良い
+  const symbolTest2String =
+    "タグの前<タグ内部>タグの外　imgタグの前<img src='imgタグ内部'/>imgタグの外"; // タグ付き
+  const tagSymbolTest: HighlightSetting[] = [
+    { keyword: "<", color: "yellow" },
+    { keyword: ">", color: "yellow" },
+    { keyword: "&lt;", color: "yellow" },
+    { keyword: "&gt;", color: "yellow" },
+    { keyword: "&amp;lt;", color: "yellow" },
+    { keyword: "&amp;gt;", color: "yellow" },
+    { keyword: "タグ内部", color: "yellow" },
+  ];
+
+  // ケース2:タグ文字で囲んだ場合と結果は同様。parseライブラリの仕様のため、加工処理の段階でエスケープ文字は対応する記号に変換される
+  const symbolTest3String =
+    "エスケープ文字を利用したタグの前&lt;タグ内部&gt;タグの外　imgタグの前&lt;img src='imgタグ内部'/&gt;imgタグの外"; // タグ付き
+
+  // ケース3:エスケープ文字(&)もエスケープする場合。parseライブラリのエスケープ解決は1段階まで。つまり&amp;→&変換まで。
+  // ゆえに、&文字のエスケープまで行わないと、厳密にXSSのガードにならない
+  const symbolTest4String =
+    "エスケープ文字を利用(＆もエスケープ）したタグの前&amp;lt;タグ内部&amp;gt;タグの外　imgタグの前&amp;lt;img src='imgタグ内部'/&amp;gt;imgタグの外"; // タグ付き
 
   return (
     <>
@@ -264,7 +308,7 @@ const HighLightSample3 = () => {
         planeHtml={htmlString}
         parseOptions={optHighlightSample(sampleHighlightSettings)}
       />
-      {testSettings1.map((s, i) => (
+      {/* {testSettings1.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
           <HighlightKeywords key={i} text={testString1} settings={[s]} />
@@ -275,17 +319,44 @@ const HighLightSample3 = () => {
           <h4>キーワード：{s.keyword}</h4>
           <HighlightKeywords key={i} text={testString2} settings={[s]} />
         </>
-      ))}
+      ))} */}
       {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
-          <>
-            {parseAndHighlight(symbolTestString, [
-              { keyword: s, color: "yellow" },
-            ])}
-          </>
+          <HighlightKeywords
+            key={i}
+            text={symbolTestString}
+            settings={[{ keyword: s, color: "yellow" }]}
+          />
         </>
       ))}
+      <h4>原文：{symbolTest2String}</h4>
+      {tagSymbolTest.map((s, i) => (
+        <>
+          <h4>キーワード：{s.keyword}</h4>
+          ハイライト結果：
+          <HighlightKeywords key={i} text={symbolTest2String} settings={[s]} />
+        </>
+      ))}
+      <h4>原文：{symbolTest3String}</h4>
+      {tagSymbolTest.map((s, i) => (
+        <>
+          <h4>キーワード：{s.keyword}</h4>
+          ハイライト結果：
+          <HighlightKeywords key={i} text={symbolTest3String} settings={[s]} />
+        </>
+      ))}
+      <h4>原文：{symbolTest4String}</h4>
+      {tagSymbolTest.map((s, i) => (
+        <>
+          <h4>キーワード：{s.keyword}</h4>
+          <HighlightKeywords key={i} text={symbolTest4String} settings={[s]} />
+        </>
+      ))}
+      {/* <h4>un escape html</h4>
+      {
+        <EscapeHtml htmlString="aaaa&lt;bbbbb&gt;ccccc&amp;lt;dddd&amp;gt;eeee" />
+      } */}
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
       </div>
@@ -321,28 +392,7 @@ const parseAndHighlight = (
   settings: HighlightSetting[],
   hilightEnable: boolean = true
 ) => {
-  return parse(text, {
-    replace: (domNode) => {
-      if (hilightEnable && domNode instanceof Text) {
-        let highlightedText = domNode.data;
-
-        // ハイライト設定分、テキストを置換
-        settings.forEach(({ keyword, color }) => {
-          //console.log("split!", highlightedText.split(/(<[^>]+>)/));
-          highlightedText = highlightedText
-            .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
-            .filter(Boolean)
-            .map((chunk) => {
-              if (chunk.includes("<")) return chunk; // タグは処理しない
-              return applyHighlight(keyword, color, chunk); // テキストにはハイライト用タグをセット
-            })
-            .join("");
-        });
-
-        return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
-      }
-    },
-  });
+  return hilightEnable ? parse(text, optHighlightSample(settings)) : text;
 };
 
 // 表示用レイアウトコンポーネント
