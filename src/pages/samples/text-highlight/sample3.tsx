@@ -18,9 +18,9 @@ type HighlightSetting = {
 
 // ハイライト設定
 const sampleHighlightSettings: HighlightSetting[] = [
+  { keyword: "high", color: "red" },
   { keyword: "highlight", color: "yellow" },
   { keyword: "ハイライト", color: "green" },
-  { keyword: "high", color: "red" },
   { keyword: "version", color: "lightblue" },
   { keyword: "span", color: "lime" },
   { keyword: "style", color: "lime" },
@@ -122,16 +122,18 @@ const optHighlightSample = (
         let highlightedText = domNode.data;
 
         // ハイライト設定分、テキストを置換
-        settings.forEach(({ keyword, color }) => {
-          highlightedText = highlightedText
-            .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
-            .filter(Boolean)
-            .map((chunk) => {
-              if (chunk.includes("<")) return chunk; // タグは処理しない
-              return applyHighlight(keyword, color, chunk, normalize); // テキストにはハイライト用タグをセット
-            })
-            .join("");
-        });
+        settings
+          .sort((s1, s2) => s2.keyword.length - s1.keyword.length)
+          .forEach(({ keyword, color }) => {
+            highlightedText = highlightedText
+              .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
+              .filter(Boolean)
+              .map((chunk) => {
+                if (chunk.includes("<")) return chunk; // タグは処理しない
+                return applyHighlight(keyword, color, chunk, normalize); // テキストにはハイライト用タグをセット
+              })
+              .join("");
+          });
 
         return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
       }
@@ -186,9 +188,11 @@ const optHighlightSample2 = (
 
         let jsx = <>{highlightedText}</>;
         // ハイライト設定分、テキストを置換
-        settings.forEach((s) => {
-          jsx = <>{traverse(jsx, s, normalize)}</>;
-        });
+        settings
+          .sort((s1, s2) => s2.keyword.length - s1.keyword.length)
+          .forEach((s) => {
+            jsx = <>{traverse(jsx, s, normalize)}</>;
+          });
 
         return jsx;
       }
@@ -260,21 +264,23 @@ const HighlightKeywords2 = ({
 }: HighlightKeywordsProps) => {
   if (!enableHighlight) return parse(text);
   let hilightedHtmlString = text;
-  settings.forEach((s) => {
-    const jsx = parse(hilightedHtmlString, {
-      replace: (domNode) => {
-        if (domNode instanceof Text) {
-          return applyHighlightNode(
-            s.keyword,
-            s.color,
-            domNode.data,
-            enableNormalize
-          );
-        }
-      },
+  settings
+    .sort((s1, s2) => s2.keyword.length - s1.keyword.length)
+    .forEach((s) => {
+      const jsx = parse(hilightedHtmlString, {
+        replace: (domNode) => {
+          if (domNode instanceof Text) {
+            return applyHighlightNode(
+              s.keyword,
+              s.color,
+              domNode.data,
+              enableNormalize
+            );
+          }
+        },
+      });
+      hilightedHtmlString = renderToStaticMarkup(<>{jsx}</>);
     });
-    hilightedHtmlString = renderToStaticMarkup(<>{jsx}</>);
-  });
   return parse(hilightedHtmlString);
 };
 
