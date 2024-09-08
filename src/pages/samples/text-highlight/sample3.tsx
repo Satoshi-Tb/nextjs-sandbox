@@ -96,16 +96,11 @@ const optHighlightSample = (
 ): HTMLReactParserOptions => {
   return {
     replace: (domNode) => {
-      console.log("domNode", domNode);
       if (domNode instanceof Text) {
         let highlightedText = domNode.data;
 
         // ハイライト設定分、テキストを置換
         settings.forEach(({ keyword: searchText, color }) => {
-          console.log("highlightedText", {
-            org: highlightedText,
-            splited: highlightedText.split(/(<[^>]+>)/),
-          });
           highlightedText = highlightedText
             .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
             .filter(Boolean)
@@ -135,16 +130,79 @@ const optTagStrip: HTMLReactParserOptions = {
   },
 };
 
+// ハイライトコンポーネントサンプル
+type HighlightKeywordsProps = {
+  text: string;
+  settings?: HighlightSetting[];
+  enableHighlight?: boolean;
+};
+/**
+ * ハイライト用コンポーネントサンプル。parseを利用するため、すべてのタグ文字列がHTMLタグとして解釈される点に注意
+ */
+const HighlightKeywords = ({
+  text,
+  settings = [],
+  enableHighlight = true,
+}: HighlightKeywordsProps) => {
+  return (
+    <>{enableHighlight ? parse(text, optHighlightSample(settings)) : text}</>
+  );
+};
+
+/**
+ * または関数のみ
+ * こちらのほうがparse利用が分かりやすい。こちらの方がよいか
+ */
+const parseAndHighlight = (
+  text: string,
+  settings: HighlightSetting[],
+  hilightEnable: boolean = true
+) => {
+  return hilightEnable ? parse(text, optHighlightSample(settings)) : text;
+};
+
+/**
+ * 別のやり方。
+ * 文字列→ハイライトタグ付与→parse→文字列→ハイライトタグ付与→parse…を繰り返す方法
+ * このやり方だと、HTMLタグ内の文字列も置換対象にできる。
+ */
+const HighlightKeywords2 = ({
+  text,
+  settings = [],
+  enableHighlight = true,
+}: HighlightKeywordsProps) => {
+  if (!enableHighlight) return text;
+  const result = settings.reduce((prevText, s, idx) => {
+    const jsx = parse(prevText, {
+      replace: (domNode) => {
+        if (domNode instanceof Text) {
+          return <>{applyHighlightNode(s.keyword, s.color, domNode.data)}</>;
+        }
+      },
+    });
+    return renderToStaticMarkup(<>{jsx}</>);
+  }, text);
+  return parse(result);
+};
+
+/**
+ * main
+ */
 const HighLightSample3 = () => {
   const htmlString = `
     <div>
       <h1>Hello, World!</h1>
       <p>
       This is a sample HTML string with some text to <u>highlight</u>. Let's highlight the words 'highlight' and 'ハイライト' and 'version'.<br/>Ignore upper/lower case: Version, VERSION, ｖｅｒｓｉｏｎ, ＶerＳION
-      <img src="https://www.j-platpat.inpit.go.jp/gazette_work/domestic/A/419289000/419289100/419289140/419289141/7239EB7A6A04F265EADF0B7910FBA631E4E0BFE2EACC7203C2F97822A65C5B3A/text/JPA 419289141_i_000004.jpg?version=202408280639"></img>
-      タグ文字列、例えば<span style="text-decoration: underline;">&amp;lt;span&amp;gt;や&amp;lt;style&amp;gt;といった文字列はハイライト対象から無視されます</span><br/>
-      タグ括弧の中身のテスト<ハイライト><br />
-      エスケープ文字のテスト&lt;ハイライト&gt;
+      <img src="https://www.j-platpat.inpit.go.jp/gazette_work/domestic/A/419289000/419289100/419289140/419289141/7239EB7A6A04F265EADF0B7910FBA631E4E0BFE2EACC7203C2F97822A65C5B3A/text/JPA 419289141_i_000004.jpg?version=202408280639"></img><br/>
+      タグ文字検証《HTMLタグ》<br />
+      タグ文字：<span style="text-decoration: underline;">ハイライト</span><br />
+      タグ文字（エスケープ文字形式）：&lt;span  style="text-decoration: underline;"&gt;ハイライト&lt;/span&gt;<br />
+      タグ文字（エスケープ文字をエスケープ）：&amp;lt;span style="text-decoration: underline;"&amp;gt;ハイライト&amp;lt;/span&amp;gt;<br />
+      タグ文字検証《HTMLタグ以外》<br />
+      タグ文字：<ハイライト><br />
+      タグ文字（エスケープ文字形式）：&lt;ハイライト&gt;<br />
+      タグ文字（エスケープ文字をエスケープ）：&amp;lt;ハイライト&amp;gt;
       </p>
     </div>
   `;
@@ -296,32 +354,49 @@ const HighLightSample3 = () => {
         </div>
       ))}
       <br />
-      <DisplayCard key={1} title="原文" planeHtml={htmlString} />
+      <DisplayCard
+        key={1}
+        title="原文"
+        planeHtml={htmlString}
+        parsedComponent={<>{parse(htmlString)}</>}
+      />
       <hr />
       <DisplayCard
         key={2}
         title="タグ削除"
         planeHtml={htmlString}
-        parseOptions={optTagStrip}
+        parsedComponent={<>{parse(htmlString, optTagStrip)}</>}
       />
       <hr />
       <DisplayCard
         key={3}
-        title="ハイライト化（文字列置換）"
+        title="ハイライト化（複数キーワード対応、タグ文字列置換による実装）"
         planeHtml={htmlString}
-        parseOptions={optHighlightSample(sampleHighlightSettings)}
+        parsedComponent={
+          <HighlightKeywords
+            text={htmlString}
+            settings={sampleHighlightSettings}
+            enableHighlight={true}
+          />
+        }
       />
-      <h4>別のやり方</h4>
-      <h4>原文：{htmlString}</h4>
-      <HighlightKeywords2
-        text={htmlString}
-        settings={sampleHighlightSettings}
-        enableHighlight={true}
+      <hr />
+      <DisplayCard
+        key={4}
+        title="ハイライト化（複数キーワード対応、JSX.Elementによる実装）"
+        planeHtml={htmlString}
+        parsedComponent={
+          <HighlightKeywords2
+            text={htmlString}
+            settings={sampleHighlightSettings}
+            enableHighlight={true}
+          />
+        }
       />
       {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
-          <HighlightKeywords
+          <HighlightKeywords2
             key={i}
             text={symbolTestString}
             settings={[{ keyword: s, color: "yellow" }]}
@@ -333,7 +408,7 @@ const HighLightSample3 = () => {
         <>
           <h4>キーワード：{s.keyword}</h4>
           ハイライト結果：
-          <HighlightKeywords key={i} text={symbolTest2String} settings={[s]} />
+          <HighlightKeywords2 key={i} text={symbolTest2String} settings={[s]} />
         </>
       ))}
       <h4>原文：{symbolTest3String}</h4>
@@ -341,14 +416,14 @@ const HighLightSample3 = () => {
         <>
           <h4>キーワード：{s.keyword}</h4>
           ハイライト結果：
-          <HighlightKeywords key={i} text={symbolTest3String} settings={[s]} />
+          <HighlightKeywords2 key={i} text={symbolTest3String} settings={[s]} />
         </>
       ))}
       <h4>原文：{symbolTest4String}</h4>
       {tagSymbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
-          <HighlightKeywords key={i} text={symbolTest4String} settings={[s]} />
+          <HighlightKeywords2 key={i} text={symbolTest4String} settings={[s]} />
         </>
       ))}
       <div style={{ marginTop: "20px" }}>
@@ -358,77 +433,18 @@ const HighLightSample3 = () => {
   );
 };
 
-// ハイライトコンポーネントサンプル
-type HighlightKeywordsProps = {
-  text: string;
-  settings?: HighlightSetting[];
-  enableHighlight?: boolean;
-};
-/**
- * ハイライト用コンポーネントサンプル。parseを利用するため、すべてのタグ文字列がHTMLタグとして解釈される点に注意
- */
-const HighlightKeywords = ({
-  text,
-  settings = [],
-  enableHighlight = true,
-}: HighlightKeywordsProps) => {
-  return (
-    <>{enableHighlight ? parse(text, optHighlightSample(settings)) : text}</>
-  );
-};
-
-/**
- * または関数のみ
- * こちらのほうがparse利用が分かりやすい。こちらの方がよいか
- */
-const parseAndHighlight = (
-  text: string,
-  settings: HighlightSetting[],
-  hilightEnable: boolean = true
-) => {
-  return hilightEnable ? parse(text, optHighlightSample(settings)) : text;
-};
-
-/**
- * 別のやり方。
- * 文字列→ハイライトタグ付与→parse→文字列→ハイライトタグ付与→parse…を繰り返す方法
- * このやり方だと、HTMLタグ内の文字列も置換対象にできる。
- */
-const HighlightKeywords2 = ({
-  text,
-  settings = [],
-  enableHighlight = true,
-}: HighlightKeywordsProps) => {
-  if (!enableHighlight) return text;
-  const result = settings.reduce((prevText, s, idx) => {
-    console.log(`parse ${idx + 1} start`, {
-      initialText: prevText,
-      setting: s,
-    });
-    const jsx = parse(prevText, {
-      replace: (domNode) => {
-        if (domNode instanceof Text) {
-          return <>{applyHighlightNode(s.keyword, s.color, domNode.data)}</>;
-        }
-      },
-    });
-    return renderToStaticMarkup(<>{jsx}</>);
-  }, text);
-  return parse(result);
-};
-
 // 表示用レイアウトコンポーネント
 type DisplayCardProps = {
   title: string;
   description?: string;
   planeHtml: string;
-  parseOptions?: HTMLReactParserOptions;
+  parsedComponent: JSX.Element;
 };
 const DisplayCard = ({
   title,
   description,
   planeHtml,
-  parseOptions,
+  parsedComponent,
 }: DisplayCardProps) => {
   return (
     <>
@@ -440,27 +456,27 @@ const DisplayCard = ({
           <div
             style={{
               border: "1px solid black",
-              width: "700px",
+              width: "800px",
               background: "white",
               margin: "10px",
+              overflow: "scroll",
             }}
           >
             <div style={{ padding: "5px" }}>{planeHtml}</div>
           </div>
         </div>
         <div>
-          <div style={{ padding: "5px" }}>HTML</div>
+          <div style={{ padding: "5px" }}>パース済HTML</div>
           <div
             style={{
               border: "1px solid black",
-              width: "700px",
+              width: "800px",
               background: "white",
               margin: "10px",
+              overflow: "scroll",
             }}
           >
-            <div style={{ padding: "5px" }}>
-              {parse(planeHtml, parseOptions)}
-            </div>
+            <div style={{ padding: "5px" }}>{parsedComponent}</div>
           </div>
         </div>
       </div>
