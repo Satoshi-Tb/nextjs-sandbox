@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode, createElement } from "react";
 import parse, {
   DOMNode,
   Element,
@@ -116,6 +116,58 @@ const optHighlightSample = (
   };
 };
 
+/**
+ *
+ * @param node
+ * @param hs
+ * @returns
+ */
+const traverse = (node: ReactNode, hs: HighlightSetting): ReactNode => {
+  // 文字列の場合
+  if (typeof node === "string") {
+    return applyHighlightNode(hs.keyword, hs.color, node);
+  }
+
+  // JSX.Elementの場合
+  if (React.isValidElement(node)) {
+    if (!node.props.children) {
+      return node; // 子要素がない場合、そのまま返す
+    }
+
+    // 子要素が複数の場合に対応するため、再帰的に処理
+    const newChildren = React.Children.map(node.props.children, (child) =>
+      traverse(child, hs)
+    );
+
+    // 新しい子要素で新しい要素を作成
+    return createElement(node.type, { ...node.props }, newChildren);
+  }
+
+  // その他の型はそのまま返す
+  return node;
+};
+
+// 特定の文字列をハイライトするためのカスタム変換関数
+const optHighlightSample2 = (
+  settings: HighlightSetting[]
+): HTMLReactParserOptions => {
+  return {
+    replace: (domNode) => {
+      if (domNode instanceof Text) {
+        let highlightedText = domNode.data;
+
+        let jsx = <>{highlightedText}</>;
+        // ハイライト設定分、テキストを置換
+        settings.forEach((s) => {
+          jsx = <>{traverse(jsx, s)}</>;
+        });
+
+        return jsx;
+      }
+    },
+  };
+};
+
 // オプションサンプル：タグ除去
 const optTagStrip: HTMLReactParserOptions = {
   replace: (domNode: DOMNode) => {
@@ -144,7 +196,11 @@ const HighlightKeywords = ({
   enableHighlight = true,
 }: HighlightKeywordsProps) => {
   return (
-    <>{enableHighlight ? parse(text, optHighlightSample(settings)) : text}</>
+    <>
+      {enableHighlight
+        ? parse(text, optHighlightSample(settings))
+        : parse(text)}
+    </>
   );
 };
 
@@ -157,7 +213,9 @@ const parseAndHighlight = (
   settings: HighlightSetting[],
   hilightEnable: boolean = true
 ) => {
-  return hilightEnable ? parse(text, optHighlightSample(settings)) : text;
+  return hilightEnable
+    ? parse(text, optHighlightSample(settings))
+    : parse(text);
 };
 
 /**
@@ -183,6 +241,18 @@ const HighlightKeywords2 = ({
     hilightedHtmlString = renderToStaticMarkup(<>{jsx}</>);
   });
   return parse(hilightedHtmlString);
+};
+
+/**
+ * 別のやり方
+ */
+const HighlightKeywords3 = ({
+  text,
+  settings = [],
+  enableHighlight = true,
+}: HighlightKeywordsProps) => {
+  if (!enableHighlight) return parse(text);
+  return parse(text, optHighlightSample2(settings));
 };
 
 /**
@@ -393,7 +463,30 @@ const HighLightSample3 = () => {
           />
         }
       />
-      {symbolTest.map((s, i) => (
+      <DisplayCard
+        key={5}
+        title="ハイライト化（複数キーワード対応、JSX.Element traverseによる実装）"
+        planeHtml={htmlString}
+        parsedComponent={
+          <HighlightKeywords3
+            text={htmlString}
+            settings={sampleHighlightSettings}
+            enableHighlight={true}
+          />
+        }
+      />
+      {/* <div>
+        {traverse(
+          <p>
+            <div>
+              段落１<u>文章１highlight</u>
+            </div>
+            <div>段落２ highlight</div>
+          </p>,
+          { keyword: "highlight", color: "yellow" }
+        )}
+      </div> */}
+      {/* {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
           <HighlightKeywords2
@@ -425,7 +518,7 @@ const HighLightSample3 = () => {
           <h4>キーワード：{s.keyword}</h4>
           <HighlightKeywords2 key={i} text={symbolTest4String} settings={[s]} />
         </>
-      ))}
+      ))} */}
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
       </div>
