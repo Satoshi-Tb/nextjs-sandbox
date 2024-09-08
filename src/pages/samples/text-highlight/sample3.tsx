@@ -8,6 +8,7 @@ import parse, {
 } from "html-react-parser";
 import Link from "next/link";
 import { normalizeForHighlight } from "@/utils/stringUtil";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
 
 type HighlightSetting = {
   keyword: string;
@@ -28,21 +29,17 @@ const sampleHighlightSettings: HighlightSetting[] = [
 // 指定されたテキストのキーワード文言に、ハイライトタグ（spanタグ）を設定する
 // TODO <>のハイライトができない。&lt;、&gt;でもダメ。記号も全角変換したほうがよいか。その場合、"や\の扱いどうするか要検討
 const applyHighlight = (keyword: string, color: string, text: string) => {
-  const normalizedSearchText = normalizeForHighlight(keyword); // キーワードのノーマライズ
+  const normalizedKeyword = normalizeForHighlight(keyword); // キーワードのノーマライズ
   const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
 
   const regex = new RegExp(
-    `(${normalizedSearchText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, // 正規表現構築時に、特殊文字をエスケープする
+    `(${normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, // 正規表現構築時に、特殊文字をエスケープする
     "g"
   ); // 正規表現構築
 
   let match;
   let resultStr = "";
   let ptr = 0;
-  // 検索結果(検索ヒット位置と、キーワード文字数)
-  const matchResult: { index: number; len: number }[] = [];
-  // console.log("target", target);
-  // console.log("search key", normalizedSearchText);
 
   // ノーマライズ結果に対して、全ての検索ヒット位置を取得
   while ((match = regex.exec(normalizedInputText)) !== null) {
@@ -52,27 +49,45 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
     resultStr += text.slice(ptr, match.index);
     resultStr +=
       `<span style="background-color: ${color}; font-weight: bold;">` +
-      text.slice(match.index, match.index + normalizedSearchText.length) +
+      text.slice(match.index, match.index + normalizedKeyword.length) +
       "</span>";
-    ptr = match.index + normalizedSearchText.length;
-    // ptr = match.index + normalizedSearchText.length;
-    //   matchResult.push({
-    //     index: match.index,
-    //     len: normalizedSearchText.length,
-    //   });
+    ptr = match.index + normalizedKeyword.length;
   }
-
-  // matchResult.forEach((m, i) => {
-  //   resultStr += text.slice(ptr, m.index);
-  //   resultStr +=
-  //     `<span style="background-color: ${color}; font-weight: bold;">` +
-  //     text.slice(m.index, m.index + m.len) +
-  //     "</span>";
-  //   ptr = m.index + m.len;
-  // });
 
   resultStr += text.slice(ptr);
   return resultStr;
+};
+
+const applyHighlightNode = (keyword: string, color: string, text: string) => {
+  const normalizedKeyword = normalizeForHighlight(keyword); // キーワードのノーマライズ
+  const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
+
+  const regex = new RegExp(
+    `(${normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, // 正規表現構築時に、特殊文字をエスケープする
+    "g"
+  ); // 正規表現構築
+
+  let match;
+  let resultStr = "";
+  let ptr = 0;
+
+  const jsxElements: (string | JSX.Element)[] = [];
+  // ノーマライズ結果に対して、全ての検索ヒット位置を取得
+  while ((match = regex.exec(normalizedInputText)) !== null) {
+    // console.log(
+    //   `Found ${match[0]} start=${match.index} end=${regex.lastIndex}.`
+    // );
+    jsxElements.push(text.slice(ptr, match.index));
+    jsxElements.push(
+      <span style={{ backgroundColor: color, fontWeight: "bold" }}>
+        {text.slice(match.index, match.index + normalizedKeyword.length)}
+      </span>
+    );
+    ptr = match.index + normalizedKeyword.length;
+  }
+
+  jsxElements.push(text.slice(ptr));
+  return jsxElements;
 };
 
 // 特定の文字列をハイライトするためのカスタム変換関数
@@ -120,20 +135,6 @@ const optTagStrip: HTMLReactParserOptions = {
   },
 };
 
-const EscapeHtml = ({ htmlString }: { htmlString: string }) => {
-  // エスケープ文字をそのまま処理するために変換を行わないオプション
-  const options: HTMLReactParserOptions = {
-    replace: (node: DOMNode) => {
-      console.log("node", node);
-      if (node instanceof Text) {
-        return <>{node.data}</>; // エスケープ文字をそのまま表示する
-      }
-    },
-  };
-
-  return <>{parse(htmlString, options)}</>;
-};
-
 const HighLightSample3 = () => {
   const htmlString = `
     <div>
@@ -141,7 +142,9 @@ const HighLightSample3 = () => {
       <p>
       This is a sample HTML string with some text to <u>highlight</u>. Let's highlight the words 'highlight' and 'ハイライト' and 'version'.<br/>Ignore upper/lower case: Version, VERSION, ｖｅｒｓｉｏｎ, ＶerＳION
       <img src="https://www.j-platpat.inpit.go.jp/gazette_work/domestic/A/419289000/419289100/419289140/419289141/7239EB7A6A04F265EADF0B7910FBA631E4E0BFE2EACC7203C2F97822A65C5B3A/text/JPA 419289141_i_000004.jpg?version=202408280639"></img>
-      タグ文字列、例えば<span style="text-decoration: underline;">&amp;lt;span&amp;gt;や&amp;lt;style&amp;gt;といった文字列はハイライト対象から無視されます</span>
+      タグ文字列、例えば<span style="text-decoration: underline;">&amp;lt;span&amp;gt;や&amp;lt;style&amp;gt;といった文字列はハイライト対象から無視されます</span><br/>
+      タグ括弧の中身のテスト<ハイライト><br />
+      エスケープ文字のテスト&lt;ハイライト&gt;
       </p>
     </div>
   `;
@@ -308,18 +311,13 @@ const HighLightSample3 = () => {
         planeHtml={htmlString}
         parseOptions={optHighlightSample(sampleHighlightSettings)}
       />
-      {/* {testSettings1.map((s, i) => (
-        <>
-          <h4>キーワード：{s.keyword}</h4>
-          <HighlightKeywords key={i} text={testString1} settings={[s]} />
-        </>
-      ))}
-      {testSettings2.map((s, i) => (
-        <>
-          <h4>キーワード：{s.keyword}</h4>
-          <HighlightKeywords key={i} text={testString2} settings={[s]} />
-        </>
-      ))} */}
+      <h4>別のやり方</h4>
+      <h4>原文：{htmlString}</h4>
+      <HighlightKeywords2
+        text={htmlString}
+        settings={sampleHighlightSettings}
+        enableHighlight={true}
+      />
       {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
@@ -353,10 +351,6 @@ const HighLightSample3 = () => {
           <HighlightKeywords key={i} text={symbolTest4String} settings={[s]} />
         </>
       ))}
-      {/* <h4>un escape html</h4>
-      {
-        <EscapeHtml htmlString="aaaa&lt;bbbbb&gt;ccccc&amp;lt;dddd&amp;gt;eeee" />
-      } */}
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
       </div>
@@ -393,6 +387,34 @@ const parseAndHighlight = (
   hilightEnable: boolean = true
 ) => {
   return hilightEnable ? parse(text, optHighlightSample(settings)) : text;
+};
+
+/**
+ * 別のやり方。
+ * 文字列→ハイライトタグ付与→parse→文字列→ハイライトタグ付与→parse…を繰り返す方法
+ * このやり方だと、HTMLタグ内の文字列も置換対象にできる。
+ */
+const HighlightKeywords2 = ({
+  text,
+  settings = [],
+  enableHighlight = true,
+}: HighlightKeywordsProps) => {
+  if (!enableHighlight) return text;
+  const result = settings.reduce((prevText, s, idx) => {
+    console.log(`parse ${idx + 1} start`, {
+      initialText: prevText,
+      setting: s,
+    });
+    const jsx = parse(prevText, {
+      replace: (domNode) => {
+        if (domNode instanceof Text) {
+          return <>{applyHighlightNode(s.keyword, s.color, domNode.data)}</>;
+        }
+      },
+    });
+    return renderToStaticMarkup(<>{jsx}</>);
+  }, text);
+  return parse(result);
 };
 
 // 表示用レイアウトコンポーネント
