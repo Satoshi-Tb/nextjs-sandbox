@@ -28,9 +28,16 @@ const sampleHighlightSettings: HighlightSetting[] = [
 
 // 指定されたテキストのキーワード文言に、ハイライトタグ（spanタグ）を設定する
 // TODO <>のハイライトができない。&lt;、&gt;でもダメ。記号も全角変換したほうがよいか。その場合、"や\の扱いどうするか要検討
-const applyHighlight = (keyword: string, color: string, text: string) => {
-  const normalizedKeyword = normalizeForHighlight(keyword); // キーワードのノーマライズ
-  const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
+const applyHighlight = (
+  keyword: string,
+  color: string,
+  text: string,
+  normalize: boolean
+) => {
+  const normalizedKeyword = normalize
+    ? normalizeForHighlight(keyword)
+    : keyword; // キーワードのノーマライズ
+  const normalizedInputText = normalize ? normalizeForHighlight(text) : text; // 対象文字列のノーマライズ
 
   const regex = new RegExp(
     `(${normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, // 正規表現構築時に、特殊文字をエスケープする
@@ -58,9 +65,24 @@ const applyHighlight = (keyword: string, color: string, text: string) => {
   return resultStr;
 };
 
-const applyHighlightNode = (keyword: string, color: string, text: string) => {
-  const normalizedKeyword = normalizeForHighlight(keyword); // キーワードのノーマライズ
-  const normalizedInputText = normalizeForHighlight(text); // 対象文字列のノーマライズ
+/**
+ * 文字列のキーワードに一致する箇所をハイライト用タグで囲んで、JSXElementとして返す。
+ * @param keyword
+ * @param color
+ * @param text
+ * @param normalize
+ * @returns
+ */
+const applyHighlightNode = (
+  keyword: string,
+  color: string,
+  text: string,
+  normalize: boolean
+) => {
+  const normalizedKeyword = normalize
+    ? normalizeForHighlight(keyword)
+    : keyword; // キーワードのノーマライズ
+  const normalizedInputText = normalize ? normalizeForHighlight(text) : text; // 対象文字列のノーマライズ
 
   const regex = new RegExp(
     `(${normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, // 正規表現構築時に、特殊文字をエスケープする
@@ -91,7 +113,8 @@ const applyHighlightNode = (keyword: string, color: string, text: string) => {
 
 // 特定の文字列をハイライトするためのカスタム変換関数
 const optHighlightSample = (
-  settings: HighlightSetting[]
+  settings: HighlightSetting[],
+  normalize: boolean = true
 ): HTMLReactParserOptions => {
   return {
     replace: (domNode) => {
@@ -99,13 +122,13 @@ const optHighlightSample = (
         let highlightedText = domNode.data;
 
         // ハイライト設定分、テキストを置換
-        settings.forEach(({ keyword: searchText, color }) => {
+        settings.forEach(({ keyword, color }) => {
           highlightedText = highlightedText
             .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
             .filter(Boolean)
             .map((chunk) => {
               if (chunk.includes("<")) return chunk; // タグは処理しない
-              return applyHighlight(searchText, color, chunk); // テキストにはハイライト用タグをセット
+              return applyHighlight(keyword, color, chunk, normalize); // テキストにはハイライト用タグをセット
             })
             .join("");
         });
@@ -122,10 +145,14 @@ const optHighlightSample = (
  * @param hs
  * @returns
  */
-const traverse = (node: ReactNode, hs: HighlightSetting): ReactNode => {
+const traverse = (
+  node: ReactNode,
+  hs: HighlightSetting,
+  normalize: boolean
+): ReactNode => {
   // 文字列の場合
   if (typeof node === "string") {
-    return applyHighlightNode(hs.keyword, hs.color, node);
+    return applyHighlightNode(hs.keyword, hs.color, node, normalize);
   }
 
   // JSX.Elementの場合
@@ -136,7 +163,7 @@ const traverse = (node: ReactNode, hs: HighlightSetting): ReactNode => {
 
     // 子要素が複数の場合に対応するため、再帰的に処理
     const newChildren = React.Children.map(node.props.children, (child) =>
-      traverse(child, hs)
+      traverse(child, hs, normalize)
     );
 
     // 新しい子要素で新しい要素を作成
@@ -149,7 +176,8 @@ const traverse = (node: ReactNode, hs: HighlightSetting): ReactNode => {
 
 // 特定の文字列をハイライトするためのカスタム変換関数
 const optHighlightSample2 = (
-  settings: HighlightSetting[]
+  settings: HighlightSetting[],
+  normalize: boolean = true
 ): HTMLReactParserOptions => {
   return {
     replace: (domNode) => {
@@ -159,7 +187,7 @@ const optHighlightSample2 = (
         let jsx = <>{highlightedText}</>;
         // ハイライト設定分、テキストを置換
         settings.forEach((s) => {
-          jsx = <>{traverse(jsx, s)}</>;
+          jsx = <>{traverse(jsx, s, normalize)}</>;
         });
 
         return jsx;
@@ -186,6 +214,7 @@ type HighlightKeywordsProps = {
   text: string;
   settings?: HighlightSetting[];
   enableHighlight?: boolean;
+  enableNormalize?: boolean;
 };
 /**
  * ハイライト用コンポーネントサンプル。parseを利用するため、すべてのタグ文字列がHTMLタグとして解釈される点に注意
@@ -219,7 +248,7 @@ const parseAndHighlight = (
 };
 
 /**
- * 別のやり方。
+ * 別のやり方１。
  * 文字列→ハイライトタグ付与→parse→文字列→ハイライトタグ付与→parse…を繰り返す方法
  * このやり方だと、HTMLタグ内の文字列も置換対象にできる。
  */
@@ -227,6 +256,7 @@ const HighlightKeywords2 = ({
   text,
   settings = [],
   enableHighlight = true,
+  enableNormalize = true,
 }: HighlightKeywordsProps) => {
   if (!enableHighlight) return parse(text);
   let hilightedHtmlString = text;
@@ -234,7 +264,12 @@ const HighlightKeywords2 = ({
     const jsx = parse(hilightedHtmlString, {
       replace: (domNode) => {
         if (domNode instanceof Text) {
-          return applyHighlightNode(s.keyword, s.color, domNode.data);
+          return applyHighlightNode(
+            s.keyword,
+            s.color,
+            domNode.data,
+            enableNormalize
+          );
         }
       },
     });
@@ -244,7 +279,9 @@ const HighlightKeywords2 = ({
 };
 
 /**
- * 別のやり方
+ * 別のやり方２
+ * ハイライトタグでラップして、JSXElementで返す方法。文字列置換回数が少ないので別のやり方１よりも速い
+ * このやり方でも、HTMLタグ内の文字列も置換対象にできる。
  */
 const HighlightKeywords3 = ({
   text,
@@ -486,10 +523,10 @@ const HighLightSample3 = () => {
           { keyword: "highlight", color: "yellow" }
         )}
       </div> */}
-      {/* {symbolTest.map((s, i) => (
+      {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
-          <HighlightKeywords2
+          <HighlightKeywords3
             key={i}
             text={symbolTestString}
             settings={[{ keyword: s, color: "yellow" }]}
@@ -501,7 +538,7 @@ const HighLightSample3 = () => {
         <>
           <h4>キーワード：{s.keyword}</h4>
           ハイライト結果：
-          <HighlightKeywords2 key={i} text={symbolTest2String} settings={[s]} />
+          <HighlightKeywords3 key={i} text={symbolTest2String} settings={[s]} />
         </>
       ))}
       <h4>原文：{symbolTest3String}</h4>
@@ -509,16 +546,16 @@ const HighLightSample3 = () => {
         <>
           <h4>キーワード：{s.keyword}</h4>
           ハイライト結果：
-          <HighlightKeywords2 key={i} text={symbolTest3String} settings={[s]} />
+          <HighlightKeywords3 key={i} text={symbolTest3String} settings={[s]} />
         </>
       ))}
       <h4>原文：{symbolTest4String}</h4>
       {tagSymbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s.keyword}</h4>
-          <HighlightKeywords2 key={i} text={symbolTest4String} settings={[s]} />
+          <HighlightKeywords3 key={i} text={symbolTest4String} settings={[s]} />
         </>
-      ))} */}
+      ))}
       <div style={{ marginTop: "20px" }}>
         <Link href="/">Homeに戻る</Link>
       </div>
