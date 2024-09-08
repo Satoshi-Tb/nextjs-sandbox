@@ -8,7 +8,7 @@ import parse, {
 } from "html-react-parser";
 import Link from "next/link";
 import { normalizeForHighlight } from "@/utils/stringUtil";
-import { renderToStaticMarkup, renderToString } from "react-dom/server";
+import { renderToStaticMarkup } from "react-dom/server";
 
 type HighlightSetting = {
   keyword: string;
@@ -287,9 +287,10 @@ const HighlightKeywords3 = ({
   text,
   settings = [],
   enableHighlight = true,
+  enableNormalize = true,
 }: HighlightKeywordsProps) => {
   if (!enableHighlight) return parse(text);
-  return parse(text, optHighlightSample2(settings));
+  return parse(text, optHighlightSample2(settings, enableNormalize));
 };
 
 /**
@@ -374,9 +375,9 @@ const HighLightSample3 = () => {
     "￥",
     "／",
     "；",
+    "＞",
     "＜",
     "＝",
-    "＞",
     "？",
     "＠",
     "［",
@@ -405,9 +406,10 @@ const HighLightSample3 = () => {
     "-",
     ".",
     "\\",
+    "/",
     ";",
-    //    ">",
-    //    "<",
+    ">",
+    "<",
     "=",
     "?",
     "@",
@@ -420,8 +422,6 @@ const HighLightSample3 = () => {
     "|",
     "}",
     "~",
-    // "&lt;",
-    // "&gt;",
   ];
   const symbolTestString = symbolTest.join(" ");
 
