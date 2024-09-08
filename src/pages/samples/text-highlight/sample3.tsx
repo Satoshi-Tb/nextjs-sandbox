@@ -26,6 +26,12 @@ const sampleHighlightSettings: HighlightSetting[] = [
   { keyword: "style", color: "lime" },
 ];
 
+// ハイライトキーワードのソート
+// 文字数が多いほうが先（部分重複キーワード対応のため。文字数短いほうがハイライト優先度高い）
+// 同一文字数の場合、順位変更なし（先の方がハイライト優先度高い）
+const hsSorter = (s1: HighlightSetting, s2: HighlightSetting) =>
+  s2.keyword.length - s1.keyword.length;
+
 // 指定されたテキストのキーワード文言に、ハイライトタグ（spanタグ）を設定する
 // TODO <>のハイライトができない。&lt;、&gt;でもダメ。記号も全角変換したほうがよいか。その場合、"や\の扱いどうするか要検討
 const applyHighlight = (
@@ -122,18 +128,16 @@ const optHighlightSample = (
         let highlightedText = domNode.data;
 
         // ハイライト設定分、テキストを置換
-        settings
-          .sort((s1, s2) => s2.keyword.length - s1.keyword.length)
-          .forEach(({ keyword, color }) => {
-            highlightedText = highlightedText
-              .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
-              .filter(Boolean)
-              .map((chunk) => {
-                if (chunk.includes("<")) return chunk; // タグは処理しない
-                return applyHighlight(keyword, color, chunk, normalize); // テキストにはハイライト用タグをセット
-              })
-              .join("");
-          });
+        settings.sort(hsSorter).forEach(({ keyword, color }) => {
+          highlightedText = highlightedText
+            .split(/(<[^>]+>)/) // HTMLタグごとに文字列分割
+            .filter(Boolean)
+            .map((chunk) => {
+              if (chunk.includes("<")) return chunk; // タグは処理しない
+              return applyHighlight(keyword, color, chunk, normalize); // テキストにはハイライト用タグをセット
+            })
+            .join("");
+        });
 
         return <>{parse(highlightedText)}</>; // 再帰的に変換するために再度parseを呼び出す
       }
@@ -188,11 +192,9 @@ const optHighlightSample2 = (
 
         let jsx = <>{highlightedText}</>;
         // ハイライト設定分、テキストを置換
-        settings
-          .sort((s1, s2) => s2.keyword.length - s1.keyword.length)
-          .forEach((s) => {
-            jsx = <>{traverse(jsx, s, normalize)}</>;
-          });
+        settings.sort(hsSorter).forEach((s) => {
+          jsx = <>{traverse(jsx, s, normalize)}</>;
+        });
 
         return jsx;
       }
@@ -264,23 +266,21 @@ const HighlightKeywords2 = ({
 }: HighlightKeywordsProps) => {
   if (!enableHighlight) return parse(text);
   let hilightedHtmlString = text;
-  settings
-    .sort((s1, s2) => s2.keyword.length - s1.keyword.length)
-    .forEach((s) => {
-      const jsx = parse(hilightedHtmlString, {
-        replace: (domNode) => {
-          if (domNode instanceof Text) {
-            return applyHighlightNode(
-              s.keyword,
-              s.color,
-              domNode.data,
-              enableNormalize
-            );
-          }
-        },
-      });
-      hilightedHtmlString = renderToStaticMarkup(<>{jsx}</>);
+  settings.sort(hsSorter).forEach((s) => {
+    const jsx = parse(hilightedHtmlString, {
+      replace: (domNode) => {
+        if (domNode instanceof Text) {
+          return applyHighlightNode(
+            s.keyword,
+            s.color,
+            domNode.data,
+            enableNormalize
+          );
+        }
+      },
     });
+    hilightedHtmlString = renderToStaticMarkup(<>{jsx}</>);
+  });
   return parse(hilightedHtmlString);
 };
 
