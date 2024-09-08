@@ -68,7 +68,6 @@ const applyHighlightNode = (keyword: string, color: string, text: string) => {
   ); // 正規表現構築
 
   let match;
-  let resultStr = "";
   let ptr = 0;
 
   const jsxElements: (string | JSX.Element)[] = [];
@@ -87,7 +86,7 @@ const applyHighlightNode = (keyword: string, color: string, text: string) => {
   }
 
   jsxElements.push(text.slice(ptr));
-  return jsxElements;
+  return <>{jsxElements}</>;
 };
 
 // 特定の文字列をハイライトするためのカスタム変換関数
@@ -171,18 +170,19 @@ const HighlightKeywords2 = ({
   settings = [],
   enableHighlight = true,
 }: HighlightKeywordsProps) => {
-  if (!enableHighlight) return text;
-  const result = settings.reduce((prevText, s, idx) => {
-    const jsx = parse(prevText, {
+  if (!enableHighlight) return parse(text);
+  let hilightedHtmlString = text;
+  settings.forEach((s) => {
+    const jsx = parse(hilightedHtmlString, {
       replace: (domNode) => {
         if (domNode instanceof Text) {
-          return <>{applyHighlightNode(s.keyword, s.color, domNode.data)}</>;
+          return applyHighlightNode(s.keyword, s.color, domNode.data);
         }
       },
     });
-    return renderToStaticMarkup(<>{jsx}</>);
-  }, text);
-  return parse(result);
+    hilightedHtmlString = renderToStaticMarkup(<>{jsx}</>);
+  });
+  return parse(hilightedHtmlString);
 };
 
 /**
