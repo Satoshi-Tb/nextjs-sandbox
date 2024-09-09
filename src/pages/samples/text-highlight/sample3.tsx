@@ -180,27 +180,20 @@ const traverse = (
   return node;
 };
 
-// 特定の文字列をハイライトするためのカスタム変換関数
-const optHighlightSample2 = (
-  settings: HighlightSetting[],
-  normalize: boolean = true
-): HTMLReactParserOptions => {
-  return {
-    replace: (domNode) => {
-      if (domNode instanceof Text) {
-        let highlightedText = domNode.data;
+/** ハイライト置換ハンドラ */
+const HilightHandler =
+  (settings: HighlightSetting[], normalize: boolean = true) =>
+  (domNode: DOMNode) => {
+    if (domNode instanceof Text) {
+      let jsx = <>{domNode.data}</>;
+      // ハイライト設定分、テキストを置換
+      settings.sort(hsSorter).forEach((s) => {
+        jsx = <>{traverse(jsx, s, normalize)}</>;
+      });
 
-        let jsx = <>{highlightedText}</>;
-        // ハイライト設定分、テキストを置換
-        settings.sort(hsSorter).forEach((s) => {
-          jsx = <>{traverse(jsx, s, normalize)}</>;
-        });
-
-        return jsx;
-      }
-    },
+      return jsx;
+    }
   };
-};
 
 // オプションサンプル：タグ除去
 const optTagStrip: HTMLReactParserOptions = {
@@ -296,7 +289,7 @@ const HighlightKeywords3 = ({
   enableNormalize = true,
 }: HighlightKeywordsProps) => {
   if (!enableHighlight) return parse(text);
-  return parse(text, optHighlightSample2(settings, enableNormalize));
+  return parse(text, { replace: HilightHandler(settings, enableNormalize) });
 };
 
 /**
