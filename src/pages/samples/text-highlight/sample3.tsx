@@ -478,6 +478,7 @@ const HighLightSample3 = () => {
     "エスケープ文字を利用(＆もエスケープ）したタグの前&amp;lt;タグ内部&amp;gt;タグの外　imgタグの前&amp;lt;img src='imgタグ内部'/&amp;gt;imgタグの外"; // タグ付き
 
   const [highlightEnable, setHighlightEnable] = useState(true);
+  const [enableNormalize, setEnableNormalize] = useState(true);
 
   type NoHighlightDispType = "plain" | "parse" | "custom";
   const [noHighlightDisp, setNoHighlightDisp] =
@@ -510,6 +511,12 @@ const HighLightSample3 = () => {
           inputProps={{ "aria-label": "controlled" }}
         />
         <label>{highlightEnable ? "ハイライト有効" : "ハイライト無効"}</label>
+        <Checkbox
+          checked={enableNormalize}
+          onChange={(event) => setEnableNormalize(event.target.checked)}
+          inputProps={{ "aria-label": "controlled" }}
+        />
+        <label>{enableNormalize ? "表記ゆれ有効" : "表記ゆれ無効"}</label>
         <FormControl sx={{ m: 1, minWidth: 80 }}>
           <InputLabel id="demo-simple-select-autowidth-label">
             ハイライト無効の場合
@@ -551,6 +558,7 @@ const HighLightSample3 = () => {
             text={htmlString}
             settings={sampleHighlightSettings}
             enableHighlight={highlightEnable}
+            enableNormalize={enableNormalize}
             noHighlightDisp={convertDispOpt()}
           />
         }
@@ -565,6 +573,7 @@ const HighLightSample3 = () => {
             text={htmlString}
             settings={sampleHighlightSettings}
             enableHighlight={highlightEnable}
+            enableNormalize={enableNormalize}
             noHighlightDisp={convertDispOpt()}
           />
         }
@@ -578,6 +587,7 @@ const HighLightSample3 = () => {
             text={htmlString}
             settings={sampleHighlightSettings}
             enableHighlight={highlightEnable}
+            enableNormalize={enableNormalize}
             noHighlightDisp={convertDispOpt()}
           />
         }
