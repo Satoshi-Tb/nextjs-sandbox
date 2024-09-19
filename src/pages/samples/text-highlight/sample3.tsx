@@ -1,4 +1,4 @@
-import React, { ReactNode, createElement } from "react";
+import React, { ReactNode, createElement, useState } from "react";
 import parse, {
   DOMNode,
   Element,
@@ -9,6 +9,14 @@ import parse, {
 import Link from "next/link";
 import { normalizeForHighlight } from "@/utils/stringUtil";
 import { renderToStaticMarkup } from "react-dom/server";
+import Checkbox from "@mui/material/Checkbox";
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+} from "@mui/material";
 
 type HighlightSetting = {
   keyword: string;
@@ -266,8 +274,13 @@ const HighlightKeywords2 = ({
   settings = [],
   enableHighlight = true,
   enableNormalize = true,
+  noHighlightDisp = "parse",
 }: HighlightKeywordsProps) => {
-  if (!enableHighlight) return parse(text);
+  if (!enableHighlight) {
+    if (noHighlightDisp === "parse") return parse(text);
+    if (noHighlightDisp === "plain") return text;
+    return noHighlightDisp(text);
+  }
   let hilightedHtmlString = text;
   settings.sort(hsSorter).forEach((s) => {
     const jsx = parse(hilightedHtmlString, {
@@ -464,6 +477,22 @@ const HighLightSample3 = () => {
   const symbolTest4String =
     "エスケープ文字を利用(＆もエスケープ）したタグの前&amp;lt;タグ内部&amp;gt;タグの外　imgタグの前&amp;lt;img src='imgタグ内部'/&amp;gt;imgタグの外"; // タグ付き
 
+  const [highlightEnable, setHighlightEnable] = useState(true);
+
+  type NoHighlightDispType = "plain" | "parse" | "custom";
+  const [noHighlightDisp, setNoHighlightDisp] =
+    React.useState<NoHighlightDispType>("parse");
+
+  const handleSelectChange = (event: SelectChangeEvent) => {
+    setNoHighlightDisp(event.target.value as NoHighlightDispType);
+  };
+
+  const convertDispOpt = () => {
+    return noHighlightDisp === "custom"
+      ? (text: string) => <></>
+      : noHighlightDisp;
+  };
+
   return (
     <>
       <h2>html-react-parseのテスト</h2>
@@ -474,6 +503,31 @@ const HighLightSample3 = () => {
         </div>
       ))}
       <br />
+      <div>
+        <Checkbox
+          checked={highlightEnable}
+          onChange={(event) => setHighlightEnable(event.target.checked)}
+          inputProps={{ "aria-label": "controlled" }}
+        />
+        <label>{highlightEnable ? "ハイライト有効" : "ハイライト無効"}</label>
+        <FormControl sx={{ m: 1, minWidth: 80 }}>
+          <InputLabel id="demo-simple-select-autowidth-label">
+            ハイライト無効の場合
+          </InputLabel>
+          <Select
+            labelId="demo-simple-select-autowidth-label"
+            id="demo-simple-select-autowidth"
+            value={noHighlightDisp}
+            onChange={handleSelectChange}
+            autoWidth
+            label="Age"
+          >
+            <MenuItem value={"plain"}>Plain text</MenuItem>
+            <MenuItem value={"parse"}>Parse HTML</MenuItem>
+            <MenuItem value={"custom"}>Custom view</MenuItem>
+          </Select>
+        </FormControl>
+      </div>
       <DisplayCard
         key={1}
         title="原文"
@@ -496,7 +550,8 @@ const HighLightSample3 = () => {
           <HighlightKeywords
             text={htmlString}
             settings={sampleHighlightSettings}
-            enableHighlight={true}
+            enableHighlight={highlightEnable}
+            noHighlightDisp={convertDispOpt()}
           />
         }
       />
@@ -509,7 +564,8 @@ const HighLightSample3 = () => {
           <HighlightKeywords2
             text={htmlString}
             settings={sampleHighlightSettings}
-            enableHighlight={true}
+            enableHighlight={highlightEnable}
+            noHighlightDisp={convertDispOpt()}
           />
         }
       />
@@ -521,22 +577,11 @@ const HighLightSample3 = () => {
           <HighlightKeywords3
             text={htmlString}
             settings={sampleHighlightSettings}
-            enableHighlight={true}
-            noHighlightDisp="parse"
+            enableHighlight={highlightEnable}
+            noHighlightDisp={convertDispOpt()}
           />
         }
       />
-      {/* <div>
-        {traverse(
-          <p>
-            <div>
-              段落１<u>文章１highlight</u>
-            </div>
-            <div>段落２ highlight</div>
-          </p>,
-          { keyword: "highlight", color: "yellow" }
-        )}
-      </div> */}
       {symbolTest.map((s, i) => (
         <>
           <h4>キーワード：{s}</h4>
