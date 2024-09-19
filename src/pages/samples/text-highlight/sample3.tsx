@@ -214,6 +214,10 @@ type HighlightKeywordsProps = {
   settings?: HighlightSetting[];
   enableHighlight?: boolean;
   enableNormalize?: boolean;
+  noHighlightDisp?:
+    | "plain"
+    | "parse"
+    | ((text: string) => string | JSX.Element | JSX.Element[]);
 };
 /**
  * ハイライト用コンポーネントサンプル。parseを利用するため、すべてのタグ文字列がHTMLタグとして解釈される点に注意
@@ -222,12 +226,18 @@ const HighlightKeywords = ({
   text,
   settings = [],
   enableHighlight = true,
+  enableNormalize = true,
+  noHighlightDisp = "parse",
 }: HighlightKeywordsProps) => {
   return (
     <>
       {enableHighlight
-        ? parse(text, optHighlightSample(settings))
-        : parse(text)}
+        ? parse(text, optHighlightSample(settings, enableNormalize))
+        : noHighlightDisp === "parse"
+        ? parse(text)
+        : noHighlightDisp === "plain"
+        ? text
+        : noHighlightDisp(text)}
     </>
   );
 };
@@ -287,9 +297,13 @@ const HighlightKeywords3 = ({
   settings = [],
   enableHighlight = true,
   enableNormalize = true,
+  noHighlightDisp = "parse",
 }: HighlightKeywordsProps) => {
-  if (!enableHighlight) return parse(text);
-  return parse(text, { replace: HilightHandler(settings, enableNormalize) });
+  if (enableHighlight)
+    return parse(text, { replace: HilightHandler(settings, enableNormalize) });
+  if (noHighlightDisp === "parse") return parse(text);
+  if (noHighlightDisp === "plain") return text;
+  return noHighlightDisp(text);
 };
 
 /**
@@ -508,6 +522,7 @@ const HighLightSample3 = () => {
             text={htmlString}
             settings={sampleHighlightSettings}
             enableHighlight={true}
+            noHighlightDisp="parse"
           />
         }
       />
