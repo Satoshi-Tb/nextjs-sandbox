@@ -47,6 +47,9 @@ function Home() {
         <li>
           <Link href="/samples/hoc/sample1">HOC</Link>
         </li>
+        <li>
+          <Link href="/samples/dynamic/samples/page1">DynamicRouting</Link>
+        </li>
       </ul>
     </div>
   );
