@@ -206,11 +206,11 @@ export const MultilineEditing = () => {
         >
           <div>編集前：</div>
           <p style={{ border: "solid", padding: "5", margin: "0" }}>
-            {cellOldValue}
+            {cellOldValue.replace(/\n/g, "<改行>")}
           </p>
           <div style={{ marginTop: "10px" }}>編集後：</div>
           <p style={{ border: "solid", padding: "5", margin: "0" }}>
-            {cellNewValue}
+            {cellNewValue.replace(/\n/g, "<改行>")}
           </p>
         </div>
       </div>
