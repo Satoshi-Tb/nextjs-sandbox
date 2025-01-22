@@ -45,6 +45,9 @@ function Home() {
           <Link href="/samples/grid/sample1">grid</Link>
         </li>
         <li>
+          <Link href="/samples/grid/sample2">grid with multiline edit</Link>
+        </li>
+        <li>
           <Link href="/samples/hoc/sample1">HOC</Link>
         </li>
         <li>
