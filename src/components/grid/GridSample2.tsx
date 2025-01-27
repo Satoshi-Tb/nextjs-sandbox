@@ -7,11 +7,18 @@ import {
   useGridApiContext,
   GridColTypeDef,
   GridCellEditStopReasons,
+  GridRenderCellParams,
+  useGridApiRef,
+  GridToolbar,
+  gridFilteredSortedRowIdsSelector,
+  GridCellParams,
+  GridFilterModel,
 } from "@mui/x-data-grid";
 import InputBase, { InputBaseProps } from "@mui/material/InputBase";
 import Popper from "@mui/material/Popper";
 import Paper from "@mui/material/Paper";
 import { LoremIpsum } from "lorem-ipsum";
+import { Button, Typography } from "@mui/material";
 
 const lines = [
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -76,7 +83,7 @@ function EditTextarea(props: GridRenderEditCellParams<any, string>) {
           top: 0,
         }}
       />
-      {anchorEl && (
+      {anchorEl ? (
         <Popper open anchorEl={anchorEl} placement="bottom-start">
           <Paper elevation={1} sx={{ p: 1, minWidth: colDef.computedWidth }}>
             <InputBase
@@ -89,6 +96,10 @@ function EditTextarea(props: GridRenderEditCellParams<any, string>) {
             />
           </Paper>
         </Popper>
+      ) : (
+        <>
+          <div>hello</div>
+        </>
       )}
     </div>
   );
@@ -109,6 +120,21 @@ const columns: GridColDef[] = [
     width: 400,
     editable: true,
     ...multilineColumn,
+    renderCell: (param: GridRenderCellParams) => (
+      <div
+        style={{
+          overflowY: "auto",
+          overflowWrap: "break-word",
+          whiteSpace: "pre-wrap",
+          height: "100%",
+          width: "100%",
+          paddingTop: "2px",
+          paddingLeft: "2px",
+        }}
+      >
+        {param.value}
+      </div>
+    ),
   },
 ];
 
@@ -127,26 +153,17 @@ const lorem = new LoremIpsum({
   },
 });
 
-// ダミーデータ生成
-const rows: GridRowModel[] = [];
-for (let i = 0; i < 50; i += 1) {
-  const bio = [];
-
-  for (let j = 0; j < getRandomInt(10) + 1; j += 1) {
-    bio.push(lorem.generateSentences(1));
-  }
-
-  rows.push({
-    id: i,
-    username: "ユーザー" + i,
-    age: getRandomInt(100) + 1,
-    bio: bio.join(" "),
-  });
-}
-
 export const MultilineEditing = () => {
   const [cellNewValue, setCellNewValue] = React.useState("");
   const [cellOldValue, setCellOldValue] = React.useState("");
+  // グリッドデータ
+  const [rows, setRows] = React.useState<GridRowModel[]>([]);
+  const [selectedId, setSelectedId] = React.useState<number | undefined>(
+    undefined
+  );
+
+  // api操作用（gridコンポーネント外から操作する場合）
+  const apiRef = useGridApiRef();
 
   // セル編集処理
   const handleProcessRowUpdate = async (newRow: any, oldRow: any) => {
@@ -165,6 +182,73 @@ export const MultilineEditing = () => {
     }
   };
 
+  React.useEffect(() => {
+    const rowData: any[] = [];
+    // ダミーデータ生成
+    for (let i = 0; i < 50; i += 1) {
+      const bio = [];
+
+      for (let j = 0; j < getRandomInt(10) + 1; j += 1) {
+        bio.push(lorem.generateSentences(1));
+      }
+
+      rowData.push({
+        id: i,
+        username: "ユーザー" + i,
+        age: i + 10,
+        bio: bio.join(" "),
+      });
+    }
+    setRows(rowData);
+    apiRef.current.selectRow(rowData[0].id);
+    setSelectedId(rowData[0].id);
+  }, []);
+
+  // セルキー押下処理
+  const handleCellKeyDown = (
+    params: GridCellParams,
+    event: React.KeyboardEvent
+  ) => {
+    //    console.log("handleCellKeyDown", { params, event });
+
+    // ソート・フィルター後のidリスト取得
+    const ids = gridFilteredSortedRowIdsSelector(apiRef);
+    if (event.code === "ArrowDown" || event.code === "ArrowUp") {
+      const curPos = ids.findIndex((v) => v === params.id);
+
+      if (curPos === -1) return;
+
+      if (event.code === "ArrowDown") {
+        if (curPos === ids.length - 1) return;
+        setSelectedId(ids[curPos + 1] as number);
+      } else {
+        if (curPos === 0) {
+          event.preventDefault(); // ヘッダー行にカーソル進めないようにする
+          return;
+        }
+        setSelectedId(ids[curPos - 1] as number);
+      }
+    }
+  };
+
+  const updateSelectedIdAfterFilter = (param: any) => {
+    // フィルタで表示データ変更の場合。
+    // フィルター後、表示行０件→リセット
+    // フィルター後、選択行あり→そのまま
+    // フィルター後、選択行なし→先頭行を選択
+
+    // フィルター変更時の選択状態調整
+    // onFilterイベントではフィルター前のデータしか取得できなかった
+    const ids = gridFilteredSortedRowIdsSelector(apiRef);
+    //console.log("filter changed", { ids, param, apiRef });
+    console.log("state changed", { param, apiRef, ids });
+    if (ids.length === 0) {
+      setSelectedId(undefined);
+    } else if (!ids.find((id) => id === selectedId)) {
+      setSelectedId(ids[0] as number);
+    }
+  };
+
   return (
     <>
       <div
@@ -174,11 +258,24 @@ export const MultilineEditing = () => {
           marginBottom: "20px",
         }}
       >
-        <div style={{ height: 300, width: "80%" }}>
+        <div style={{ height: 500, width: "80%" }}>
           <DataGrid
+            apiRef={apiRef}
             rows={rows}
             columns={columns}
+            checkboxSelection
+            disableRowSelectionOnClick
+            slots={{ toolbar: GridToolbar }}
             processRowUpdate={handleProcessRowUpdate}
+            rowHeight={100}
+            onCellClick={(params) => {
+              // disableRowSelectionOnClickを無効にすると正しく動作しない
+              // →cellクリックの後に、statechangeが起動するようになるため。
+              console.log("cell click");
+              setSelectedId(params.row.id);
+            }}
+            onCellKeyDown={handleCellKeyDown}
+            onStateChange={(params) => updateSelectedIdAfterFilter(params)}
             onCellEditStop={(params, event) => {
               if (params.reason !== GridCellEditStopReasons.enterKeyDown) {
                 return;
@@ -190,6 +287,19 @@ export const MultilineEditing = () => {
           />
         </div>
       </div>
+      <Button
+        onClick={() => {
+          const ids = gridFilteredSortedRowIdsSelector(apiRef);
+          console.log("gridFilteredSortedRowIdsSelector", ids);
+          apiRef.current.selectRow(
+            ids[0],
+            apiRef.current.isRowSelected(ids[0])
+          );
+        }}
+      >
+        1行目選択
+      </Button>
+      <Typography>選択行のID: {selectedId}</Typography>
       <div
         style={{
           display: "flex",
@@ -205,7 +315,21 @@ export const MultilineEditing = () => {
           }}
         >
           <div>編集前：</div>
-          <p style={{ border: "solid", padding: "5", margin: "0" }}>
+          <p
+            style={{
+              borderColor: "red",
+              borderWidth: 1,
+              borderStyle: "solid",
+              padding: "5",
+              margin: "0",
+              width: "300px",
+              height: "100px",
+              overflowY: "auto",
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              whiteSpace: "normal",
+            }}
+          >
             {cellOldValue.replace(/\n/g, "<改行>")}
           </p>
           <div style={{ marginTop: "10px" }}>編集後：</div>
