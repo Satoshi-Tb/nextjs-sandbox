@@ -53,6 +53,9 @@ function Home() {
         <li>
           <Link href="/samples/dynamic/samples/page1">DynamicRouting</Link>
         </li>
+        <li>
+          <Link href="/samples/tab">tab basic</Link>
+        </li>
       </ul>
     </div>
   );
