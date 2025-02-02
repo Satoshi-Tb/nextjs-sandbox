@@ -8,7 +8,9 @@ import { useDynamicColumnGridHooks } from "./DynamicCloumnGridHooks";
  * @returns
  */
 export const DynamicColumnGrid = () => {
-  const { gridApiRef, rows, isLoading, colums } = useDynamicColumnGridHooks();
+  const { gridApiRef, rows, isLoading, colums } =
+    useDynamicColumnGridHooks("1");
+
   return (
     <div
       style={{
@@ -25,6 +27,7 @@ export const DynamicColumnGrid = () => {
           loading={isLoading}
           slots={{ toolbar: GridToolbar }}
           columns={colums}
+          hideFooterPagination={true}
         />
         <Link href="/">TOP</Link>
       </Stack>

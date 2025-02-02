@@ -9,8 +9,9 @@ import {
   useGridApiRef,
 } from "@mui/x-data-grid";
 import React from "react";
+import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 
-type ColDefType = {
+export type ColDefType = {
   fieldName: string;
   label: string;
   inputType: string;
@@ -34,176 +35,13 @@ type PartialGridColDef = Pick<
 > &
   Pick<GridSingleSelectColDef, "valueOptions">;
 
-export const useDynamicColumnGridHooks = () => {
+export const useDynamicColumnGridHooks = (id: string) => {
   const gridApiRef = useGridApiRef();
 
-  const isLoading = false;
-  const error: { message: string } | undefined = (function (flg: boolean) {
-    return undefined;
-  })(false);
-
-  // テストデータ
-  const rows = [
-    {
-      id: 1,
-      category: "果物",
-      item: "りんご",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "1",
-      checkItem: "0",
-    },
-    {
-      id: 2,
-      category: "果物",
-      item: "すいか",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 3,
-      category: "果物",
-      item: "みかん",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "1",
-      checkItem: "1",
-    },
-    {
-      id: 4,
-      category: "果物",
-      item: "いちご",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 5,
-      category: "野菜",
-      item: "なす",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 6,
-      category: "野菜",
-      item: "きゅうり",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 7,
-      category: "野菜",
-      item: "大根",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 8,
-      category: "野菜",
-      item: "ごぼう",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 9,
-      category: "野菜",
-      item: "キャベツ",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 10,
-      category: "野菜",
-      item: "長ネギ",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 11,
-      category: "野菜",
-      item: "玉ねぎ",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 12,
-      category: "野菜",
-      item: "にんじん",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-  ];
-
-  // テストカラム定義データ
-  const dynamicColDefList: ColDefType[] = [
-    { fieldName: "txtItem", label: "テキスト項目", inputType: "1" },
-    {
-      fieldName: "singleSelectItem",
-      label: "選択項目",
-      inputType: "2",
-      options: [
-        {
-          optKey: "singleSelectItemOption",
-          optValue: "A",
-          optName: "アルファ",
-        },
-        {
-          optKey: "singleSelectItemOption",
-          optValue: "B",
-          optName: "ブラボー",
-        },
-        {
-          optKey: "singleSelectItemOption",
-          optValue: "C",
-          optName: "チャーリー",
-        },
-        {
-          optKey: "singleSelectItemOption",
-          optValue: "D",
-          optName: "デルタ",
-        },
-      ],
-    },
-    {
-      fieldName: "switchItem",
-      label: "スイッチ項目",
-      inputType: "3",
-      options: [
-        { optKey: "switchItemOption", optValue: "0", optName: "無効" },
-        { optKey: "switchItemOption", optValue: "1", optName: "有効" },
-      ],
-    },
-    {
-      fieldName: "checkItem",
-      label: "チェック項目",
-      inputType: "4",
-      options: [
-        { optKey: "checkItemOption", optValue: "0", optName: "未" },
-        { optKey: "checkItemOption", optValue: "1", optName: "済" },
-      ],
-    },
-  ];
-
+  const { data, isLoading, error } = useGetListWithColumnDefs(id);
+  const rows = data?.data.rowData ?? [];
+  const dynamicColDefs = data?.data.colDefData ?? [];
+  console.log("display data", { data, rows, dynamicColDefs });
   // カラム定義データから動的に定義生成
   const createDynamicColDef = (colDef: ColDefType): PartialGridColDef => {
     const propBase: { field: string; headerName: string; editable: boolean } = {
@@ -262,10 +100,10 @@ export const useDynamicColumnGridHooks = () => {
       width: 130,
     },
     // 動的項目
-    ...dynamicColDefList.map<GridColDef>((def) => createDynamicColDef(def)),
+    ...dynamicColDefs.map<GridColDef>((def) => createDynamicColDef(def)),
   ];
 
-  return { gridApiRef, rows, isLoading, error, colums };
+  return { gridApiRef, rows, colums, isLoading, error };
 };
 
 // カスタムセルレンダラー
