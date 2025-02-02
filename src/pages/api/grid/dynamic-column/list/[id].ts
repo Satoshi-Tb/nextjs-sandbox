@@ -1,4 +1,7 @@
-import type { ColDefType } from "@/components/grid/DynamicCloumnGridHooks";
+import type {
+  ColDefType,
+  RowDataType,
+} from "@/components/grid/DynamicCloumnGridHooks";
 import type { GridDynamicColumnListResponseType } from "@/components/swr/grid/useDynamicColumnData";
 import { wait } from "@/utils/misc";
 import { NextApiRequest, NextApiResponse } from "next";
@@ -6,8 +9,14 @@ import { NextApiRequest, NextApiResponse } from "next";
 // テストカラム定義データ
 const dynamicColDefList: ColDefType[][] = [
   [
-    { fieldName: "txtItem", label: "テキスト項目", inputType: "1" },
     {
+      gridFieldName: "txtItem",
+      fieldName: "txtItem",
+      label: "テキスト項目",
+      inputType: "1",
+    },
+    {
+      gridFieldName: "singleSelectItem",
       fieldName: "singleSelectItem",
       label: "選択項目",
       inputType: "2",
@@ -35,6 +44,7 @@ const dynamicColDefList: ColDefType[][] = [
       ],
     },
     {
+      gridFieldName: "switchItem",
       fieldName: "switchItem",
       label: "スイッチ項目",
       inputType: "3",
@@ -44,6 +54,7 @@ const dynamicColDefList: ColDefType[][] = [
       ],
     },
     {
+      gridFieldName: "checkItem",
       fieldName: "checkItem",
       label: "チェック項目",
       inputType: "4",
@@ -54,9 +65,20 @@ const dynamicColDefList: ColDefType[][] = [
     },
   ],
   [
-    { fieldName: "maker", label: "メーカー", inputType: "1" },
-    { fieldName: "color", label: "色", inputType: "1" },
     {
+      gridFieldName: "maker",
+      fieldName: "maker",
+      label: "メーカー",
+      inputType: "1",
+    },
+    {
+      gridFieldName: "color",
+      fieldName: "color",
+      label: "色",
+      inputType: "1",
+    },
+    {
+      gridFieldName: "size",
       fieldName: "size",
       label: "サイズ",
       inputType: "2",
@@ -92,133 +114,235 @@ const dynamicColDefList: ColDefType[][] = [
 ];
 
 // テストデータ
-const testRowData: any[][] = [
+const testRowData: RowDataType[][] = [
   [
     {
       id: 1,
       category: "果物",
       item: "りんご",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "1",
-      checkItem: "0",
+      freeItems: [
+        {
+          id: 100,
+          gridFieldName: "txtItem",
+          fieldName: "txtItem",
+          value: "あいうえお",
+        },
+        {
+          id: 101,
+          gridFieldName: "singleSelectItem",
+          fieldName: "singleSelectItem",
+          value: "A",
+        },
+        {
+          id: 102,
+          gridFieldName: "switchItem",
+          fieldName: "switchItem",
+          value: "1",
+        },
+        {
+          id: 103,
+          gridFieldName: "checkItem",
+          fieldName: "checkItem",
+          value: "0",
+        },
+      ],
     },
     {
       id: 2,
       category: "果物",
       item: "すいか",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
+      freeItems: [
+        {
+          id: 200,
+          gridFieldName: "txtItem",
+          fieldName: "txtItem",
+          value: "あいうえお",
+        },
+        {
+          id: 201,
+          gridFieldName: "singleSelectItem",
+          fieldName: "singleSelectItem",
+          value: "A",
+        },
+        {
+          id: 202,
+          gridFieldName: "switchItem",
+          fieldName: "switchItem",
+          value: "1",
+        },
+        {
+          id: 203,
+          gridFieldName: "checkItem",
+          fieldName: "checkItem",
+          value: "0",
+        },
+      ],
     },
     {
       id: 3,
       category: "果物",
       item: "みかん",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "1",
-      checkItem: "1",
+      freeItems: [
+        {
+          id: 300,
+          gridFieldName: "txtItem",
+          fieldName: "txtItem",
+          value: "あいうえお",
+        },
+        {
+          id: 301,
+          gridFieldName: "singleSelectItem",
+          fieldName: "singleSelectItem",
+          value: "A",
+        },
+        {
+          id: 302,
+          gridFieldName: "switchItem",
+          fieldName: "switchItem",
+          value: "1",
+        },
+        {
+          id: 303,
+          gridFieldName: "checkItem",
+          fieldName: "checkItem",
+          value: "0",
+        },
+      ],
     },
     {
       id: 4,
       category: "果物",
       item: "いちご",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
+      freeItems: [
+        {
+          id: 400,
+          gridFieldName: "txtItem",
+          fieldName: "txtItem",
+          value: "あいうえお",
+        },
+        {
+          id: 401,
+          gridFieldName: "singleSelectItem",
+          fieldName: "singleSelectItem",
+          value: "A",
+        },
+        {
+          id: 402,
+          gridFieldName: "switchItem",
+          fieldName: "switchItem",
+          value: "1",
+        },
+        {
+          id: 403,
+          gridFieldName: "checkItem",
+          fieldName: "checkItem",
+          value: "0",
+        },
+      ],
     },
     {
       id: 5,
       category: "野菜",
       item: "なす",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
+      freeItems: [
+        {
+          id: 500,
+          gridFieldName: "txtItem",
+          fieldName: "txtItem",
+          value: "あいうえお",
+        },
+        {
+          id: 501,
+          gridFieldName: "singleSelectItem",
+          fieldName: "singleSelectItem",
+          value: "A",
+        },
+        {
+          id: 502,
+          gridFieldName: "switchItem",
+          fieldName: "switchItem",
+          value: "1",
+        },
+        {
+          id: 503,
+          gridFieldName: "checkItem",
+          fieldName: "checkItem",
+          value: "0",
+        },
+      ],
     },
     {
       id: 6,
       category: "野菜",
       item: "きゅうり",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 7,
-      category: "野菜",
-      item: "大根",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 8,
-      category: "野菜",
-      item: "ごぼう",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 9,
-      category: "野菜",
-      item: "キャベツ",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 10,
-      category: "野菜",
-      item: "長ネギ",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 11,
-      category: "野菜",
-      item: "玉ねぎ",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
-    },
-    {
-      id: 12,
-      category: "野菜",
-      item: "にんじん",
-      txtItem: "あいうえお",
-      singleSelectItem: "A",
-      switchItem: "0",
-      checkItem: "1",
+      freeItems: [
+        {
+          id: 600,
+          gridFieldName: "txtItem",
+          fieldName: "txtItem",
+          value: "あいうえお",
+        },
+        {
+          id: 601,
+          gridFieldName: "singleSelectItem",
+          fieldName: "singleSelectItem",
+          value: "A",
+        },
+        {
+          id: 602,
+          gridFieldName: "switchItem",
+          fieldName: "switchItem",
+          value: "1",
+        },
+        {
+          id: 603,
+          gridFieldName: "checkItem",
+          fieldName: "checkItem",
+          value: "0",
+        },
+      ],
     },
   ],
   [
     {
-      id: 1,
+      id: 11,
       category: "トップス",
       item: "クルーネックTシャツ",
-      maker: "ユニクロ",
-      color: "ホワイト",
-      size: "S",
+      freeItems: [
+        {
+          id: 1101,
+          gridFieldName: "maker",
+          fieldName: "maker",
+          value: "ユニクロ",
+        },
+        {
+          id: 1102,
+          gridFieldName: "color",
+          fieldName: "color",
+          value: "ホワイト",
+        },
+        { id: 1103, gridFieldName: "size", fieldName: "size", value: "S" },
+      ],
     },
     {
-      id: 2,
+      id: 12,
       category: "トップス",
       item: "コンパクトジャケット",
-      maker: "ノースフェイス",
-      color: "ブラック",
-      size: "L",
+      freeItems: [
+        {
+          id: 1201,
+          gridFieldName: "maker",
+          fieldName: "maker",
+          value: "ノースフェイス",
+        },
+        {
+          id: 1202,
+          gridFieldName: "color",
+          fieldName: "color",
+          value: "ブラック",
+        },
+        { id: 1203, gridFieldName: "size", fieldName: "size", value: "L" },
+      ],
     },
   ],
 ];

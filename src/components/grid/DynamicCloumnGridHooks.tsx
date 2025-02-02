@@ -5,6 +5,8 @@ import {
   GridRenderEditCellParams,
   GridSingleSelectColDef,
   GridTreeNodeWithRender,
+  GridValueGetterParams,
+  GridValueSetterParams,
   useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
@@ -12,6 +14,7 @@ import React, { useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 
 export type ColDefType = {
+  gridFieldName: string;
   fieldName: string;
   label: string;
   inputType: string;
@@ -23,6 +26,20 @@ type OptItemType = {
   optName: string;
 };
 
+export type RowDataType = {
+  id: number;
+  category: string;
+  item: string;
+  freeItems: FreeItemType[];
+};
+
+export type FreeItemType = {
+  id: number;
+  gridFieldName: string;
+  fieldName: string;
+  value: string;
+};
+
 type PartialGridColDef = Pick<
   GridColDef,
   | "field"
@@ -32,6 +49,8 @@ type PartialGridColDef = Pick<
   | "type"
   | "renderEditCell"
   | "width"
+  | "valueGetter"
+  | "valueSetter"
 > &
   Pick<GridSingleSelectColDef, "valueOptions">;
 
@@ -45,11 +64,29 @@ export const useDynamicColumnGridHooks = () => {
   const dynamicColDefs = data?.data.colDefData ?? [];
 
   // カラム定義データから動的に定義生成
+  // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
+  // TODO カスタムセル定義の実装難易度に影響（valueの取り方）
   const createDynamicColDef = (colDef: ColDefType): PartialGridColDef => {
-    const propBase: { field: string; headerName: string; editable: boolean } = {
-      field: colDef.fieldName,
+    // 共通カラム定義設定
+    const propBase: PartialGridColDef = {
+      field: colDef.gridFieldName,
       headerName: colDef.label,
       editable: true,
+      valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
+        params.row.freeItems.find(
+          (f) => f.gridFieldName === colDef.gridFieldName
+        )?.value || "",
+      valueSetter: (params: GridValueSetterParams<RowDataType, string>) => {
+        // 編集時に freeItems の該当する項目を更新
+        return {
+          ...params.row,
+          freeItems: params.row.freeItems.map((f) =>
+            f.gridFieldName === colDef.gridFieldName
+              ? { ...f, value: params.value }
+              : f
+          ),
+        };
+      },
     };
 
     switch (colDef.inputType) {
