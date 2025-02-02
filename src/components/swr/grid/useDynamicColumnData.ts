@@ -1,6 +1,17 @@
 import useSWR from "swr";
 import { fetcher } from "@/utils/fetcher";
-import type { GridDynamicColumnListResponseType } from "@/pages/api/grid/dynamic-column/list/[id]";
+import type { ColDefType } from "@/components/grid/DynamicCloumnGridHooks";
+
+type GridDynamicColumnListDataType = {
+  colDefData: ColDefType[];
+  rowData: any[];
+};
+
+export type GridDynamicColumnListResponseType = {
+  code: string;
+  errors: { message: string }[];
+  data: GridDynamicColumnListDataType;
+};
 
 export const useGetListWithColumnDefs = (id: string | undefined) => {
   const key = id

@@ -1,18 +1,7 @@
-import { ColDefType } from "@/components/grid/DynamicCloumnGridHooks";
+import type { ColDefType } from "@/components/grid/DynamicCloumnGridHooks";
+import type { GridDynamicColumnListResponseType } from "@/components/swr/grid/useDynamicColumnData";
 import { wait } from "@/utils/misc";
 import { NextApiRequest, NextApiResponse } from "next";
-import { URLSearchParams } from "url";
-
-type GridDynamicColumnListDataType = {
-  colDefData: ColDefType[];
-  rowData: any[];
-};
-
-export type GridDynamicColumnListResponseType = {
-  code: string;
-  errors: { message: string }[];
-  data: GridDynamicColumnListDataType;
-};
 
 // テストカラム定義データ
 const dynamicColDefList: ColDefType[][] = [
