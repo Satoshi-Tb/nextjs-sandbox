@@ -8,7 +8,7 @@ import {
   useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import React from "react";
+import React, { useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 
 export type ColDefType = {
@@ -35,13 +35,15 @@ type PartialGridColDef = Pick<
 > &
   Pick<GridSingleSelectColDef, "valueOptions">;
 
-export const useDynamicColumnGridHooks = (id: string) => {
+export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
 
-  const { data, isLoading, error } = useGetListWithColumnDefs(id);
+  const [testDataId, setTestDataId] = useState("1");
+
+  const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
   const rows = data?.data.rowData ?? [];
   const dynamicColDefs = data?.data.colDefData ?? [];
-  console.log("display data", { data, rows, dynamicColDefs });
+
   // カラム定義データから動的に定義生成
   const createDynamicColDef = (colDef: ColDefType): PartialGridColDef => {
     const propBase: { field: string; headerName: string; editable: boolean } = {
@@ -103,7 +105,15 @@ export const useDynamicColumnGridHooks = (id: string) => {
     ...dynamicColDefs.map<GridColDef>((def) => createDynamicColDef(def)),
   ];
 
-  return { gridApiRef, rows, colums, isLoading, error };
+  return {
+    gridApiRef,
+    rows,
+    colums,
+    isLoading,
+    error,
+    testDataId,
+    setTestDataId,
+  };
 };
 
 // カスタムセルレンダラー
