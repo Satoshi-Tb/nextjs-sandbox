@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import { fetcher } from "@/utils/fetcher";
 import type { ColDefType } from "@/components/grid/DynamicCloumnGridHooks";
+import envConfig from "@/utils/envConfig";
 
 type GridDynamicColumnListDataType = {
   colDefData: ColDefType[];
@@ -15,7 +16,7 @@ export type GridDynamicColumnListResponseType = {
 
 export const useGetListWithColumnDefs = (id: string | undefined) => {
   const key = id
-    ? `http://localhost:3000/api/grid/dynamic-column/list/${id}`
+    ? `${envConfig.apiUrl}/api/grid/dynamic-column/list/${id}`
     : undefined;
 
   const { data, error, isLoading } = useSWR<GridDynamicColumnListResponseType>(

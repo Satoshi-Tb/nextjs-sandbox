@@ -1,3 +1,4 @@
+import envConfig from "@/utils/envConfig";
 import React, { useEffect, useState } from "react";
 
 export const ParentComponent: React.FC = () => {
@@ -21,7 +22,7 @@ export const ParentComponent: React.FC = () => {
 
   const openChildWindow = () => {
     const w = window.open(
-      "http://localhost:3000/samples/popup/child",
+      `${envConfig.apiUrl}/samples/popup/child`,
       "Child Window",
       "width=600,height=400"
     );
