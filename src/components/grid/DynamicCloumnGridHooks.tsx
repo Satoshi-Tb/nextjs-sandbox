@@ -1,5 +1,6 @@
 import { Box, Switch } from "@mui/material";
 import {
+  GridCellParams,
   GridColDef,
   GridRenderCellParams,
   GridRenderEditCellParams,
@@ -56,6 +57,9 @@ export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
 
   const [testDataId, setTestDataId] = useState("1");
+
+  // 編集後の列名
+  const [editedField, setEditedField] = useState<string | null>(null);
 
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
   const rows = data?.data.rowData ?? [];
@@ -146,6 +150,32 @@ export const useDynamicColumnGridHooks = () => {
     ];
   }, [dynamicColDefs, createDynamicColumnDefs]);
 
+  // 行編集イベント
+  const processRowUpdate = (newRow: RowDataType, oldRow: RowDataType) => {
+    console.log("processRowUpdate", { newRow, oldRow });
+
+    if (!editedField) return newRow; // 未設定の場合、何もしない（ありえない。エラーにした方が良い）
+
+    const { id, value } = newRow.detailItems.find(
+      (item) => item.gridFieldName === editedField
+    ) || { id: undefined, value: "" };
+
+    // ★バックエンド更新処理
+    console.log(
+      `processRowUpdate for ${editedField} [id, value] = [${id}, ${value}]`
+    );
+
+    setEditedField(null); // 念のためクリア
+
+    return newRow;
+  };
+
+  // 行編集終了イベント
+  const onCellEditStop = (params: GridCellParams) => {
+    console.log("cell edit stopped", params);
+    setEditedField(params.field);
+  };
+
   return {
     gridApiRef,
     rows,
@@ -154,6 +184,8 @@ export const useDynamicColumnGridHooks = () => {
     error,
     testDataId,
     setTestDataId,
+    processRowUpdate,
+    onCellEditStop,
   };
 };
 

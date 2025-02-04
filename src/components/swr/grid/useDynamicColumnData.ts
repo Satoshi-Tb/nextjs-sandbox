@@ -1,11 +1,14 @@
 import useSWR from "swr";
 import { fetcher } from "@/utils/fetcher";
-import type { ColDefType } from "@/components/grid/DynamicCloumnGridHooks";
+import type {
+  ColDefType,
+  RowDataType,
+} from "@/components/grid/DynamicCloumnGridHooks";
 import envConfig from "@/utils/envConfig";
 
 type GridDynamicColumnListDataType = {
   colDefData: ColDefType[];
-  rowData: any[];
+  rowData: RowDataType[];
 };
 
 export type GridDynamicColumnListResponseType = {

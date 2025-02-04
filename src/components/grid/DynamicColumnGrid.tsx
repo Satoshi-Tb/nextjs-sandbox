@@ -1,6 +1,5 @@
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import {
-  Box,
   FormControl,
   InputLabel,
   MenuItem,
@@ -8,15 +7,26 @@ import {
   Stack,
 } from "@mui/material";
 import Link from "next/link";
-import { useDynamicColumnGridHooks } from "./DynamicCloumnGridHooks";
+import {
+  RowDataType,
+  useDynamicColumnGridHooks,
+} from "./DynamicCloumnGridHooks";
 
 /**
  * グリッド画面
  * @returns
  */
 export const DynamicColumnGrid = () => {
-  const { gridApiRef, rows, isLoading, colums, testDataId, setTestDataId } =
-    useDynamicColumnGridHooks();
+  const {
+    gridApiRef,
+    rows,
+    isLoading,
+    colums,
+    testDataId,
+    setTestDataId,
+    processRowUpdate,
+    onCellEditStop,
+  } = useDynamicColumnGridHooks();
 
   return (
     <div
@@ -50,10 +60,8 @@ export const DynamicColumnGrid = () => {
           slots={{ toolbar: GridToolbar }}
           columns={colums}
           hideFooterPagination={true}
-          processRowUpdate={(newRow, oldRow) => {
-            console.log("processRowUpdate", { newRow, oldRow });
-            return newRow;
-          }}
+          processRowUpdate={processRowUpdate}
+          onCellEditStop={onCellEditStop}
         />
         {/* フッター */}
         <Link href="/">TOP</Link>
