@@ -63,6 +63,12 @@ const dynamicColDefList: ColDefType[][] = [
         { optKey: "checkItemOption", optValue: "1", optName: "済" },
       ],
     },
+    {
+      gridFieldName: "labelItem",
+      fieldName: "labelItem",
+      label: "ラベル項目",
+      inputType: "5",
+    },
   ],
   [
     {
@@ -145,6 +151,12 @@ const testRowData: RowDataType[][] = [
           fieldName: "checkItem",
           value: "0",
         },
+        {
+          id: 104,
+          gridFieldName: "labelItem",
+          fieldName: "labelItem",
+          value: "ラベル項目です",
+        },
       ],
     },
     {
@@ -175,6 +187,12 @@ const testRowData: RowDataType[][] = [
           gridFieldName: "checkItem",
           fieldName: "checkItem",
           value: "0",
+        },
+        {
+          id: 304,
+          gridFieldName: "labelItem",
+          fieldName: "labelItem",
+          value: "ラベル項目です",
         },
       ],
     },
@@ -207,6 +225,12 @@ const testRowData: RowDataType[][] = [
           fieldName: "checkItem",
           value: "0",
         },
+        {
+          id: 404,
+          gridFieldName: "labelItem",
+          fieldName: "labelItem",
+          value: "ラベル項目です",
+        },
       ],
     },
     {
@@ -237,6 +261,12 @@ const testRowData: RowDataType[][] = [
           gridFieldName: "checkItem",
           fieldName: "checkItem",
           value: "0",
+        },
+        {
+          id: 404,
+          gridFieldName: "labelItem",
+          fieldName: "labelItem",
+          value: "ラベル項目です",
         },
       ],
     },
@@ -269,6 +299,12 @@ const testRowData: RowDataType[][] = [
           fieldName: "checkItem",
           value: "0",
         },
+        {
+          id: 504,
+          gridFieldName: "labelItem",
+          fieldName: "labelItem",
+          value: "ラベル項目です",
+        },
       ],
     },
     {
@@ -299,6 +335,12 @@ const testRowData: RowDataType[][] = [
           gridFieldName: "checkItem",
           fieldName: "checkItem",
           value: "0",
+        },
+        {
+          id: 604,
+          gridFieldName: "labelItem",
+          fieldName: "labelItem",
+          value: "ラベル項目です",
         },
       ],
     },

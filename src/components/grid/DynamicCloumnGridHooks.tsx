@@ -74,7 +74,7 @@ export const useDynamicColumnGridHooks = () => {
       const baseDef: PartialGridColDef = {
         field: colDef.gridFieldName,
         headerName: colDef.label,
-        editable: true,
+        editable: !(colDef.inputType === "5"),
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
             (f) => f.gridFieldName === colDef.gridFieldName
