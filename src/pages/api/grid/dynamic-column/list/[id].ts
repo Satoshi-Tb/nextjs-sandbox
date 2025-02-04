@@ -120,7 +120,7 @@ const testRowData: RowDataType[][] = [
       id: 1,
       category: "果物",
       item: "りんご",
-      freeItems: [
+      detailItems: [
         {
           id: 100,
           gridFieldName: "txtItem",
@@ -151,7 +151,7 @@ const testRowData: RowDataType[][] = [
       id: 2,
       category: "果物",
       item: "すいか",
-      freeItems: [
+      detailItems: [
         {
           id: 200,
           gridFieldName: "txtItem",
@@ -182,7 +182,7 @@ const testRowData: RowDataType[][] = [
       id: 3,
       category: "果物",
       item: "みかん",
-      freeItems: [
+      detailItems: [
         {
           id: 300,
           gridFieldName: "txtItem",
@@ -213,7 +213,7 @@ const testRowData: RowDataType[][] = [
       id: 4,
       category: "果物",
       item: "いちご",
-      freeItems: [
+      detailItems: [
         {
           id: 400,
           gridFieldName: "txtItem",
@@ -244,7 +244,7 @@ const testRowData: RowDataType[][] = [
       id: 5,
       category: "野菜",
       item: "なす",
-      freeItems: [
+      detailItems: [
         {
           id: 500,
           gridFieldName: "txtItem",
@@ -275,7 +275,7 @@ const testRowData: RowDataType[][] = [
       id: 6,
       category: "野菜",
       item: "きゅうり",
-      freeItems: [
+      detailItems: [
         {
           id: 600,
           gridFieldName: "txtItem",
@@ -308,7 +308,7 @@ const testRowData: RowDataType[][] = [
       id: 11,
       category: "トップス",
       item: "クルーネックTシャツ",
-      freeItems: [
+      detailItems: [
         {
           id: 1101,
           gridFieldName: "maker",
@@ -328,7 +328,7 @@ const testRowData: RowDataType[][] = [
       id: 12,
       category: "トップス",
       item: "コンパクトジャケット",
-      freeItems: [
+      detailItems: [
         {
           id: 1201,
           gridFieldName: "maker",

@@ -50,6 +50,10 @@ export const DynamicColumnGrid = () => {
           slots={{ toolbar: GridToolbar }}
           columns={colums}
           hideFooterPagination={true}
+          processRowUpdate={(newRow, oldRow) => {
+            console.log("processRowUpdate", { newRow, oldRow });
+            return newRow;
+          }}
         />
         {/* フッター */}
         <Link href="/">TOP</Link>

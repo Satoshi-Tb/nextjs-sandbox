@@ -30,14 +30,12 @@ export type RowDataType = {
   id: number;
   category: string;
   item: string;
-  freeItems: FreeItemType[];
-};
-
-export type FreeItemType = {
-  id: number;
-  gridFieldName: string;
-  fieldName: string;
-  value: string;
+  detailItems: {
+    id: number;
+    gridFieldName: string;
+    fieldName: string;
+    value: string;
+  }[];
 };
 
 type PartialGridColDef = Pick<
@@ -68,19 +66,19 @@ export const useDynamicColumnGridHooks = () => {
   // TODO カスタムセル定義の実装難易度に影響（valueの取り方）
   const createDynamicColDef = (colDef: ColDefType): PartialGridColDef => {
     // 共通カラム定義設定
-    const propBase: PartialGridColDef = {
+    const baseDef: PartialGridColDef = {
       field: colDef.gridFieldName,
       headerName: colDef.label,
       editable: true,
       valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
-        params.row.freeItems.find(
+        params.row.detailItems.find(
           (f) => f.gridFieldName === colDef.gridFieldName
         )?.value || "",
       valueSetter: (params: GridValueSetterParams<RowDataType, string>) => {
         // 編集時に freeItems の該当する項目を更新
         return {
           ...params.row,
-          freeItems: params.row.freeItems.map((f) =>
+          detailItems: params.row.detailItems.map((f) =>
             f.gridFieldName === colDef.gridFieldName
               ? { ...f, value: params.value }
               : f
@@ -92,11 +90,11 @@ export const useDynamicColumnGridHooks = () => {
     switch (colDef.inputType) {
       case "1":
         return {
-          ...propBase,
+          ...baseDef,
         };
       case "2":
         return {
-          ...propBase,
+          ...baseDef,
           type: "singleSelect",
           valueOptions:
             colDef.options?.map((opt) => ({
@@ -106,19 +104,19 @@ export const useDynamicColumnGridHooks = () => {
         };
       case "3":
         return {
-          ...propBase,
+          ...baseDef,
           renderCell: renderSwitchCell,
           renderEditCell: renderEditingSwitchCell,
         };
       case "4":
         return {
-          ...propBase,
+          ...baseDef,
           type: "boolean",
         };
 
       default:
         return {
-          ...propBase,
+          ...baseDef,
         };
     }
   };
