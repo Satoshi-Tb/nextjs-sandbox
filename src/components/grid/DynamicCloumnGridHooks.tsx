@@ -10,7 +10,7 @@ import {
   useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 
 export type ColDefType = {
@@ -64,62 +64,65 @@ export const useDynamicColumnGridHooks = () => {
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
   // TODO カスタムセル定義の実装難易度に影響（valueの取り方）
-  const createDynamicColDef = (colDef: ColDefType): PartialGridColDef => {
-    // 共通カラム定義設定
-    const baseDef: PartialGridColDef = {
-      field: colDef.gridFieldName,
-      headerName: colDef.label,
-      editable: true,
-      valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
-        params.row.detailItems.find(
-          (f) => f.gridFieldName === colDef.gridFieldName
-        )?.value || "",
-      valueSetter: (params: GridValueSetterParams<RowDataType, string>) => {
-        // 編集時に freeItems の該当する項目を更新
-        return {
-          ...params.row,
-          detailItems: params.row.detailItems.map((f) =>
-            f.gridFieldName === colDef.gridFieldName
-              ? { ...f, value: params.value }
-              : f
-          ),
-        };
-      },
-    };
+  const createDynamicColumnDefs = useCallback(
+    (colDef: ColDefType): PartialGridColDef => {
+      // 共通カラム定義設定
+      const baseDef: PartialGridColDef = {
+        field: colDef.gridFieldName,
+        headerName: colDef.label,
+        editable: true,
+        valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
+          params.row.detailItems.find(
+            (f) => f.gridFieldName === colDef.gridFieldName
+          )?.value || "",
+        valueSetter: (params: GridValueSetterParams<RowDataType, string>) => {
+          // 編集時に freeItems の該当する項目を更新
+          return {
+            ...params.row,
+            detailItems: params.row.detailItems.map((f) =>
+              f.gridFieldName === colDef.gridFieldName
+                ? { ...f, value: params.value }
+                : f
+            ),
+          };
+        },
+      };
 
-    switch (colDef.inputType) {
-      case "1":
-        return {
-          ...baseDef,
-        };
-      case "2":
-        return {
-          ...baseDef,
-          type: "singleSelect",
-          valueOptions:
-            colDef.options?.map((opt) => ({
-              value: opt.optValue,
-              label: opt.optName,
-            })) ?? [],
-        };
-      case "3":
-        return {
-          ...baseDef,
-          renderCell: renderSwitchCell,
-          renderEditCell: renderEditingSwitchCell,
-        };
-      case "4":
-        return {
-          ...baseDef,
-          type: "boolean",
-        };
+      switch (colDef.inputType) {
+        case "1":
+          return {
+            ...baseDef,
+          };
+        case "2":
+          return {
+            ...baseDef,
+            type: "singleSelect",
+            valueOptions:
+              colDef.options?.map((opt) => ({
+                value: opt.optValue,
+                label: opt.optName,
+              })) ?? [],
+          };
+        case "3":
+          return {
+            ...baseDef,
+            renderCell: renderSwitchCell,
+            renderEditCell: renderEditingSwitchCell,
+          };
+        case "4":
+          return {
+            ...baseDef,
+            type: "boolean",
+          };
 
-      default:
-        return {
-          ...baseDef,
-        };
-    }
-  };
+        default:
+          return {
+            ...baseDef,
+          };
+      }
+    },
+    [renderSwitchCell, renderEditingSwitchCell]
+  );
 
   /**
    * グリッドカラム定義
@@ -139,9 +142,9 @@ export const useDynamicColumnGridHooks = () => {
         width: 130,
       },
       // 動的項目
-      ...dynamicColDefs.map<GridColDef>((def) => createDynamicColDef(def)),
+      ...dynamicColDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
     ];
-  }, [dynamicColDefs]);
+  }, [dynamicColDefs, createDynamicColumnDefs]);
 
   return {
     gridApiRef,
