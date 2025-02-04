@@ -10,7 +10,7 @@ import {
   useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 
 export type ColDefType = {
@@ -124,21 +124,24 @@ export const useDynamicColumnGridHooks = () => {
   /**
    * グリッドカラム定義
    */
-  const colums: GridColDef[] = [
-    // 固定項目
-    {
-      field: "category",
-      headerName: "分類名",
-      width: 130,
-    },
-    {
-      field: "item",
-      headerName: "商品名",
-      width: 130,
-    },
-    // 動的項目
-    ...dynamicColDefs.map<GridColDef>((def) => createDynamicColDef(def)),
-  ];
+  const colums = useMemo<GridColDef[]>(() => {
+    console.log("colums defition 再計算");
+    return [
+      // 固定項目
+      {
+        field: "category",
+        headerName: "分類名",
+        width: 130,
+      },
+      {
+        field: "item",
+        headerName: "商品名",
+        width: 130,
+      },
+      // 動的項目
+      ...dynamicColDefs.map<GridColDef>((def) => createDynamicColDef(def)),
+    ];
+  }, [dynamicColDefs]);
 
   return {
     gridApiRef,
