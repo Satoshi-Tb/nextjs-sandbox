@@ -1,4 +1,4 @@
-import { Box, Switch } from "@mui/material";
+import { Box, MenuItem, Select, Switch } from "@mui/material";
 import {
   GridCellParams,
   GridColDef,
@@ -11,7 +11,7 @@ import {
   useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 
 export type ColDefType = {
@@ -31,6 +31,7 @@ export type RowDataType = {
   id: number;
   category: string;
   item: string;
+  selectItem: string;
   detailItems: {
     id: number;
     gridFieldName: string;
@@ -38,6 +39,8 @@ export type RowDataType = {
     value: string;
   }[];
 };
+
+type SelectItemType = "1" | "2" | "3" | "4" | "5" | "";
 
 type PartialGridColDef = Pick<
   GridColDef,
@@ -61,9 +64,29 @@ export const useDynamicColumnGridHooks = () => {
   // 編集後の列名
   const [editedField, setEditedField] = useState<string | null>(null);
 
+  // 選択項目の状態管理
+  const [selectItemState, setSelectItemState] = useState<{
+    [rowId: string]: SelectItemType;
+  }>({});
+
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
-  const rows = data?.data.rowData ?? [];
-  const dynamicColDefs = data?.data.colDefData ?? [];
+  const rows = useMemo(() => data?.data.rowData ?? [], [data]);
+
+  // 初期値設定
+  useEffect(() => {
+    if (rows.length > 0) {
+      // 選択項目の初期値設定
+      const initialSelectItemState = rows.reduce<{
+        [rowId: string]: SelectItemType;
+      }>((acc, row) => {
+        acc[row.id] = row.selectItem as SelectItemType;
+        return acc;
+      }, {});
+      setSelectItemState(initialSelectItemState);
+    }
+  }, [rows]);
+
+  const dynamicColDefs = useMemo(() => data?.data.colDefData ?? [], [data]);
 
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
@@ -125,7 +148,7 @@ export const useDynamicColumnGridHooks = () => {
           };
       }
     },
-    [renderSwitchCell, renderEditingSwitchCell]
+    []
   );
 
   /**
@@ -145,10 +168,51 @@ export const useDynamicColumnGridHooks = () => {
         headerName: "商品名",
         width: 130,
       },
+      {
+        field: "selectItem",
+        headerName: "選択項目",
+        width: 130,
+        renderCell: (param: GridRenderCellParams<RowDataType, string>) => {
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
+              <Select
+                value={selectItemState[param.id] || ""}
+                onChange={(event) => {
+                  setSelectItemState({
+                    ...selectItemState,
+                    [param.id]: event.target.value as SelectItemType,
+                  });
+                  console.log("changeItemState", {
+                    targetRow: param.id,
+                    targetValue: event.target.value,
+                  });
+                }}
+                displayEmpty={true}
+                inputProps={{ "aria-label": "Without label" }}
+              >
+                <MenuItem value="">
+                  <em>選択なし</em>
+                </MenuItem>
+                <MenuItem value="1">選択値1</MenuItem>
+                <MenuItem value="2">選択値2</MenuItem>
+                <MenuItem value="3">選択値3</MenuItem>
+                <MenuItem value="4">選択値4</MenuItem>
+                <MenuItem value="5">選択値5</MenuItem>
+              </Select>
+            </Box>
+          );
+        },
+      },
       // 動的項目
       ...dynamicColDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
     ];
-  }, [dynamicColDefs, createDynamicColumnDefs]);
+  }, [dynamicColDefs, createDynamicColumnDefs, selectItemState]);
 
   // 行編集イベント
   const processRowUpdate = (newRow: RowDataType, oldRow: RowDataType) => {
@@ -212,6 +276,7 @@ const renderSwitchCell = (
 const renderEditingSwitchCell = (param: GridRenderEditCellParams) => {
   const { id, value, field } = param;
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const apiRef = useGridApiContext();
 
   const handleChange = async (event: any) => {

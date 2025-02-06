@@ -56,6 +56,7 @@ export const DynamicColumnGrid = () => {
         <DataGrid
           apiRef={gridApiRef}
           rows={rows}
+          rowHeight={80}
           loading={isLoading}
           slots={{ toolbar: GridToolbar }}
           columns={colums}

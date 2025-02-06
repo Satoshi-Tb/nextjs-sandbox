@@ -126,6 +126,7 @@ const testRowData: RowDataType[][] = [
       id: 1,
       category: "果物",
       item: "りんご",
+      selectItem: "1",
       detailItems: [
         {
           id: 100,
@@ -163,6 +164,7 @@ const testRowData: RowDataType[][] = [
       id: 2,
       category: "果物",
       item: "すいか",
+      selectItem: "2",
       detailItems: [
         {
           id: 200,
@@ -200,6 +202,7 @@ const testRowData: RowDataType[][] = [
       id: 3,
       category: "果物",
       item: "みかん",
+      selectItem: "3",
       detailItems: [
         {
           id: 300,
@@ -237,6 +240,7 @@ const testRowData: RowDataType[][] = [
       id: 4,
       category: "果物",
       item: "いちご",
+      selectItem: "4",
       detailItems: [
         {
           id: 400,
@@ -274,6 +278,7 @@ const testRowData: RowDataType[][] = [
       id: 5,
       category: "野菜",
       item: "なす",
+      selectItem: "5",
       detailItems: [
         {
           id: 500,
@@ -311,6 +316,7 @@ const testRowData: RowDataType[][] = [
       id: 6,
       category: "野菜",
       item: "きゅうり",
+      selectItem: "",
       detailItems: [
         {
           id: 600,
@@ -350,6 +356,7 @@ const testRowData: RowDataType[][] = [
       id: 11,
       category: "トップス",
       item: "クルーネックTシャツ",
+      selectItem: "1",
       detailItems: [
         {
           id: 1101,
@@ -370,6 +377,7 @@ const testRowData: RowDataType[][] = [
       id: 12,
       category: "トップス",
       item: "コンパクトジャケット",
+      selectItem: "",
       detailItems: [
         {
           id: 1201,
