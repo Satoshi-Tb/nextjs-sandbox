@@ -284,6 +284,25 @@ export const MultilineEditing = () => {
                 event.defaultMuiPrevented = true;
               }
             }}
+            onRowClick={(params) => {
+              // セルクリックだけだと、反応しない場合あり。rowクリックで選択状態更新したほうが良いかも
+              console.log("row click", params);
+            }}
+            sx={{
+              // 優先度はホバー＞クリック行＞チェックボックス選択
+              "& .MuiDataGrid-row.Mui-selected": {
+                backgroundColor: "rgba(0, 255, 0, 0.3)", // チェックボックスによる選択行の背景色
+              },
+              "& .MuiDataGrid-row.selected-row": {
+                backgroundColor: "rgba(255, 165, 0, 0.5)", // クリックした行の色
+              },
+              "& .MuiDataGrid-row:hover": {
+                backgroundColor: "rgba(0, 0, 255, 0.1)", // ホバー時の色
+              },
+            }}
+            getRowClassName={(params) =>
+              params.id === selectedId ? "selected-row" : ""
+            }
           />
         </div>
       </div>
