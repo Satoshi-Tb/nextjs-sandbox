@@ -62,6 +62,10 @@ function Home() {
         <li>
           <Link href="/samples/tab">tab basic</Link>
         </li>
+
+        <li>
+          <Link href="/samples/basic">render test</Link>
+        </li>
       </ul>
     </div>
   );
