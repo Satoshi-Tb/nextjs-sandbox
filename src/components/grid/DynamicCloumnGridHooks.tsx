@@ -51,6 +51,12 @@ type SelectValueSetType = {
   [rowId: number]: SelectValueType;
 };
 
+// 動的スイッチ項目の値セット
+type SwitchValueType = { [fieldName: string]: boolean };
+type SwitchValueSetType = {
+  [rowId: number]: SwitchValueType;
+};
+
 export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
 
@@ -65,6 +71,7 @@ export const useDynamicColumnGridHooks = () => {
   }>({});
 
   const [selectValueSet, setSelectValueSet] = useState<SelectValueSetType>({});
+  const [switchValueSet, setSwitchValueSet] = useState<SwitchValueSetType>({});
 
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
   const rows = useMemo(() => data?.data.rowData ?? [], [data]);
@@ -102,6 +109,27 @@ export const useDynamicColumnGridHooks = () => {
         {}
       );
       setSelectValueSet(initialSelectValueSet);
+
+      // スイッチ選択項目の値セット初期化
+      const switchFields = colDefs
+        .filter((d) => d.inputType === "3")
+        .map((d) => d.gridFieldName);
+      const initialSwitchValueSet = rows.reduce<SwitchValueSetType>(
+        (accSet, row) => {
+          const switchValue = row.detailItems
+            .filter((r) => switchFields.includes(r.gridFieldName))
+            .reduce<SwitchValueType>((acc, r) => {
+              acc[r.gridFieldName] = r.value === "1";
+              return acc;
+            }, {});
+
+          accSet[row.id] = switchValue;
+          return accSet;
+        },
+        {}
+      );
+      setSwitchValueSet(initialSwitchValueSet);
+
       console.log("initialSelectValueSet", initialSelectValueSet);
     }
   }, [rows, colDefs]);
@@ -157,7 +185,12 @@ export const useDynamicColumnGridHooks = () => {
           return {
             ...baseDef,
             renderCell: (params) => (
-              <SwitchCell params={params} colDef={colDef} />
+              <SwitchCell
+                params={params}
+                colDef={colDef}
+                switchValueSet={switchValueSet}
+                setSwitchValueSet={setSwitchValueSet}
+              />
             ),
           };
         case "4":
@@ -172,7 +205,7 @@ export const useDynamicColumnGridHooks = () => {
           };
       }
     },
-    [selectValueSet]
+    [selectValueSet, switchValueSet]
   );
 
   /**
@@ -339,12 +372,21 @@ type SwitchCellPropTypes = {
   params: GridRenderCellParams<RowDataType, string>;
   colDef: ColDefType;
   disabled?: boolean;
+  switchValueSet: SwitchValueSetType;
+  setSwitchValueSet: React.Dispatch<React.SetStateAction<SwitchValueSetType>>;
 };
 const SwitchCell = ({
   params,
   colDef,
   disabled = false,
+  switchValueSet,
+  setSwitchValueSet,
 }: SwitchCellPropTypes) => {
+  const rowId = params.id as number;
+  const value = switchValueSet[rowId]
+    ? switchValueSet[rowId][colDef.gridFieldName]
+    : false;
+
   return (
     <Box
       sx={{
@@ -353,7 +395,19 @@ const SwitchCell = ({
         height: "100%",
       }}
     >
-      <Switch checked={params.value === "1"} disabled={disabled} />
+      <Switch
+        checked={value}
+        disabled={disabled}
+        onClick={() => {
+          setSwitchValueSet({
+            ...switchValueSet,
+            [rowId]: {
+              ...switchValueSet[rowId],
+              [colDef.gridFieldName]: !value,
+            },
+          });
+        }}
+      />
     </Box>
   );
 };
