@@ -20,6 +20,7 @@ export type ColDefType = {
   label: string;
   inputType: string;
   options?: OptItemType[];
+  width?: number;
 };
 type OptItemType = {
   optKey: string;
@@ -42,19 +43,13 @@ export type RowDataType = {
 
 type SelectItemType = "1" | "2" | "3" | "4" | "5" | "";
 
-type PartialGridColDef = Pick<
-  GridColDef,
-  | "field"
-  | "headerName"
-  | "editable"
-  | "renderCell"
-  | "type"
-  | "renderEditCell"
-  | "width"
-  | "valueGetter"
-  | "valueSetter"
-> &
-  Pick<GridSingleSelectColDef, "valueOptions">;
+// 動的選択項目の値セット
+type SelectValueType = {
+  [fieldName: string]: string;
+};
+type SelectValueSetType = {
+  [rowId: number]: SelectValueType;
+};
 
 export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
@@ -69,11 +64,15 @@ export const useDynamicColumnGridHooks = () => {
     [rowId: string]: SelectItemType;
   }>({});
 
+  const [selectValueSet, setSelectValueSet] = useState<SelectValueSetType>({});
+
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
   const rows = useMemo(() => data?.data.rowData ?? [], [data]);
+  const colDefs = useMemo(() => data?.data.colDefData ?? [], [data]);
 
   // 初期値設定
   useEffect(() => {
+    console.log("rows changed", { rows, colDefs });
     if (rows.length > 0) {
       // 選択項目の初期値設定
       const initialSelectItemState = rows.reduce<{
@@ -83,19 +82,41 @@ export const useDynamicColumnGridHooks = () => {
         return acc;
       }, {});
       setSelectItemState(initialSelectItemState);
-    }
-  }, [rows]);
 
-  const dynamicColDefs = useMemo(() => data?.data.colDefData ?? [], [data]);
+      // 選択項目の値セット初期化
+      const singleSelectFields = colDefs
+        .filter((d) => d.inputType === "2")
+        .map((d) => d.gridFieldName);
+      const initialSelectValueSet = rows.reduce<SelectValueSetType>(
+        (accValueSet, row) => {
+          const selectValues = row.detailItems
+            .filter((r) => singleSelectFields.includes(r.gridFieldName))
+            .reduce<SelectValueType>((accValue, r) => {
+              accValue[r.gridFieldName] = r.value;
+              return accValue;
+            }, {});
+
+          accValueSet[row.id] = selectValues;
+          return accValueSet;
+        },
+        {}
+      );
+      setSelectValueSet(initialSelectValueSet);
+      console.log("initialSelectValueSet", initialSelectValueSet);
+    }
+  }, [rows, colDefs]);
 
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
   // TODO カスタムセル定義の実装難易度に影響（valueの取り方）
   const createDynamicColumnDefs = useCallback(
-    (colDef: ColDefType): PartialGridColDef => {
+    (colDef: ColDefType): GridColDef => {
+      console.log("createDynamicColumnDefs 再作成", { selectValueSet });
+
       // 共通カラム定義設定
-      const baseDef: PartialGridColDef = {
+      const baseDef: GridColDef = {
         field: colDef.gridFieldName,
+        width: colDef.width || 130,
         headerName: colDef.label,
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
@@ -123,18 +144,21 @@ export const useDynamicColumnGridHooks = () => {
         case "2":
           return {
             ...baseDef,
-            type: "singleSelect",
-            valueOptions:
-              colDef.options?.map((opt) => ({
-                value: opt.optValue,
-                label: opt.optName,
-              })) ?? [],
+            renderCell: (params) => (
+              <SelectCell
+                params={params}
+                colDef={colDef}
+                selectValueSet={selectValueSet}
+                setSelectValueSet={setSelectValueSet}
+              />
+            ),
           };
         case "3":
           return {
             ...baseDef,
-            renderCell: renderSwitchCell,
-            renderEditCell: renderEditingSwitchCell,
+            renderCell: (params) => (
+              <SwitchCell params={params} colDef={colDef} />
+            ),
           };
         case "4":
           return {
@@ -148,7 +172,7 @@ export const useDynamicColumnGridHooks = () => {
           };
       }
     },
-    []
+    [selectValueSet]
   );
 
   /**
@@ -214,9 +238,9 @@ export const useDynamicColumnGridHooks = () => {
 
     return [
       ...fixedColDefs,
-      ...dynamicColDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
+      ...colDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
     ];
-  }, [dynamicColDefs, createDynamicColumnDefs, selectItemState]);
+  }, [colDefs, createDynamicColumnDefs, selectItemState]);
 
   // 行編集イベント
   const processRowUpdate = (newRow: RowDataType, oldRow: RowDataType) => {
@@ -257,21 +281,79 @@ export const useDynamicColumnGridHooks = () => {
   };
 };
 
-// カスタムセルレンダラー
-// スイッチセル（表示用）
-const renderSwitchCell = (
-  param: GridRenderCellParams<any, any, any, GridTreeNodeWithRender>
-) => {
+type SelectCellPropTypes = {
+  params: GridRenderCellParams<RowDataType, string>;
+  colDef: ColDefType;
+  disabled?: boolean;
+  selectValueSet: SelectValueSetType;
+  setSelectValueSet: React.Dispatch<React.SetStateAction<SelectValueSetType>>;
+};
+const SelectCell = ({
+  params,
+  colDef,
+  disabled = false,
+  selectValueSet,
+  setSelectValueSet,
+}: SelectCellPropTypes) => {
+  console.log("SelectCell", { params, colDef, selectValueSet });
+
+  const rowId = params.id as number;
+  const value = selectValueSet[rowId]
+    ? selectValueSet[rowId][colDef.gridFieldName]
+    : "";
+
   return (
     <Box
       sx={{
         display: "flex",
         alignItems: "center",
-        lineHeight: "24px",
-        color: "text.secondary",
+        height: "100%",
       }}
     >
-      <Switch checked={param.value === "1"} disabled={true} />
+      <Select
+        value={value}
+        onChange={(event) => {
+          setSelectValueSet({
+            ...selectValueSet,
+            [rowId]: {
+              ...selectValueSet[rowId],
+              [colDef.gridFieldName]: event.target.value,
+            },
+          });
+        }}
+        displayEmpty={true}
+        disabled={disabled}
+      >
+        <MenuItem value="">選択なし</MenuItem>
+        {colDef.options?.map((opt) => (
+          <MenuItem key={`${opt.optKey}_${opt.optValue}`} value={opt.optValue}>
+            {opt.optName}
+          </MenuItem>
+        ))}
+      </Select>
+    </Box>
+  );
+};
+
+type SwitchCellPropTypes = {
+  params: GridRenderCellParams<RowDataType, string>;
+  colDef: ColDefType;
+  disabled?: boolean;
+};
+const SwitchCell = ({
+  params,
+  colDef,
+  disabled = false,
+}: SwitchCellPropTypes) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        height: "100%",
+      }}
+    >
+      <Switch checked={params.value === "1"} disabled={disabled} />
     </Box>
   );
 };
