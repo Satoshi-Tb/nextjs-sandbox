@@ -37,7 +37,7 @@ export const DynamicColumnGrid = () => {
         width: "100%",
       }}
     >
-      <Stack sx={{ height: 500, width: "50%", m: "10px" }} spacing={2}>
+      <Stack sx={{ height: 600, width: "50%", m: "10px" }} spacing={2}>
         {/* データセットセレクト */}
         <FormControl sx={{ m: 1, width: 150 }} size="small">
           <InputLabel id="demo-select-small-label">サンプルデータ</InputLabel>
@@ -63,6 +63,14 @@ export const DynamicColumnGrid = () => {
           hideFooterPagination={true}
           processRowUpdate={processRowUpdate}
           onCellEditStop={onCellEditStop}
+          onRowSelectionModelChange={(params) => {
+            console.log("onRowSelectionModelChange", params);
+          }}
+          checkboxSelection={true}
+          disableRowSelectionOnClick={true}
+          onStateChange={(params) => {
+            console.log("onStateChange", params);
+          }}
         />
         {/* フッター */}
         <Link href="/">TOP</Link>

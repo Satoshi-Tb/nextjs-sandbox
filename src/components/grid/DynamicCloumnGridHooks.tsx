@@ -97,7 +97,6 @@ export const useDynamicColumnGridHooks = () => {
       const baseDef: PartialGridColDef = {
         field: colDef.gridFieldName,
         headerName: colDef.label,
-        editable: !(colDef.inputType === "5"),
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
             (f) => f.gridFieldName === colDef.gridFieldName
@@ -119,6 +118,7 @@ export const useDynamicColumnGridHooks = () => {
         case "1":
           return {
             ...baseDef,
+            editable: true,
           };
         case "2":
           return {
@@ -156,8 +156,9 @@ export const useDynamicColumnGridHooks = () => {
    */
   const colums = useMemo<GridColDef[]>(() => {
     console.log("colums defition 再計算");
-    return [
-      // 固定項目
+
+    // 固定項目
+    const fixedColDefs: GridColDef[] = [
       {
         field: "category",
         headerName: "分類名",
@@ -209,7 +210,10 @@ export const useDynamicColumnGridHooks = () => {
           );
         },
       },
-      // 動的項目
+    ];
+
+    return [
+      ...fixedColDefs,
       ...dynamicColDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
     ];
   }, [dynamicColDefs, createDynamicColumnDefs, selectItemState]);
