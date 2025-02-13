@@ -168,6 +168,7 @@ export const useDynamicColumnGridHooks = () => {
           return {
             ...baseDef,
             editable: true,
+            renderCell: WrappedCell,
           };
         case "2":
           return {
@@ -409,6 +410,24 @@ const SwitchCell = ({
         }}
       />
     </Box>
+  );
+};
+
+const WrappedCell = (params: GridRenderCellParams) => {
+  return (
+    <div
+      style={{
+        overflowY: "auto",
+        overflowWrap: "break-word",
+        whiteSpace: "pre-wrap",
+        height: "100%",
+        width: "100%",
+        paddingTop: "5px",
+        paddingLeft: "5px",
+      }}
+    >
+      {params.value}
+    </div>
   );
 };
 
