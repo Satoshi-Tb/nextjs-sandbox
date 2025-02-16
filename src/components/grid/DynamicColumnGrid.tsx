@@ -1,5 +1,6 @@
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import {
+  Box,
   FormControl,
   InputLabel,
   MenuItem,
@@ -62,6 +63,9 @@ export const DynamicColumnGrid = () => {
           columns={colums}
           hideFooterPagination={true}
           processRowUpdate={processRowUpdate}
+          onRowEditCommit={(params) => {
+            console.log("onRowEditCommit", params);
+          }}
           onCellEditStop={onCellEditStop}
           onRowSelectionModelChange={(params) => {
             console.log("onRowSelectionModelChange", params);
@@ -75,6 +79,39 @@ export const DynamicColumnGrid = () => {
         {/* フッター */}
         <Link href="/">TOP</Link>
       </Stack>
+      <TestHorizontalScrollContainer />
     </div>
+  );
+};
+
+const TestHorizontalScrollContainer = () => {
+  return (
+    <Box
+      sx={{
+        display: "flex", // 子要素を横並びにする
+        overflowX: "auto", // 横スクロールを有効化
+        whiteSpace: "nowrap", // 折り返しを防ぐ
+        width: "100%", // 親要素の幅を100%に
+        border: "1px solid gray", // 視認しやすくするための枠線
+      }}
+    >
+      {/* 子要素 (複数の Box) */}
+      {[...Array(10)].map((_, index) => (
+        <Box
+          key={index}
+          sx={{
+            minWidth: "150px", // 子要素の最小幅
+            height: "100px", // 高さを統一
+            backgroundColor: "lightblue",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 8px", // 余白を追加
+          }}
+        >
+          Item {index + 1}
+        </Box>
+      ))}
+    </Box>
   );
 };

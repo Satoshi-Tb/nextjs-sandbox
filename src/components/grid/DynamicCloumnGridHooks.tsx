@@ -1,4 +1,12 @@
-import { Box, MenuItem, Select, Switch } from "@mui/material";
+import {
+  Box,
+  FormControlLabel,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  Select,
+  Switch,
+} from "@mui/material";
 import {
   GridCellParams,
   GridColDef,
@@ -199,7 +207,13 @@ export const useDynamicColumnGridHooks = () => {
             ...baseDef,
             type: "boolean",
           };
-
+        case "5":
+          return {
+            ...baseDef,
+            renderCell: (params) => (
+              <RadioCell params={params} colDef={colDef} />
+            ),
+          };
         default:
           return {
             ...baseDef,
@@ -409,6 +423,57 @@ const SwitchCell = ({
           });
         }}
       />
+    </Box>
+  );
+};
+
+type RadioCellPropTypes = {
+  params: GridRenderCellParams<RowDataType, string>;
+  colDef: ColDefType;
+  disabled?: boolean;
+};
+const RadioCell = ({
+  params,
+  colDef,
+  disabled = false,
+}: RadioCellPropTypes) => {
+  const rowId = params.id as number;
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        height: "100%",
+        overflowX: "auto", // ★ 横スクロールを有効化
+        whiteSpace: "nowrap", // ★ 折り返しを防ぐ
+        width: "100%", // ★ 親の列幅に依存
+      }}
+    >
+      <RadioGroup
+        row
+        name="row-radio-buttons-group"
+        sx={{ width: "fit-content", border: "1px solid red" }}
+      >
+        <FormControlLabel
+          value=""
+          control={<Radio />}
+          sx={{ border: "1px solid gray", display: "inline" }}
+          label="未選択"
+        />
+        <FormControlLabel
+          value="0"
+          control={<Radio />}
+          sx={{ border: "1px solid gray", display: "inline" }}
+          label="要"
+        />
+        <FormControlLabel
+          value="1"
+          control={<Radio />}
+          sx={{ border: "1px solid gray", display: "inline" }}
+          label="否"
+        />
+      </RadioGroup>
     </Box>
   );
 };

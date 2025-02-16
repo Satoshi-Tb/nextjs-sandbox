@@ -68,6 +68,7 @@ const dynamicColDefList: ColDefType[][] = [
     {
       gridFieldName: "labelItem",
       fieldName: "labelItem",
+      width: 200,
       label: "ラベル項目",
       inputType: "5",
     },
