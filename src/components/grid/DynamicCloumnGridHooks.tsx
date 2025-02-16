@@ -442,37 +442,21 @@ const RadioCell = ({
   return (
     <Box
       sx={{
-        display: "flex",
-        alignItems: "center",
         height: "100%",
-        overflowX: "auto", // ★ 横スクロールを有効化
-        whiteSpace: "nowrap", // ★ 折り返しを防ぐ
-        width: "100%", // ★ 親の列幅に依存
+        overflowX: "auto",
+        width: "100%",
       }}
     >
       <RadioGroup
         row
         name="row-radio-buttons-group"
-        sx={{ width: "fit-content", border: "1px solid red" }}
+        sx={{
+          flexWrap: "nowrap",
+        }}
       >
-        <FormControlLabel
-          value=""
-          control={<Radio />}
-          sx={{ border: "1px solid gray", display: "inline" }}
-          label="未選択"
-        />
-        <FormControlLabel
-          value="0"
-          control={<Radio />}
-          sx={{ border: "1px solid gray", display: "inline" }}
-          label="要"
-        />
-        <FormControlLabel
-          value="1"
-          control={<Radio />}
-          sx={{ border: "1px solid gray", display: "inline" }}
-          label="否"
-        />
+        <FormControlLabel value="" control={<Radio />} label="未選択" />
+        <FormControlLabel value="0" control={<Radio />} label="要" />
+        <FormControlLabel value="1" control={<Radio />} label="否" />
       </RadioGroup>
     </Box>
   );

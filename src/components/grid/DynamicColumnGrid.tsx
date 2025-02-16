@@ -38,7 +38,7 @@ export const DynamicColumnGrid = () => {
         width: "100%",
       }}
     >
-      <Stack sx={{ height: 600, width: "50%", m: "10px" }} spacing={2}>
+      <Stack sx={{ height: 800, width: "50%", m: "10px" }} spacing={2}>
         {/* データセットセレクト */}
         <FormControl sx={{ m: 1, width: 150 }} size="small">
           <InputLabel id="demo-select-small-label">サンプルデータ</InputLabel>
@@ -78,8 +78,62 @@ export const DynamicColumnGrid = () => {
         />
         {/* フッター */}
         <Link href="/">TOP</Link>
+        <TestHorizontalScrollContainer />
+        <div
+          style={{
+            width: "fit-content",
+            background: "lightblue",
+            border: "1px solid black",
+          }}
+        >
+          <span>Hello </span>
+          <span>World</span>
+        </div>
+        <div
+          style={{
+            width: "fit-content",
+            background: "lightblue",
+            border: "1px solid black",
+          }}
+        >
+          <div style={{ display: "inline" }}>Hello </div>
+          <div style={{ display: "inline" }}>World</div>
+        </div>
+        <div
+          style={{
+            width: "fit-content",
+            background: "lightblue",
+            border: "1px solid black",
+          }}
+        >
+          <input type="radio" />
+          <label>Radio1</label>
+          <input type="radio" />
+          <label>Radio2</label>
+        </div>
+        <div
+          style={{
+            width: "100px",
+            overflowX: "auto",
+            border: "1px solid red",
+            padding: "5px",
+          }}
+        >
+          <div
+            style={{
+              width: "fit-content",
+              background: "lightblue",
+              whiteSpace: "nowrap",
+              border: "1px solid black",
+            }}
+          >
+            <input type="radio" />
+            <label>Radio1</label>
+            <input type="radio" />
+            <label>Radio2</label>
+          </div>
+        </div>
       </Stack>
-      <TestHorizontalScrollContainer />
     </div>
   );
 };
