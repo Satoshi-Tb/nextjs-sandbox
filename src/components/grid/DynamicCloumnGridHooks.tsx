@@ -6,6 +6,7 @@ import {
   RadioGroup,
   Select,
   Switch,
+  Typography,
 } from "@mui/material";
 import {
   GridCellParams,
@@ -28,6 +29,7 @@ export type ColDefType = {
   fieldName: string;
   label: string;
   inputType: string;
+  required?: boolean;
   options?: OptItemType[];
   width?: number;
 };
@@ -162,7 +164,26 @@ export const useDynamicColumnGridHooks = () => {
       const baseDef: GridColDef = {
         field: colDef.gridFieldName,
         width: colDef.width || 130,
-        headerName: colDef.label,
+        renderHeader: (params) => {
+          return (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                gap: "3px",
+              }}
+            >
+              {colDef.required && (
+                <Typography variant="body1" sx={{ color: "red" }}>
+                  *
+                </Typography>
+              )}
+              {colDef.label}
+            </div>
+          );
+        },
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
             (f) => f.gridFieldName === colDef.gridFieldName

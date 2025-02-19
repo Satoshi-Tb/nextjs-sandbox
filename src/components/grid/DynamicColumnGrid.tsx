@@ -1,6 +1,7 @@
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import {
   Box,
+  Button,
   FormControl,
   InputLabel,
   MenuItem,
@@ -41,21 +42,26 @@ export const DynamicColumnGrid = () => {
       }}
     >
       <Stack sx={{ height: 800, width: "50%", m: "10px" }} spacing={2}>
-        {/* データセットセレクト */}
-        <FormControl sx={{ m: 1, width: 150 }} size="small">
-          <InputLabel id="demo-select-small-label">サンプルデータ</InputLabel>
-          <Select
-            labelId="demo-select-small-label"
-            id="demo-select-small"
-            value={testDataId}
-            label="testDataSet"
-            onChange={(event) => setTestDataId(event.target.value)}
-          >
-            <MenuItem value={"1"}>DataSet:1</MenuItem>
-            <MenuItem value={"2"}>DataSet:2</MenuItem>
-            <MenuItem value={"3"}>DataSet:3</MenuItem>
-          </Select>
-        </FormControl>
+        <Stack direction="row" spacing={2} sx={{ width: "100%" }}>
+          {/* データセットセレクト */}
+          <FormControl sx={{ m: 1, width: 150 }} size="small">
+            <InputLabel id="demo-select-small-label">サンプルデータ</InputLabel>
+            <Select
+              labelId="demo-select-small-label"
+              id="demo-select-small"
+              value={testDataId}
+              label="testDataSet"
+              onChange={(event) => setTestDataId(event.target.value)}
+            >
+              <MenuItem value={"1"}>DataSet:1</MenuItem>
+              <MenuItem value={"2"}>DataSet:2</MenuItem>
+              <MenuItem value={"3"}>DataSet:3</MenuItem>
+            </Select>
+          </FormControl>
+          <Button variant="outlined" onClick={() => console.log("click")}>
+            入力チェック
+          </Button>
+        </Stack>
         {error && (
           <Typography variant="body1" sx={{ color: "red", fontWeight: "bold" }}>
             {error.message}

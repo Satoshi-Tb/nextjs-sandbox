@@ -15,6 +15,7 @@ const dynamicColDefList: ColDefType[][] = [
       width: 200,
       label: "テキスト項目",
       inputType: "1",
+      required: true,
     },
     {
       gridFieldName: "singleSelectItem",
@@ -22,6 +23,7 @@ const dynamicColDefList: ColDefType[][] = [
       width: 150,
       label: "選択項目",
       inputType: "2",
+      required: true,
       options: [
         {
           optKey: "singleSelectItemOption",
