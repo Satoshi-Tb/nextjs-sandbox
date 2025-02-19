@@ -14,7 +14,7 @@ type GridDynamicColumnListDataType = {
 export type GridDynamicColumnListResponseType = {
   code: string;
   errors: { message: string }[];
-  data: GridDynamicColumnListDataType;
+  data: GridDynamicColumnListDataType | undefined;
 };
 
 export const useGetListWithColumnDefs = (id: string | undefined) => {

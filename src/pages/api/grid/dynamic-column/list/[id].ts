@@ -424,11 +424,24 @@ export default async function handler(
       // ダミーウェイト
       await wait(2000);
 
-      res.status(200).json({
-        code: "0000",
-        errors: [],
-        data: { colDefData: colDefData, rowData: rowData },
-      });
+      if (id !== "3") {
+        res.status(200).json({
+          code: "0000",
+          errors: [],
+          data: { colDefData: colDefData, rowData: rowData },
+        });
+      } else {
+        res.status(500).json({
+          code: "9000",
+          errors: [
+            {
+              message: "データ取得エラー",
+            },
+          ],
+          data: undefined,
+        });
+      }
+
       break;
 
     default:

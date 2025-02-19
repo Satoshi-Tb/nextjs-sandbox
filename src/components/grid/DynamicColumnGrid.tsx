@@ -6,6 +6,7 @@ import {
   MenuItem,
   Select,
   Stack,
+  Typography,
 } from "@mui/material";
 import Link from "next/link";
 import {
@@ -22,6 +23,7 @@ export const DynamicColumnGrid = () => {
     gridApiRef,
     rows,
     isLoading,
+    error,
     colums,
     testDataId,
     setTestDataId,
@@ -51,8 +53,14 @@ export const DynamicColumnGrid = () => {
           >
             <MenuItem value={"1"}>DataSet:1</MenuItem>
             <MenuItem value={"2"}>DataSet:2</MenuItem>
+            <MenuItem value={"3"}>DataSet:3</MenuItem>
           </Select>
         </FormControl>
+        {error && (
+          <Typography variant="body1" sx={{ color: "red", fontWeight: "bold" }}>
+            {error.message}
+          </Typography>
+        )}
         {/* 一覧 */}
         <DataGrid
           apiRef={gridApiRef}

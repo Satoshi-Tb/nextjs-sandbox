@@ -21,6 +21,7 @@ import {
 } from "@mui/x-data-grid";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
+import { useRouter } from "next/router";
 
 export type ColDefType = {
   gridFieldName: string;
@@ -68,6 +69,8 @@ type SwitchValueSetType = {
 export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
 
+  const router = useRouter();
+
   const [testDataId, setTestDataId] = useState("1");
 
   // 編集後の列名
@@ -82,8 +85,14 @@ export const useDynamicColumnGridHooks = () => {
   const [switchValueSet, setSwitchValueSet] = useState<SwitchValueSetType>({});
 
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
-  const rows = useMemo(() => data?.data.rowData ?? [], [data]);
-  const colDefs = useMemo(() => data?.data.colDefData ?? [], [data]);
+
+  if (error) {
+    console.error("error", error);
+    // router.push("/");  // エラー時のリダイレクト
+  }
+
+  const rows = useMemo(() => data?.data?.rowData ?? [], [data]);
+  const colDefs = useMemo(() => data?.data?.colDefData ?? [], [data]);
 
   // 初期値設定
   useEffect(() => {
