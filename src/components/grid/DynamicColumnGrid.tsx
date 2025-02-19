@@ -1,6 +1,5 @@
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import {
-  Box,
   Button,
   FormControl,
   InputLabel,
@@ -10,10 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
-import {
-  RowDataType,
-  useDynamicColumnGridHooks,
-} from "./DynamicCloumnGridHooks";
+import { useDynamicColumnGridHooks } from "./DynamicCloumnGridHooks";
 
 /**
  * グリッド画面
@@ -30,6 +26,10 @@ export const DynamicColumnGrid = () => {
     setTestDataId,
     processRowUpdate,
     onCellEditStop,
+    handleCheckInput,
+    rowSelectionModel,
+    handleRowSelectionModelChange,
+    requiredErrorInfo,
   } = useDynamicColumnGridHooks();
 
   return (
@@ -58,7 +58,7 @@ export const DynamicColumnGrid = () => {
               <MenuItem value={"3"}>DataSet:3</MenuItem>
             </Select>
           </FormControl>
-          <Button variant="outlined" onClick={() => console.log("click")}>
+          <Button variant="outlined" onClick={handleCheckInput}>
             入力チェック
           </Button>
         </Stack>
@@ -81,13 +81,23 @@ export const DynamicColumnGrid = () => {
             console.log("onRowEditCommit", params);
           }}
           onCellEditStop={onCellEditStop}
-          onRowSelectionModelChange={(params) => {
-            console.log("onRowSelectionModelChange", params);
-          }}
+          rowSelectionModel={rowSelectionModel}
+          onRowSelectionModelChange={handleRowSelectionModelChange}
           checkboxSelection={true}
           disableRowSelectionOnClick={true}
           onStateChange={(params) => {
-            console.log("onStateChange", params);
+            // console.log("onStateChange", params);
+          }}
+          sx={{
+            "& .MuiDataGrid-row.input-error": {
+              backgroundColor: "hsla(0, 100.00%, 50.00%, 0.50)", // エラー行の色
+            },
+          }}
+          getRowClassName={(params) => {
+            console.log("getRowClassName", requiredErrorInfo);
+            return requiredErrorInfo.find((info) => info.id === params.id)
+              ? "input-error"
+              : "";
           }}
         />
         {/* フッター */}

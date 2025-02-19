@@ -13,8 +13,7 @@ import {
   GridColDef,
   GridRenderCellParams,
   GridRenderEditCellParams,
-  GridSingleSelectColDef,
-  GridTreeNodeWithRender,
+  GridRowSelectionModel,
   GridValueGetterParams,
   GridValueSetterParams,
   useGridApiContext,
@@ -23,6 +22,8 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 import { useRouter } from "next/router";
+import { mutate } from "swr";
+import envConfig from "@/utils/envConfig";
 
 export type ColDefType = {
   gridFieldName: string;
@@ -51,6 +52,8 @@ export type RowDataType = {
     value: string;
   }[];
 };
+
+export type InputErrorInfo = { id: number; errorFields: string[] };
 
 type SelectItemType = "1" | "2" | "3" | "4" | "5" | "";
 
@@ -83,7 +86,18 @@ export const useDynamicColumnGridHooks = () => {
     [rowId: string]: SelectItemType;
   }>({});
 
+  // 選択行リスト
+  const [rowSelectionModel, setRowSelectionModel] =
+    useState<GridRowSelectionModel>([]);
+
+  // 入力チェックエラーリスト
+  const [requiredErrorInfo, setRequiredErrorInfo] = useState<InputErrorInfo[]>(
+    []
+  );
+
+  // 動的選択項目の値セット
   const [selectValueSet, setSelectValueSet] = useState<SelectValueSetType>({});
+  // 動的スイッチ項目の値セット
   const [switchValueSet, setSwitchValueSet] = useState<SwitchValueSetType>({});
 
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
@@ -93,15 +107,15 @@ export const useDynamicColumnGridHooks = () => {
     // router.push("/");  // エラー時のリダイレクト
   }
 
-  const rows = useMemo(() => data?.data?.rowData ?? [], [data]);
+  const rowData = useMemo(() => data?.data?.rowData ?? [], [data]);
   const colDefs = useMemo(() => data?.data?.colDefData ?? [], [data]);
 
   // 初期値設定
   useEffect(() => {
-    console.log("rows changed", { rows, colDefs });
-    if (rows.length > 0) {
+    console.log("rows changed", { rows: rowData, colDefs });
+    if (rowData.length > 0) {
       // 選択項目の初期値設定
-      const initialSelectItemState = rows.reduce<{
+      const initialSelectItemState = rowData.reduce<{
         [rowId: string]: SelectItemType;
       }>((acc, row) => {
         acc[row.id] = row.selectItem as SelectItemType;
@@ -113,7 +127,7 @@ export const useDynamicColumnGridHooks = () => {
       const singleSelectFields = colDefs
         .filter((d) => d.inputType === "2")
         .map((d) => d.gridFieldName);
-      const initialSelectValueSet = rows.reduce<SelectValueSetType>(
+      const initialSelectValueSet = rowData.reduce<SelectValueSetType>(
         (accValueSet, row) => {
           const selectValues = row.detailItems
             .filter((r) => singleSelectFields.includes(r.gridFieldName))
@@ -133,7 +147,7 @@ export const useDynamicColumnGridHooks = () => {
       const switchFields = colDefs
         .filter((d) => d.inputType === "3")
         .map((d) => d.gridFieldName);
-      const initialSwitchValueSet = rows.reduce<SwitchValueSetType>(
+      const initialSwitchValueSet = rowData.reduce<SwitchValueSetType>(
         (accSet, row) => {
           const switchValue = row.detailItems
             .filter((r) => switchFields.includes(r.gridFieldName))
@@ -151,7 +165,7 @@ export const useDynamicColumnGridHooks = () => {
 
       console.log("initialSelectValueSet", initialSelectValueSet);
     }
-  }, [rows, colDefs]);
+  }, [rowData, colDefs]);
 
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
@@ -190,7 +204,7 @@ export const useDynamicColumnGridHooks = () => {
           )?.value || "",
         valueSetter: (params: GridValueSetterParams<RowDataType, string>) => {
           // 編集時に freeItems の該当する項目を更新
-          return {
+          const newValue = {
             ...params.row,
             detailItems: params.row.detailItems.map((f) =>
               f.gridFieldName === colDef.gridFieldName
@@ -198,6 +212,8 @@ export const useDynamicColumnGridHooks = () => {
                 : f
             ),
           };
+          console.log("set value", { value: params.value, newValue });
+          return newValue;
         },
       };
 
@@ -261,6 +277,11 @@ export const useDynamicColumnGridHooks = () => {
 
     // 固定項目
     const fixedColDefs: GridColDef[] = [
+      {
+        field: "id",
+        headerName: "ID",
+        width: 80,
+      },
       {
         field: "category",
         headerName: "分類名",
@@ -334,6 +355,8 @@ export const useDynamicColumnGridHooks = () => {
     console.log(
       `processRowUpdate for ${editedField} [id, value] = [${id}, ${value}]`
     );
+    // データリフレッシュ
+    mutate(`${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`);
 
     setEditedField(null); // 念のためクリア
 
@@ -346,9 +369,62 @@ export const useDynamicColumnGridHooks = () => {
     setEditedField(params.field);
   };
 
+  // 選択行変更
+  const handleRowSelectionModelChange = (
+    newSelectionModel: GridRowSelectionModel
+  ) => {
+    setRowSelectionModel(newSelectionModel);
+  };
+
+  // 入力チェックハンドラ
+  const handleCheckInput = () => {
+    console.log("入力チェック実施", { rowData });
+    const errorInfo = rowData.reduce<InputErrorInfo[]>((acc, row) => {
+      const errorFields = checkInput(row);
+      if (errorFields.length > 0) {
+        acc.push({ id: row.id, errorFields: errorFields });
+      }
+      return acc;
+    }, []);
+    console.log("入力チェック結果", errorInfo);
+    if (errorInfo.length > 0) {
+      console.log("エラーあり");
+      // セルに色を付ける
+    }
+
+    setRequiredErrorInfo(errorInfo);
+  };
+
+  const checkInput = (row: RowDataType) => {
+    const errorFields: string[] = [];
+
+    const getValue = (row: RowDataType, colDef: ColDefType) => {
+      switch (colDef.inputType) {
+        case "1":
+          return row.detailItems.find(
+            (item) => item.gridFieldName === colDef.gridFieldName
+          )?.value;
+        case "2":
+          return selectValueSet[row.id][colDef.fieldName];
+        case "3":
+          return switchValueSet[row.id][colDef.fieldName];
+        default:
+          return "dummy"; // 必須チェックtrueにするため、とりあえずdummy値を返す
+      }
+    };
+
+    colDefs.forEach((def) => {
+      if (def.required && !getValue(row, def)) {
+        errorFields.push(def.fieldName);
+      }
+    });
+
+    return errorFields;
+  };
+
   return {
     gridApiRef,
-    rows,
+    rows: rowData,
     colums,
     isLoading,
     error,
@@ -356,6 +432,10 @@ export const useDynamicColumnGridHooks = () => {
     setTestDataId,
     processRowUpdate,
     onCellEditStop,
+    handleCheckInput,
+    rowSelectionModel,
+    handleRowSelectionModelChange,
+    requiredErrorInfo,
   };
 };
 
@@ -373,8 +453,6 @@ const SelectCell = ({
   selectValueSet,
   setSelectValueSet,
 }: SelectCellPropTypes) => {
-  console.log("SelectCell", { params, colDef, selectValueSet });
-
   const rowId = params.id as number;
   const value = selectValueSet[rowId]
     ? selectValueSet[rowId][colDef.gridFieldName]
