@@ -42,14 +42,16 @@ function Home() {
           <Link href="/samples/popup/parent">popup</Link>
         </li>
         <li>
-          <Link href="/samples/grid/sample1">grid</Link>
+          <Link href="/samples/data-grid/sample1">data grid</Link>
         </li>
         <li>
-          <Link href="/samples/grid/sample2">grid with multiline edit</Link>
+          <Link href="/samples/data-grid/sample2">
+            data grid with multiline edit
+          </Link>
         </li>
         <li>
-          <Link href="/samples/grid/sample3">
-            grid with dynamic row definition
+          <Link href="/samples/data-grid/sample3">
+            data grid with dynamic row definition
           </Link>
         </li>
 

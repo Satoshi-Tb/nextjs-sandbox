@@ -7,6 +7,7 @@ import {
   gridPaginatedVisibleSortedGridRowIdsSelector,
   useGridApiRef,
 } from "@mui/x-data-grid";
+import Link from "next/link";
 
 const rawData = [
   { id: 1, category: "果物", item: "りんご" },
@@ -90,6 +91,8 @@ export const GridSample = () => {
           console.log("rows", processedData);
         }}
       />
+      {/* フッター */}
+      <Link href="/">TOP</Link>
     </div>
   );
 };

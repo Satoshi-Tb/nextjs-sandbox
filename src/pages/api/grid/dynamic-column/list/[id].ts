@@ -1,7 +1,7 @@
 import type {
   ColDefType,
   RowDataType,
-} from "@/components/grid/DynamicCloumnGridHooks";
+} from "@/components/dataGrid/DynamicCloumnGridHooks";
 import type { GridDynamicColumnListResponseType } from "@/components/swr/grid/useDynamicColumnData";
 import { wait } from "@/utils/misc";
 import { NextApiRequest, NextApiResponse } from "next";

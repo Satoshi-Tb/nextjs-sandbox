@@ -19,6 +19,7 @@ import Popper from "@mui/material/Popper";
 import Paper from "@mui/material/Paper";
 import { LoremIpsum } from "lorem-ipsum";
 import { Button, Typography } from "@mui/material";
+import Link from "next/link";
 
 const lines = [
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -356,6 +357,8 @@ export const MultilineEditing = () => {
             {cellNewValue.replace(/\n/g, "<改行>")}
           </p>
         </div>
+        {/* フッター */}
+        <Link href="/">TOP</Link>
       </div>
     </>
   );

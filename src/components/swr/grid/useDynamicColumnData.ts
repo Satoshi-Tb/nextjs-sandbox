@@ -3,7 +3,7 @@ import { fetcher } from "@/utils/fetcher";
 import type {
   ColDefType,
   RowDataType,
-} from "@/components/grid/DynamicCloumnGridHooks";
+} from "@/components/dataGrid/DynamicCloumnGridHooks";
 import envConfig from "@/utils/envConfig";
 
 type GridDynamicColumnListDataType = {
