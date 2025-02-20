@@ -56,6 +56,10 @@ function Home() {
         </li>
 
         <li>
+          <Link href="/samples/grid/sample1">grid</Link>
+        </li>
+
+        <li>
           <Link href="/samples/hoc/sample1">HOC</Link>
         </li>
         <li>
