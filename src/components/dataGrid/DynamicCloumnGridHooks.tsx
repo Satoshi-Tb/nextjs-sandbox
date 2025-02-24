@@ -11,6 +11,7 @@ import {
 import {
   GridCellParams,
   GridColDef,
+  GridFilterInputValueProps,
   GridRenderCellParams,
   GridRenderEditCellParams,
   GridRowSelectionModel,
@@ -63,7 +64,13 @@ const INPUT_TYPE = {
   LABEL: "5",
 } as const satisfies Record<string, string>;
 
-type SelectItemType = "1" | "2" | "3" | "4" | "5" | "";
+const SAMPLE_SELECT_OPTIONS: OptItemType[] = [
+  { optKey: "sampleSelectOption", optValue: "1", optName: "選択値1" },
+  { optKey: "sampleSelectOption", optValue: "2", optName: "選択値2" },
+  { optKey: "sampleSelectOption", optValue: "3", optName: "選択値3" },
+  { optKey: "sampleSelectOption", optValue: "4", optName: "選択値4" },
+  { optKey: "sampleSelectOption", optValue: "5", optName: "選択値5" },
+];
 
 // 動的選択項目の値セット
 type SelectValueType = {
@@ -97,7 +104,7 @@ export const useDynamicColumnGridHooks = () => {
 
   // 選択項目の状態管理
   const [selectItemState, setSelectItemState] = useState<{
-    [rowId: string]: SelectItemType;
+    [rowId: string]: string;
   }>({});
 
   // 選択行リスト
@@ -132,9 +139,9 @@ export const useDynamicColumnGridHooks = () => {
     if (rowData.length > 0) {
       // 選択項目の初期値設定
       const initialSelectItemState = rowData.reduce<{
-        [rowId: string]: SelectItemType;
+        [rowId: string]: string;
       }>((acc, row) => {
-        acc[row.id] = row.selectItem as SelectItemType;
+        acc[row.id] = row.selectItem;
         return acc;
       }, {});
       setSelectItemState(initialSelectItemState);
@@ -330,6 +337,37 @@ export const useDynamicColumnGridHooks = () => {
         field: "selectItem",
         headerName: "選択項目",
         width: 130,
+        filterOperators: [
+          {
+            label: "次の値と等しい",
+            value: "equals",
+            getApplyFilterFn: (filterItem) => {
+              if (!filterItem.value) {
+                return null;
+              }
+              return (params) => params.value === filterItem.value;
+            },
+            InputComponent: (props: GridFilterInputValueProps) => {
+              const { item, applyValue } = props;
+              return (
+                <select
+                  value={item.value ?? ""}
+                  onChange={(event) =>
+                    applyValue({ ...item, value: event.target.value })
+                  }
+                  style={{ height: "100%" }}
+                >
+                  <option value="">選択してください</option>
+                  {SAMPLE_SELECT_OPTIONS.map((opt, idx) => (
+                    <option key={idx} value={opt.optValue}>
+                      {opt.optName}
+                    </option>
+                  ))}
+                </select>
+              );
+            },
+          },
+        ],
         renderCell: (param: GridRenderCellParams<RowDataType, string>) => {
           return (
             <Box
@@ -344,24 +382,20 @@ export const useDynamicColumnGridHooks = () => {
                 onChange={(event) => {
                   setSelectItemState({
                     ...selectItemState,
-                    [param.id]: event.target.value as SelectItemType,
-                  });
-                  console.log("changeItemState", {
-                    targetRow: param.id,
-                    targetValue: event.target.value,
+                    [param.id]: event.target.value,
                   });
                 }}
                 displayEmpty={true}
                 inputProps={{ "aria-label": "Without label" }}
               >
-                <MenuItem value="">
-                  <em>選択なし</em>
-                </MenuItem>
-                <MenuItem value="1">選択値1</MenuItem>
-                <MenuItem value="2">選択値2</MenuItem>
-                <MenuItem value="3">選択値3</MenuItem>
-                <MenuItem value="4">選択値4</MenuItem>
-                <MenuItem value="5">選択値5</MenuItem>
+                {[
+                  { optKey: "", optValue: "", optName: "選択なし" },
+                  ...SAMPLE_SELECT_OPTIONS,
+                ].map((opt, idx) => (
+                  <MenuItem key={idx} value={opt.optValue}>
+                    {opt.optName}
+                  </MenuItem>
+                ))}
               </Select>
             </Box>
           );
