@@ -350,20 +350,23 @@ export const useDynamicColumnGridHooks = () => {
             InputComponent: (props: GridFilterInputValueProps) => {
               const { item, applyValue } = props;
               return (
-                <select
-                  value={item.value ?? ""}
+                <Select
+                  value={item.value || ""}
                   onChange={(event) =>
                     applyValue({ ...item, value: event.target.value })
                   }
-                  style={{ height: "100%" }}
+                  sx={{ height: "100%", mt: "1rem" }}
                 >
-                  <option value="">選択してください</option>
-                  {SAMPLE_SELECT_OPTIONS.map((opt, idx) => (
-                    <option key={idx} value={opt.optValue}>
+                  <MenuItem value="-1">選択してください</MenuItem>
+                  {[
+                    { optKey: "", optValue: "", optName: "選択なし" },
+                    ...SAMPLE_SELECT_OPTIONS,
+                  ].map((opt, idx) => (
+                    <MenuItem key={idx} value={opt.optValue}>
                       {opt.optName}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
+                </Select>
               );
             },
           },
@@ -386,7 +389,6 @@ export const useDynamicColumnGridHooks = () => {
                   });
                 }}
                 displayEmpty={true}
-                inputProps={{ "aria-label": "Without label" }}
               >
                 {[
                   { optKey: "", optValue: "", optName: "選択なし" },
