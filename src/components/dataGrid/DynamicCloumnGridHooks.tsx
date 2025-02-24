@@ -239,6 +239,7 @@ export const useDynamicColumnGridHooks = () => {
             </div>
           );
         },
+        headerName: colDef.label,
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
             (f) => f.gridFieldName === colDef.gridFieldName
