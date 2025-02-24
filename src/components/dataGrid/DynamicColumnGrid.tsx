@@ -94,7 +94,7 @@ export const DynamicColumnGrid = () => {
             },
           }}
           getRowClassName={(params) => {
-            console.log("getRowClassName", requiredErrorInfo);
+            // console.log("getRowClassName", requiredErrorInfo);
             return requiredErrorInfo.find((info) => info.id === params.id)
               ? "input-error"
               : "";

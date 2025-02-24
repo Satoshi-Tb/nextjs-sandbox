@@ -82,7 +82,7 @@ type SwitchValueSetType = {
 // 動的ラジオ項目の値セット
 type RadioValueType = { [fieldName: string]: string };
 type RadioValueSetType = {
-  [rowId: number]: SwitchValueType;
+  [rowId: number]: RadioValueType;
 };
 
 export const useDynamicColumnGridHooks = () => {
@@ -179,7 +179,25 @@ export const useDynamicColumnGridHooks = () => {
       );
       setSwitchValueSet(initialSwitchValueSet);
 
-      console.log("initialSelectValueSet", initialSelectValueSet);
+      // ラジオ項目の値セット初期化
+      const radioFields = colDefs
+        .filter((d) => d.inputType === INPUT_TYPE.RADIO)
+        .map((d) => d.gridFieldName);
+      const initialRadioValueSet = rowData.reduce<RadioValueSetType>(
+        (accValueSet, row) => {
+          const selectValues = row.detailItems
+            .filter((r) => radioFields.includes(r.gridFieldName))
+            .reduce<RadioValueType>((accValue, r) => {
+              accValue[r.gridFieldName] = r.value;
+              return accValue;
+            }, {});
+
+          accValueSet[row.id] = selectValues;
+          return accValueSet;
+        },
+        {}
+      );
+      setRadioValueSet(initialRadioValueSet);
     }
   }, [rowData, colDefs]);
 
@@ -268,7 +286,12 @@ export const useDynamicColumnGridHooks = () => {
           return {
             ...baseDef,
             renderCell: (params) => (
-              <RadioCell params={params} colDef={colDef} />
+              <RadioCell
+                params={params}
+                colDef={colDef}
+                radioValueSet={radioValueSet}
+                setRadioValueSet={setRadioValueSet}
+              />
             ),
           };
         default:
@@ -277,7 +300,7 @@ export const useDynamicColumnGridHooks = () => {
           };
       }
     },
-    [selectValueSet, switchValueSet]
+    [selectValueSet, switchValueSet, radioValueSet]
   );
 
   /**
@@ -465,9 +488,9 @@ const SelectCell = ({
   setSelectValueSet,
 }: SelectCellPropTypes) => {
   const rowId = params.id as number;
-  const value = selectValueSet[rowId]
-    ? selectValueSet[rowId][colDef.gridFieldName]
-    : "";
+  const value =
+    (selectValueSet[rowId] && selectValueSet[rowId][colDef.gridFieldName]) ||
+    "";
 
   return (
     <Box
@@ -517,9 +540,9 @@ const SwitchCell = ({
   setSwitchValueSet,
 }: SwitchCellPropTypes) => {
   const rowId = params.id as number;
-  const value = switchValueSet[rowId]
-    ? switchValueSet[rowId][colDef.gridFieldName]
-    : false;
+  const value =
+    (switchValueSet[rowId] && switchValueSet[rowId][colDef.gridFieldName]) ||
+    false;
 
   const unCheckedValueLabel = colDef.options ? colDef.options[0].optName : "";
   const checkedValueLabel = colDef.options ? colDef.options[1].optName : "";
@@ -555,13 +578,19 @@ type RadioCellPropTypes = {
   params: GridRenderCellParams<RowDataType, string>;
   colDef: ColDefType;
   disabled?: boolean;
+  radioValueSet: RadioValueSetType;
+  setRadioValueSet: React.Dispatch<React.SetStateAction<RadioValueSetType>>;
 };
 const RadioCell = ({
   params,
   colDef,
   disabled = false,
+  radioValueSet,
+  setRadioValueSet,
 }: RadioCellPropTypes) => {
   const rowId = params.id as number;
+  const value =
+    (radioValueSet[rowId] && radioValueSet[rowId][colDef.gridFieldName]) || "";
 
   return (
     <Box
@@ -577,10 +606,31 @@ const RadioCell = ({
         sx={{
           flexWrap: "nowrap",
         }}
+        onChange={(_, value) => {
+          setRadioValueSet({
+            ...radioValueSet,
+            [rowId]: {
+              ...radioValueSet[rowId],
+              [colDef.gridFieldName]: value,
+            },
+          });
+        }}
       >
-        <FormControlLabel value="" control={<Radio />} label="未選択" />
-        <FormControlLabel value="0" control={<Radio />} label="要" />
-        <FormControlLabel value="1" control={<Radio />} label="否" />
+        <FormControlLabel
+          value=""
+          control={<Radio />}
+          label={<Typography fontSize={14}>未選択</Typography>}
+          checked={value === ""}
+        />
+        {colDef.options?.map((def, idx) => (
+          <FormControlLabel
+            key={`${def.optKey}_${idx}`}
+            value={def.optValue}
+            control={<Radio disabled={disabled} />}
+            label={<Typography fontSize={14}>{def.optName}</Typography>}
+            checked={value === def.optValue}
+          />
+        ))}
       </RadioGroup>
     </Box>
   );
