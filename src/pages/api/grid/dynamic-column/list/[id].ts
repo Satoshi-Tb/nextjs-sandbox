@@ -58,13 +58,14 @@ const dynamicColDefList: ColDefType[][] = [
       ],
     },
     {
-      gridFieldName: "checkItem",
-      fieldName: "checkItem",
-      label: "チェック項目",
+      gridFieldName: "radioItem",
+      fieldName: "radioItem",
+      width: 250,
+      label: "ラジオ項目",
       inputType: "4",
       options: [
-        { optKey: "checkItemOption", optValue: "0", optName: "未" },
-        { optKey: "checkItemOption", optValue: "1", optName: "済" },
+        { optKey: "radioItemOption", optValue: "1", optName: "要" },
+        { optKey: "radioItemOption", optValue: "0", optName: "否" },
       ],
     },
     {
@@ -153,8 +154,8 @@ const testRowData: RowDataType[][] = [
         },
         {
           id: 103,
-          gridFieldName: "checkItem",
-          fieldName: "checkItem",
+          gridFieldName: "radioItem",
+          fieldName: "radioItem",
           value: "0",
         },
         {
@@ -191,12 +192,12 @@ const testRowData: RowDataType[][] = [
         },
         {
           id: 203,
-          gridFieldName: "checkItem",
-          fieldName: "checkItem",
-          value: "0",
+          gridFieldName: "radioItem",
+          fieldName: "radioItem",
+          value: "1",
         },
         {
-          id: 304,
+          id: 204,
           gridFieldName: "labelItem",
           fieldName: "labelItem",
           value: "ラベル2",
@@ -229,12 +230,12 @@ const testRowData: RowDataType[][] = [
         },
         {
           id: 303,
-          gridFieldName: "checkItem",
-          fieldName: "checkItem",
-          value: "0",
+          gridFieldName: "radioItem",
+          fieldName: "radioItem",
+          value: "",
         },
         {
-          id: 404,
+          id: 304,
           gridFieldName: "labelItem",
           fieldName: "labelItem",
           value: "ラベル3",
@@ -267,8 +268,8 @@ const testRowData: RowDataType[][] = [
         },
         {
           id: 403,
-          gridFieldName: "checkItem",
-          fieldName: "checkItem",
+          gridFieldName: "radioItem",
+          fieldName: "radioItem",
           value: "0",
         },
         {
@@ -305,9 +306,9 @@ const testRowData: RowDataType[][] = [
         },
         {
           id: 503,
-          gridFieldName: "checkItem",
-          fieldName: "checkItem",
-          value: "0",
+          gridFieldName: "radioItem",
+          fieldName: "radioItem",
+          value: "1",
         },
         {
           id: 504,
@@ -343,9 +344,9 @@ const testRowData: RowDataType[][] = [
         },
         {
           id: 603,
-          gridFieldName: "checkItem",
-          fieldName: "checkItem",
-          value: "0",
+          gridFieldName: "radioItem",
+          fieldName: "radioItem",
+          value: "",
         },
         {
           id: 604,

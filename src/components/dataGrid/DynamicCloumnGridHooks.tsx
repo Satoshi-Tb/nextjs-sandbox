@@ -55,6 +55,14 @@ export type RowDataType = {
 
 export type InputErrorInfo = { id: number; errorFields: string[] };
 
+const INPUT_TYPE = {
+  TEXT: "1",
+  SINGLE_SELECT: "2",
+  SWITCH: "3",
+  RADIO: "4",
+  LABEL: "5",
+} as const satisfies Record<string, string>;
+
 type SelectItemType = "1" | "2" | "3" | "4" | "5" | "";
 
 // 動的選択項目の値セット
@@ -68,6 +76,12 @@ type SelectValueSetType = {
 // 動的スイッチ項目の値セット
 type SwitchValueType = { [fieldName: string]: boolean };
 type SwitchValueSetType = {
+  [rowId: number]: SwitchValueType;
+};
+
+// 動的ラジオ項目の値セット
+type RadioValueType = { [fieldName: string]: string };
+type RadioValueSetType = {
   [rowId: number]: SwitchValueType;
 };
 
@@ -99,6 +113,8 @@ export const useDynamicColumnGridHooks = () => {
   const [selectValueSet, setSelectValueSet] = useState<SelectValueSetType>({});
   // 動的スイッチ項目の値セット
   const [switchValueSet, setSwitchValueSet] = useState<SwitchValueSetType>({});
+  // 動的ラジオ項目の値セット
+  const [radioValueSet, setRadioValueSet] = useState<RadioValueSetType>({});
 
   const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
 
@@ -125,7 +141,7 @@ export const useDynamicColumnGridHooks = () => {
 
       // 選択項目の値セット初期化
       const singleSelectFields = colDefs
-        .filter((d) => d.inputType === "2")
+        .filter((d) => d.inputType === INPUT_TYPE.SINGLE_SELECT)
         .map((d) => d.gridFieldName);
       const initialSelectValueSet = rowData.reduce<SelectValueSetType>(
         (accValueSet, row) => {
@@ -145,7 +161,7 @@ export const useDynamicColumnGridHooks = () => {
 
       // スイッチ選択項目の値セット初期化
       const switchFields = colDefs
-        .filter((d) => d.inputType === "3")
+        .filter((d) => d.inputType === INPUT_TYPE.SWITCH)
         .map((d) => d.gridFieldName);
       const initialSwitchValueSet = rowData.reduce<SwitchValueSetType>(
         (accSet, row) => {
@@ -177,7 +193,7 @@ export const useDynamicColumnGridHooks = () => {
       // 共通カラム定義設定
       const baseDef: GridColDef = {
         field: colDef.gridFieldName,
-        width: colDef.width || 130,
+        width: colDef.width || 150,
         renderHeader: (params) => {
           return (
             <div
@@ -218,13 +234,13 @@ export const useDynamicColumnGridHooks = () => {
       };
 
       switch (colDef.inputType) {
-        case "1":
+        case INPUT_TYPE.TEXT:
           return {
             ...baseDef,
             editable: true,
             renderCell: WrappedCell,
           };
-        case "2":
+        case INPUT_TYPE.SINGLE_SELECT:
           return {
             ...baseDef,
             renderCell: (params) => (
@@ -236,7 +252,7 @@ export const useDynamicColumnGridHooks = () => {
               />
             ),
           };
-        case "3":
+        case INPUT_TYPE.SWITCH:
           return {
             ...baseDef,
             renderCell: (params) => (
@@ -248,12 +264,7 @@ export const useDynamicColumnGridHooks = () => {
               />
             ),
           };
-        case "4":
-          return {
-            ...baseDef,
-            type: "boolean",
-          };
-        case "5":
+        case INPUT_TYPE.RADIO:
           return {
             ...baseDef,
             renderCell: (params) => (
