@@ -521,6 +521,9 @@ const SwitchCell = ({
     ? switchValueSet[rowId][colDef.gridFieldName]
     : false;
 
+  const unCheckedValueLabel = colDef.options ? colDef.options[0].optName : "";
+  const checkedValueLabel = colDef.options ? colDef.options[1].optName : "";
+
   return (
     <Box
       sx={{
@@ -529,6 +532,7 @@ const SwitchCell = ({
         height: "100%",
       }}
     >
+      <Typography fontSize={14}>{unCheckedValueLabel}</Typography>
       <Switch
         checked={value}
         disabled={disabled}
@@ -542,6 +546,7 @@ const SwitchCell = ({
           });
         }}
       />
+      <Typography fontSize={14}>{checkedValueLabel}</Typography>
     </Box>
   );
 };
