@@ -514,9 +514,14 @@ const SelectCell = ({
         displayEmpty={true}
         disabled={disabled}
       >
-        <MenuItem value="">選択なし</MenuItem>
-        {colDef.options?.map((opt) => (
-          <MenuItem key={`${opt.optKey}_${opt.optValue}`} value={opt.optValue}>
+        {[
+          { optKey: colDef.gridFieldName, optName: "選択なし", optValue: "" },
+          ...(colDef.options || []),
+        ].map((opt) => (
+          <MenuItem
+            key={`${colDef.gridFieldName}_${opt.optValue}`}
+            value={opt.optValue}
+          >
             {opt.optName}
           </MenuItem>
         ))}
@@ -616,15 +621,12 @@ const RadioCell = ({
           });
         }}
       >
-        <FormControlLabel
-          value=""
-          control={<Radio />}
-          label={<Typography fontSize={14}>未選択</Typography>}
-          checked={value === ""}
-        />
-        {colDef.options?.map((def, idx) => (
+        {[
+          { optKey: colDef.gridFieldName, optName: "未選択", optValue: "" },
+          ...(colDef.options || []),
+        ].map((def, idx) => (
           <FormControlLabel
-            key={`${def.optKey}_${idx}`}
+            key={`${colDef.gridFieldName}_${idx}`}
             value={def.optValue}
             control={<Radio disabled={disabled} />}
             label={<Typography fontSize={14}>{def.optName}</Typography>}
