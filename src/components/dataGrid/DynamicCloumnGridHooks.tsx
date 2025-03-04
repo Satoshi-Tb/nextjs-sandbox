@@ -343,10 +343,18 @@ export const useDynamicColumnGridHooks = () => {
             label: "次の値と等しい",
             value: "equals",
             getApplyFilterFn: (filterItem) => {
-              if (!filterItem.value) {
+              console.log("selectItem getApplyFilterFn(equals)", {
+                selectItemState,
+                filterItem,
+              });
+              // valueに、選択プロンプトに対応する値がセットされると、フィルター解除
+              if (filterItem.value === "__NOT_SELECTED__") {
                 return null;
               }
-              return (params) => params.value === filterItem.value;
+              return (params: GridCellParams<RowDataType, string>) => {
+                const value = selectItemState[params.id];
+                return value === filterItem.value;
+              };
             },
             InputComponent: (props: GridFilterInputValueProps) => {
               const { item, applyValue } = props;
@@ -358,9 +366,58 @@ export const useDynamicColumnGridHooks = () => {
                   }
                   sx={{ height: "100%", mt: "1rem" }}
                 >
-                  <MenuItem value="-1">選択してください</MenuItem>
+                  <MenuItem value="__NOT_SELECTED__">選択してください</MenuItem>
                   {[
-                    { optKey: "", optValue: "", optName: "選択なし" },
+                    {
+                      optKey: "",
+                      optValue: "",
+                      optName: "選択なし",
+                    },
+                    ...SAMPLE_SELECT_OPTIONS,
+                  ].map((opt, idx) => (
+                    <MenuItem key={idx} value={opt.optValue}>
+                      {opt.optName}
+                    </MenuItem>
+                  ))}
+                </Select>
+              );
+            },
+          },
+          {
+            label: "次の値と等しくない",
+            value: "notEquals",
+            getApplyFilterFn: (filterItem) => {
+              console.log("selectItem getApplyFilterFn(notEquals)", {
+                selectItemState,
+                filterItem,
+              });
+              if (!filterItem.value) {
+                return null;
+              }
+              return (params: GridCellParams<RowDataType, string>) => {
+                const value = selectItemState[params.id];
+                return filterItem.value === "__NOT_SELECTED__"
+                  ? !!value
+                  : value !== filterItem.value;
+              };
+            },
+            InputComponent: (props: GridFilterInputValueProps) => {
+              const { item, applyValue } = props;
+              return (
+                <Select
+                  value={item.value || ""}
+                  onChange={(event) =>
+                    applyValue({ ...item, value: event.target.value })
+                  }
+                  sx={{ height: "100%", mt: "1rem" }}
+                >
+                  <MenuItem value="">選択してください</MenuItem>
+                  {[
+                    {
+                      optKey: "",
+                      optValue: "__NOT_SELECTED__",
+                      optName: "選択なし",
+                    },
                     ...SAMPLE_SELECT_OPTIONS,
                   ].map((opt, idx) => (
                     <MenuItem key={idx} value={opt.optValue}>
