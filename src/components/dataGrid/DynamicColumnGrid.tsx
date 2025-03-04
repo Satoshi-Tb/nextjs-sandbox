@@ -92,6 +92,18 @@ export const DynamicColumnGrid = () => {
             "& .MuiDataGrid-row.input-error": {
               backgroundColor: "hsla(0, 100.00%, 50.00%, 0.50)", // エラー行の色
             },
+            "& .custom-header-1": {
+              backgroundColor: "#e0f7fa",
+              color: "#00796b",
+            },
+            "& .custom-header-2": {
+              backgroundColor: "#e0f7fa",
+              color: "#00796b",
+            },
+            "& .custom-header-3": {
+              backgroundColor: "#e0f7fa",
+              color: "#00796b",
+            },
           }}
           getRowClassName={(params) => {
             // console.log("getRowClassName", requiredErrorInfo);

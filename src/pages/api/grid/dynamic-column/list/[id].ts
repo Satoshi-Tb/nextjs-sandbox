@@ -13,6 +13,7 @@ const dynamicColDefList: ColDefType[][] = [
       gridFieldName: "txtItem",
       fieldName: "txtItem",
       width: 200,
+      extraLabel: "ヘッダー1",
       label: "テキスト項目",
       inputType: "1",
       required: true,
@@ -21,6 +22,7 @@ const dynamicColDefList: ColDefType[][] = [
       gridFieldName: "singleSelectItem",
       fieldName: "singleSelectItem",
       width: 150,
+      extraLabel: "ヘッダー1",
       label: "選択項目",
       inputType: "2",
       required: true,
@@ -50,6 +52,7 @@ const dynamicColDefList: ColDefType[][] = [
     {
       gridFieldName: "switchItem",
       fieldName: "switchItem",
+      extraLabel: "ヘッダー2",
       label: "スイッチ項目",
       inputType: "3",
       options: [
@@ -61,6 +64,7 @@ const dynamicColDefList: ColDefType[][] = [
       gridFieldName: "radioItem",
       fieldName: "radioItem",
       width: 250,
+      extraLabel: "ヘッダー2",
       label: "ラジオ項目",
       inputType: "4",
       options: [

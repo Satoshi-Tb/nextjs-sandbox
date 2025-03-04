@@ -29,6 +29,7 @@ import envConfig from "@/utils/envConfig";
 export type ColDefType = {
   gridFieldName: string;
   fieldName: string;
+  extraLabel?: string;
   label: string;
   inputType: string;
   required?: boolean;
@@ -221,24 +222,43 @@ export const useDynamicColumnGridHooks = () => {
         width: colDef.width || 150,
         renderHeader: (params) => {
           return (
-            <div
-              style={{
+            <Box
+              sx={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                gap: "3px",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                width: "100%",
               }}
             >
-              {colDef.required && (
-                <Typography variant="body1" sx={{ color: "red" }}>
-                  *
-                </Typography>
+              {colDef.extraLabel && (
+                <Box
+                  sx={{
+                    backgroundColor: "#e0f7fa", // 水色背景
+                    px: 1, // 左右余白
+                    borderRadius: "4px", // 角丸（必要に応じて）
+                    width: "100%",
+                  }}
+                >
+                  <Typography variant="body2">{colDef.extraLabel}</Typography>
+                </Box>
               )}
-              {colDef.label}
-            </div>
+
+              <Typography variant="body2">
+                {colDef.required && (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "red", mr: "3px" }}
+                    component="span"
+                  >
+                    *
+                  </Typography>
+                )}
+                {colDef.label}
+              </Typography>
+            </Box>
           );
         },
+        //        headerClassName: `custom-header-${colDef.inputType}`, // カラム幅いっぱいに色を付ける
         headerName: colDef.label,
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
