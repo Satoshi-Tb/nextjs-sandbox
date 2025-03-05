@@ -30,6 +30,7 @@ export const DynamicColumnGrid = () => {
     rowSelectionModel,
     handleRowSelectionModelChange,
     requiredErrorInfo,
+    sxStylesColumnHeader,
   } = useDynamicColumnGridHooks();
 
   return (
@@ -104,6 +105,7 @@ export const DynamicColumnGrid = () => {
               backgroundColor: "#e0f7fa",
               color: "#00796b",
             },
+            ...sxStylesColumnHeader, // カラムヘッダー色
           }}
           getRowClassName={(params) => {
             // console.log("getRowClassName", requiredErrorInfo);

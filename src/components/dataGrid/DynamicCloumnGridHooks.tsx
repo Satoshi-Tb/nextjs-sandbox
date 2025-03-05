@@ -29,7 +29,9 @@ import envConfig from "@/utils/envConfig";
 export type ColDefType = {
   gridFieldName: string;
   fieldName: string;
-  extraLabel?: string;
+  categoryType?: string;
+  categoryLabel?: string;
+  categoryColor?: string;
   label: string;
   inputType: string;
   required?: boolean;
@@ -72,6 +74,8 @@ const SAMPLE_SELECT_OPTIONS: OptItemType[] = [
   { optKey: "sampleSelectOption", optValue: "4", optName: "選択値4" },
   { optKey: "sampleSelectOption", optValue: "5", optName: "選択値5" },
 ];
+
+const COLUMN_HEADER_CLASS_PREF = "category-header";
 
 // 動的選択項目の値セット
 type SelectValueType = {
@@ -209,6 +213,28 @@ export const useDynamicColumnGridHooks = () => {
     }
   }, [rowData, colDefs]);
 
+  // カラムヘッダーの背景色
+  const columnHeaderStyles = useMemo(() => {
+    const categoryColorMap = colDefs.reduce<Record<string, string>>(
+      (acc, def) => {
+        if (def.categoryType) {
+          acc[def.categoryType] = def.categoryColor || "";
+        }
+        return acc;
+      },
+      {}
+    ); // {"1":"#ffffff", "2":"#eeeeee"}
+
+    const styles = Object.entries(categoryColorMap).reduce<
+      Record<string, object>
+    >((acc, [key, color]) => {
+      acc[`& .${COLUMN_HEADER_CLASS_PREF}-${key}`] = { backgroundColor: color };
+      return acc;
+    }, {});
+
+    return styles;
+  }, [colDefs]);
+
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
   // TODO カスタムセル定義の実装難易度に影響（valueの取り方）
@@ -227,22 +253,11 @@ export const useDynamicColumnGridHooks = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "flex-start",
-                width: "100%",
               }}
             >
-              {colDef.extraLabel && (
-                <Box
-                  sx={{
-                    backgroundColor: "#e0f7fa", // 水色背景
-                    px: 1, // 左右余白
-                    borderRadius: "4px", // 角丸（必要に応じて）
-                    width: "100%",
-                  }}
-                >
-                  <Typography variant="body2">{colDef.extraLabel}</Typography>
-                </Box>
+              {colDef.categoryLabel && (
+                <Typography variant="body2">{colDef.categoryLabel}</Typography>
               )}
-
               <Typography variant="body2">
                 {colDef.required && (
                   <Typography
@@ -258,7 +273,9 @@ export const useDynamicColumnGridHooks = () => {
             </Box>
           );
         },
-        //        headerClassName: `custom-header-${colDef.inputType}`, // カラム幅いっぱいに色を付ける
+        headerClassName: `${COLUMN_HEADER_CLASS_PREF}-${
+          colDef.categoryType || ""
+        }`, // カラム幅いっぱいに色を付ける
         headerName: colDef.label,
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
@@ -527,6 +544,7 @@ export const useDynamicColumnGridHooks = () => {
     rowSelectionModel,
     handleRowSelectionModelChange,
     requiredErrorInfo,
+    sxStylesColumnHeader: columnHeaderStyles,
   };
 };
 
