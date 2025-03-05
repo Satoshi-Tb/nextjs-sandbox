@@ -11,6 +11,7 @@ import {
 import {
   GridCellParams,
   GridColDef,
+  GridColumnHeaderParams,
   GridFilterInputValueProps,
   GridRenderCellParams,
   GridRenderEditCellParams,
@@ -246,33 +247,9 @@ export const useDynamicColumnGridHooks = () => {
       const baseDef: GridColDef = {
         field: colDef.gridFieldName,
         width: colDef.width || 150,
-        renderHeader: (params) => {
-          return (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-              }}
-            >
-              {colDef.categoryLabel && (
-                <Typography variant="body2">{colDef.categoryLabel}</Typography>
-              )}
-              <Typography variant="body2">
-                {colDef.required && (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "red", mr: "3px" }}
-                    component="span"
-                  >
-                    *
-                  </Typography>
-                )}
-                {colDef.label}
-              </Typography>
-            </Box>
-          );
-        },
+        renderHeader: (params) => (
+          <HeaderCell params={params} colDef={colDef} />
+        ),
         headerClassName: categoryExists(colDef)
           ? getHeaderClassName(colDef)
           : "",
@@ -601,6 +578,38 @@ const SelectCell = ({
           </MenuItem>
         ))}
       </Select>
+    </Box>
+  );
+};
+
+type HeaderCellPropTypes = {
+  params: GridColumnHeaderParams;
+  colDef: ColDefType;
+};
+const HeaderCell = ({ params, colDef }: HeaderCellPropTypes) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+      }}
+    >
+      {colDef.categoryLabel && (
+        <Typography variant="body2">{colDef.categoryLabel}</Typography>
+      )}
+      <Typography variant="body2">
+        {colDef.required && (
+          <Typography
+            variant="body2"
+            sx={{ color: "red", mr: "3px" }}
+            component="span"
+          >
+            *
+          </Typography>
+        )}
+        {colDef.label}
+      </Typography>
     </Box>
   );
 };
