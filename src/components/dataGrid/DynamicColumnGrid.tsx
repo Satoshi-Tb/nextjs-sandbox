@@ -30,6 +30,7 @@ export const DynamicColumnGrid = () => {
     rowSelectionModel,
     handleRowSelectionModelChange,
     requiredErrorInfo,
+    columnHeaderStyles,
   } = useDynamicColumnGridHooks();
 
   return (
@@ -92,6 +93,7 @@ export const DynamicColumnGrid = () => {
             "& .MuiDataGrid-row.input-error": {
               backgroundColor: "hsla(0, 100.00%, 50.00%, 0.50)", // エラー行の色
             },
+            ...columnHeaderStyles, // カラムヘッダー色
           }}
           getRowClassName={(params) => {
             // console.log("getRowClassName", requiredErrorInfo);

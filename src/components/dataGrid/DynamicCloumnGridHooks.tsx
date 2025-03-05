@@ -11,6 +11,7 @@ import {
 import {
   GridCellParams,
   GridColDef,
+  GridColumnHeaderParams,
   GridFilterInputValueProps,
   GridRenderCellParams,
   GridRenderEditCellParams,
@@ -29,6 +30,9 @@ import envConfig from "@/utils/envConfig";
 export type ColDefType = {
   gridFieldName: string;
   fieldName: string;
+  categoryType?: string;
+  categoryLabel?: string;
+  categoryColor?: string;
   label: string;
   inputType: string;
   required?: boolean;
@@ -72,6 +76,12 @@ const SAMPLE_SELECT_OPTIONS: OptItemType[] = [
   { optKey: "sampleSelectOption", optValue: "5", optName: "選択値5" },
 ];
 
+// カラムヘッダCSS生成用
+const categoryExists = (def: ColDefType) =>
+  !!(def.categoryType && def.categoryColor);
+const getHeaderClassName = (def: ColDefType) =>
+  `category-header-${def.categoryType}`;
+
 // 動的選択項目の値セット
 type SelectValueType = {
   [fieldName: string]: string;
@@ -92,6 +102,10 @@ type RadioValueSetType = {
   [rowId: number]: RadioValueType;
 };
 
+/**
+ * コンポーネント定義
+ * @returns 動的適宜グリッドデータ（hooks）
+ */
 export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
 
@@ -208,6 +222,20 @@ export const useDynamicColumnGridHooks = () => {
     }
   }, [rowData, colDefs]);
 
+  // カラムヘッダーの背景色
+  const columnHeaderStyles = useMemo(
+    () =>
+      colDefs.reduce<Record<string, object>>((styles, def) => {
+        if (categoryExists(def)) {
+          styles[`& .${getHeaderClassName(def)}`] = {
+            backgroundColor: def.categoryColor,
+          };
+        }
+        return styles;
+      }, {}),
+    [colDefs]
+  );
+
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
   // TODO カスタムセル定義の実装難易度に影響（valueの取り方）
@@ -219,26 +247,12 @@ export const useDynamicColumnGridHooks = () => {
       const baseDef: GridColDef = {
         field: colDef.gridFieldName,
         width: colDef.width || 150,
-        renderHeader: (params) => {
-          return (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                gap: "3px",
-              }}
-            >
-              {colDef.required && (
-                <Typography variant="body1" sx={{ color: "red" }}>
-                  *
-                </Typography>
-              )}
-              {colDef.label}
-            </div>
-          );
-        },
+        renderHeader: (params) => (
+          <HeaderCell params={params} colDef={colDef} />
+        ),
+        headerClassName: categoryExists(colDef)
+          ? getHeaderClassName(colDef)
+          : "",
         headerName: colDef.label,
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
@@ -564,6 +578,7 @@ export const useDynamicColumnGridHooks = () => {
     rowSelectionModel,
     handleRowSelectionModelChange,
     requiredErrorInfo,
+    columnHeaderStyles,
   };
 };
 
@@ -620,6 +635,38 @@ const SelectCell = ({
           </MenuItem>
         ))}
       </Select>
+    </Box>
+  );
+};
+
+type HeaderCellPropTypes = {
+  params: GridColumnHeaderParams;
+  colDef: ColDefType;
+};
+const HeaderCell = ({ params, colDef }: HeaderCellPropTypes) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+      }}
+    >
+      {colDef.categoryLabel && (
+        <Typography variant="body2">{colDef.categoryLabel}</Typography>
+      )}
+      <Typography variant="body2">
+        {colDef.required && (
+          <Typography
+            variant="body2"
+            sx={{ color: "red", mr: "3px" }}
+            component="span"
+          >
+            *
+          </Typography>
+        )}
+        {colDef.label}
+      </Typography>
     </Box>
   );
 };
