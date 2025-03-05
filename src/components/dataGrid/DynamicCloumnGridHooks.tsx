@@ -75,7 +75,11 @@ const SAMPLE_SELECT_OPTIONS: OptItemType[] = [
   { optKey: "sampleSelectOption", optValue: "5", optName: "選択値5" },
 ];
 
-const COLUMN_HEADER_CLASS_PREF = "category-header";
+// カラムヘッダCSS生成用
+const categoryExists = (def: ColDefType) =>
+  !!(def.categoryType && def.categoryColor);
+const getHeaderClassName = (def: ColDefType) =>
+  `category-header-${def.categoryType}`;
 
 // 動的選択項目の値セット
 type SelectValueType = {
@@ -97,6 +101,10 @@ type RadioValueSetType = {
   [rowId: number]: RadioValueType;
 };
 
+/**
+ * コンポーネント定義
+ * @returns 動的適宜グリッドデータ（hooks）
+ */
 export const useDynamicColumnGridHooks = () => {
   const gridApiRef = useGridApiRef();
 
@@ -214,26 +222,18 @@ export const useDynamicColumnGridHooks = () => {
   }, [rowData, colDefs]);
 
   // カラムヘッダーの背景色
-  const columnHeaderStyles = useMemo(() => {
-    const categoryColorMap = colDefs.reduce<Record<string, string>>(
-      (acc, def) => {
-        if (def.categoryType) {
-          acc[def.categoryType] = def.categoryColor || "";
+  const columnHeaderStyles = useMemo(
+    () =>
+      colDefs.reduce<Record<string, object>>((styles, def) => {
+        if (categoryExists(def)) {
+          styles[`& .${getHeaderClassName(def)}`] = {
+            backgroundColor: def.categoryColor,
+          };
         }
-        return acc;
-      },
-      {}
-    ); // {"1":"#ffffff", "2":"#eeeeee"}
-
-    const styles = Object.entries(categoryColorMap).reduce<
-      Record<string, object>
-    >((acc, [key, color]) => {
-      acc[`& .${COLUMN_HEADER_CLASS_PREF}-${key}`] = { backgroundColor: color };
-      return acc;
-    }, {});
-
-    return styles;
-  }, [colDefs]);
+        return styles;
+      }, {}),
+    [colDefs]
+  );
 
   // カラム定義データから動的に定義生成
   // TODO データ構造が複雑なので、レンダリングパフォーマンス懸念
@@ -273,9 +273,9 @@ export const useDynamicColumnGridHooks = () => {
             </Box>
           );
         },
-        headerClassName: `${COLUMN_HEADER_CLASS_PREF}-${
-          colDef.categoryType || ""
-        }`, // カラム幅いっぱいに色を付ける
+        headerClassName: categoryExists(colDef)
+          ? getHeaderClassName(colDef)
+          : "",
         headerName: colDef.label,
         valueGetter: (params: GridValueGetterParams<RowDataType, string>) =>
           params.row.detailItems.find(
@@ -544,7 +544,7 @@ export const useDynamicColumnGridHooks = () => {
     rowSelectionModel,
     handleRowSelectionModelChange,
     requiredErrorInfo,
-    sxStylesColumnHeader: columnHeaderStyles,
+    columnHeaderStyles,
   };
 };
 
