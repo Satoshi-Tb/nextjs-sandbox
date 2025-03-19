@@ -361,13 +361,17 @@ export const useDynamicColumnGridHooks = () => {
                 selectItemState,
                 filterItem,
               });
-              // valueに、選択プロンプトに対応する値がセットされると、フィルター解除
-              if (filterItem.value === "__NOT_SELECTED__") {
+              if (filterItem.value == null || filterItem.value === "") {
                 return null;
               }
               return (params: GridCellParams<RowDataType, string>) => {
                 const value = selectItemState[params.id];
-                return value === filterItem.value;
+                console.log("applyFn", { params, value });
+
+                return (
+                  value === filterItem.value ||
+                  (filterItem.value === "__NOT_SELECTED__" && !value)
+                );
               };
             },
             InputComponent: (props: GridFilterInputValueProps) => {
@@ -380,11 +384,15 @@ export const useDynamicColumnGridHooks = () => {
                   }
                   sx={{ height: "100%", mt: "1rem" }}
                 >
-                  <MenuItem value="__NOT_SELECTED__">選択してください</MenuItem>
                   {[
                     {
                       optKey: "",
                       optValue: "",
+                      optName: "選択してください",
+                    },
+                    {
+                      optKey: "0",
+                      optValue: "__NOT_SELECTED__",
                       optName: "選択なし",
                     },
                     ...SAMPLE_SELECT_OPTIONS,
@@ -405,7 +413,7 @@ export const useDynamicColumnGridHooks = () => {
                 selectItemState,
                 filterItem,
               });
-              if (!filterItem.value) {
+              if (filterItem.value == null || filterItem.value === "") {
                 return null;
               }
               return (params: GridCellParams<RowDataType, string>) => {
@@ -428,7 +436,7 @@ export const useDynamicColumnGridHooks = () => {
                   <MenuItem value="">選択してください</MenuItem>
                   {[
                     {
-                      optKey: "",
+                      optKey: "0",
                       optValue: "__NOT_SELECTED__",
                       optName: "選択なし",
                     },
