@@ -1,8 +1,11 @@
 import { Box, MenuItem, Select } from "@mui/material";
 import {
+  GridCellParams,
   GridColDef,
   gridExpandedSortedRowEntriesSelector,
+  GridFilterInputValueProps,
   GridRenderCellParams,
+  GridValueGetterParams,
   useGridApiRef,
   ValueOptions,
 } from "@mui/x-data-grid";
@@ -201,12 +204,17 @@ export const useGridSampleHooks = () => {
         field: "selectItem2",
         headerName: "選択項目カスタム",
         width: 150,
+        valueGetter: (
+          params: GridValueGetterParams<SampleRowDataType1, string>
+        ) => selectedItemSet[params.id],
         renderCell: (
           params: GridRenderCellParams<SampleRowDataType1, string>
         ) => {
+          // console.log("renderCell", { params });
+          // params.valueは、valueGetter適用後
           return (
             <Select
-              value={selectedItemSet[params.id] || ""}
+              value={params.value}
               onChange={(event) => {
                 // 選択項目の状態を更新
                 setSelectedItemSet((prevState) => ({
@@ -226,6 +234,52 @@ export const useGridSampleHooks = () => {
             </Select>
           );
         },
+        filterOperators: [
+          {
+            label: "次の値と等しい",
+            value: "equals",
+            getApplyFilterFn: (filterItem, column) => {
+              console.log("create getApplyFilterFn", { filterItem, column });
+              if (!filterItem.value) return null;
+              return (params: GridCellParams<SampleRowDataType1, string>) => {
+                return filterItem.value === params.value;
+              };
+            },
+            InputComponent: (props: GridFilterInputValueProps) => {
+              const { item, applyValue } = props;
+              return (
+                <Select
+                  value={item.value || ""}
+                  onChange={(event) => {
+                    const newValue = { ...item, value: event.target.value };
+                    applyValue(newValue);
+                  }}
+                  sx={{ height: "100%", mt: "1rem" }}
+                >
+                  {[
+                    {
+                      value: "",
+                      label: "選択してください",
+                    },
+                    {
+                      value: "__NOT_SELECTED__",
+                      label: "選択なし",
+                    },
+                    ...VAL_OPTS_SEL2,
+                  ].map((opt, idx) => (
+                    <MenuItem key={idx} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              );
+            },
+            getValueAsString: (value: string) =>
+              value === "__NOT_SELECTED__"
+                ? "選択なし"
+                : VAL_OPTS_SEL2.find((opt) => opt.value === value)?.label || "",
+          },
+        ],
       },
     ],
     [selectedItemSet]
