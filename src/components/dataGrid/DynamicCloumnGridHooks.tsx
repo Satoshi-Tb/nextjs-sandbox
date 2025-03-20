@@ -369,12 +369,15 @@ export const useDynamicColumnGridHooks = () => {
         field: "selectItem",
         headerName: "選択項目カスタム",
         width: 150,
+        valueGetter(params) {
+          return selectItemState[params.id];
+        },
         filterOperators: [
           {
             label: "次の値と等しい",
             value: "equals",
             getApplyFilterFn: (filterItem) => {
-              console.log("selectItem getApplyFilterFn(equals)", {
+              console.log("selectItem:equalsFilter getApplyFilterFn(equals)", {
                 selectItemState,
                 filterItem,
               });
@@ -382,12 +385,21 @@ export const useDynamicColumnGridHooks = () => {
                 return null;
               }
               return (params: GridCellParams<RowDataType, string>) => {
-                const value = selectItemState[params.id];
-                console.log("applyFn", { params, value });
+                //const value = selectItemState[params.id];
+                // paramsの内容以外だと、コール時点の状態で固定化される
+                // ゆえに、値変更してもフィルタの内容が反映されていない
+                // →propsの状態が変換してもgetApplyFilterFnは再評価されない
+                // getApplyFilterFnは、filterModelが変更されたときに再評価される
+                // getApplyFilterFnの返却するフィルタ関数に、引数追加することはできるか
+
+                // valueGetterを定義することで、コンポーネント外に定義したstateを参照可能にする。
+                // しかし、期待する挙動にならない
+
+                console.log("called applyFn", { params });
 
                 return (
-                  value === filterItem.value ||
-                  (filterItem.value === "__NOT_SELECTED__" && !value)
+                  params.value === filterItem.value ||
+                  (filterItem.value === "__NOT_SELECTED__" && !params.value)
                 );
               };
             },
@@ -396,9 +408,14 @@ export const useDynamicColumnGridHooks = () => {
               return (
                 <Select
                   value={item.value || ""}
-                  onChange={(event) =>
-                    applyValue({ ...item, value: event.target.value })
-                  }
+                  onChange={(event) => {
+                    const newValue = { ...item, value: event.target.value };
+
+                    console.log("selectItem:equalsFilter onChange", {
+                      newValue,
+                    });
+                    applyValue(newValue);
+                  }}
                   sx={{ height: "100%", mt: "1rem" }}
                 >
                   {[
@@ -490,10 +507,13 @@ export const useDynamicColumnGridHooks = () => {
               <Select
                 value={selectItemState[param.id] || ""}
                 onChange={(event) => {
-                  setSelectItemState({
-                    ...selectItemState,
+                  // 選択項目の状態を更新　※これだけだと、フィルタリング状態には影響しない。
+                  setSelectItemState((prevState) => ({
+                    ...prevState,
                     [param.id]: event.target.value,
-                  });
+                  }));
+
+                  // バックエンド更新処理
                 }}
                 displayEmpty={true}
               >
