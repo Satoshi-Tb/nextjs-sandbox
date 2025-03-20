@@ -5,7 +5,9 @@ import {
   gridExpandedSortedRowEntriesSelector,
   GridFilterInputValueProps,
   GridRenderCellParams,
+  GridValueFormatterParams,
   GridValueGetterParams,
+  useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -16,6 +18,7 @@ type SampleRowDataType1 = {
   item: string;
   selectItem1: string;
   selectItem2: string;
+  option: string;
   textColor?: string;
 };
 
@@ -26,6 +29,7 @@ const rowData: SampleRowDataType1[] = [
     item: "りんご",
     selectItem1: "A",
     selectItem2: "1",
+    option: "option1",
   },
   {
     id: 2,
@@ -33,6 +37,7 @@ const rowData: SampleRowDataType1[] = [
     item: "すいか",
     selectItem1: "B",
     selectItem2: "2",
+    option: "option1",
   },
   {
     id: 3,
@@ -40,6 +45,7 @@ const rowData: SampleRowDataType1[] = [
     item: "みかん",
     selectItem1: "C",
     selectItem2: "3",
+    option: "option2",
   },
   {
     id: 4,
@@ -47,22 +53,39 @@ const rowData: SampleRowDataType1[] = [
     item: "いちご",
     selectItem1: "D",
     selectItem2: "4",
+    option: "option2",
   },
-  { id: 5, category: "野菜", item: "なす", selectItem1: "0", selectItem2: "" },
+  {
+    id: 5,
+    category: "野菜",
+    item: "なす",
+    selectItem1: "0",
+    selectItem2: "",
+    option: "option3",
+  },
   {
     id: 6,
     category: "野菜",
     item: "きゅうり",
     selectItem1: "A",
     selectItem2: "2",
+    option: "option3",
   },
-  { id: 7, category: "野菜", item: "大根", selectItem1: "A", selectItem2: "2" },
+  {
+    id: 7,
+    category: "野菜",
+    item: "大根",
+    selectItem1: "A",
+    selectItem2: "2",
+    option: "option2",
+  },
   {
     id: 8,
     category: "野菜",
     item: "ごぼう",
     selectItem1: "A",
     selectItem2: "3",
+    option: "option2",
   },
   {
     id: 9,
@@ -70,6 +93,7 @@ const rowData: SampleRowDataType1[] = [
     item: "キャベツ",
     selectItem1: "B",
     selectItem2: "2",
+    option: "option1",
   },
   {
     id: 10,
@@ -77,6 +101,7 @@ const rowData: SampleRowDataType1[] = [
     item: "長ネギ",
     selectItem1: "B",
     selectItem2: "3",
+    option: "option3",
   },
   {
     id: 11,
@@ -84,6 +109,7 @@ const rowData: SampleRowDataType1[] = [
     item: "玉ねぎ",
     selectItem1: "C",
     selectItem2: "3",
+    option: "option3",
   },
   {
     id: 12,
@@ -91,6 +117,7 @@ const rowData: SampleRowDataType1[] = [
     item: "にんじん",
     selectItem1: "A",
     selectItem2: "1",
+    option: "option2",
   },
 ];
 
@@ -112,7 +139,12 @@ const VAL_OPTS_SEL2: ValueOpt[] = [
   { value: "3", label: "選択3" },
   { value: "4", label: "選択4" },
 ];
-
+// 選択肢のオプション
+const options = [
+  { value: "option1", label: "オプション1" },
+  { value: "option2", label: "オプション2" },
+  { value: "option3", label: "オプション3" },
+];
 const INITIAL_PAGE_SIZE = 5;
 export const useGridSampleHooks = () => {
   const [pageSize, setPageSize] = useState(INITIAL_PAGE_SIZE);
@@ -305,6 +337,19 @@ export const useGridSampleHooks = () => {
           },
         ],
       },
+      {
+        field: "option",
+        headerName: "オプション",
+        width: 150,
+        editable: true,
+        renderCell: ComboBoxCell,
+        renderEditCell: ComboBoxEditCell,
+        valueGetter: (params: GridValueGetterParams) => params.row.option,
+        valueFormatter: (params: GridValueFormatterParams) => {
+          const option = options.find((opt) => opt.value === params.value);
+          return option ? option.label : "";
+        },
+      },
     ],
     [selectedItemSet, gridApiRef]
   );
@@ -343,4 +388,64 @@ export const useGridSampleHooks = () => {
     filteredRowCountRef,
     handleUpdateFilteredRowsCount,
   };
+};
+
+// カスタムコンボボックスエディタコンポーネント
+const ComboBoxEditCell = (props: GridRenderCellParams) => {
+  const { id, value, field } = props;
+  const apiRef = useGridApiContext();
+
+  const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    const newValue = event.target.value as string;
+    apiRef.current.setEditCellValue({ id, field, value: newValue });
+
+    // すぐに編集を終了する（編集モードを抜ける）
+    setTimeout(() => {
+      apiRef.current.stopCellEditMode({ id, field });
+    });
+  };
+
+  return (
+    <Select
+      value={value}
+      onChange={handleChange as any}
+      size="small"
+      fullWidth
+      variant="standard"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {options.map((option) => (
+        <MenuItem key={option.value} value={option.value}>
+          {option.label}
+        </MenuItem>
+      ))}
+    </Select>
+  );
+};
+
+// 表示用のコンポーネント
+const ComboBoxCell = (params: GridRenderCellParams) => {
+  const apiRef = useGridApiContext();
+
+  const handleClick = () => {
+    apiRef.current.startCellEditMode({ id: params.id, field: params.field });
+  };
+
+  // 選択された値のラベルを表示
+  const option = options.find((opt) => opt.value === params.value);
+  const displayValue = option ? option.label : "";
+
+  return (
+    <div
+      onClick={handleClick}
+      style={{
+        cursor: "pointer",
+        width: "100%",
+        height: "100%",
+        padding: "8px",
+      }}
+    >
+      {displayValue}
+    </div>
+  );
 };
