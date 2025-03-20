@@ -26,6 +26,6 @@ export const useGetListWithColumnDefs = (id: string | undefined) => {
     key,
     fetcher
   );
-  console.log("useGetListWithColumnDefs", { key, data });
+  console.log("fetch useGetListWithColumnDefs", { key, data });
   return { data, error, isLoading };
 };

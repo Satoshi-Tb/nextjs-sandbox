@@ -49,6 +49,7 @@ export type RowDataType = {
   id: number;
   category: string;
   item: string;
+  stdSelectItem: string;
   selectItem: string;
   detailItems: {
     id: number;
@@ -347,11 +348,27 @@ export const useDynamicColumnGridHooks = () => {
         field: "item",
         headerName: "商品名",
         width: 130,
+        editable: true,
+      },
+      {
+        field: "stdSelectItem",
+        headerName: "選択項目標準",
+        width: 130,
+        type: "singleSelect",
+        editable: true,
+        valueOptions: [
+          { value: "0", label: "選択なし" }, // valueに空文字を設定すると、フィルタが正常に動作しない
+          { value: "1", label: "選択値1" },
+          { value: "2", label: "選択値2" },
+          { value: "3", label: "選択値3" },
+          { value: "4", label: "選択値4" },
+          { value: "5", label: "選択値5" },
+        ],
       },
       {
         field: "selectItem",
-        headerName: "選択項目",
-        width: 130,
+        headerName: "選択項目カスタム",
+        width: 150,
         filterOperators: [
           {
             label: "次の値と等しい",
@@ -404,6 +421,11 @@ export const useDynamicColumnGridHooks = () => {
                 </Select>
               );
             },
+            getValueAsString: (value: string) =>
+              value === "__NOT_SELECTED__"
+                ? "選択なし"
+                : SAMPLE_SELECT_OPTIONS.find((opt) => opt.optValue === value)
+                    ?.optName || "",
           },
           {
             label: "次の値と等しくない",
@@ -449,6 +471,11 @@ export const useDynamicColumnGridHooks = () => {
                 </Select>
               );
             },
+            getValueAsString: (value: string) =>
+              value === "__NOT_SELECTED__"
+                ? "選択なし"
+                : SAMPLE_SELECT_OPTIONS.find((opt) => opt.optValue === value)
+                    ?.optName || "",
           },
         ],
         renderCell: (param: GridRenderCellParams<RowDataType, string>) => {
@@ -506,7 +533,7 @@ export const useDynamicColumnGridHooks = () => {
       `processRowUpdate for ${editedField} [id, value] = [${id}, ${value}]`
     );
     // データリフレッシュ
-    mutate(`${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`);
+    // mutate(`${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`);
 
     setEditedField(null); // 念のためクリア
 
