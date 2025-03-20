@@ -39,7 +39,10 @@ export const GridSample = () => {
             variant="outlined"
             color="success"
             onClick={() => {
-              const rows = gridExpandedSortedRowEntriesSelector(gridApiRef);
+              const rows = gridExpandedSortedRowEntriesSelector(
+                gridApiRef.current.state,
+                gridApiRef.current.instanceId
+              );
               filteredRowCountRef.current = rows.length;
               // 強制再レンダリング。これを実施しないと、描画内容が変化しない。
               forceUpdate({});
@@ -73,7 +76,7 @@ export const GridSample = () => {
               width: 130,
             },
           ]}
-          pageSizeOptions={[5, 10, 25]}
+          pageSizeOptions={[5, 10, 25, 100]}
           onPaginationModelChange={(model) => {
             console.log("onPaginationModelChange", model);
             setPageSize(model.pageSize);
