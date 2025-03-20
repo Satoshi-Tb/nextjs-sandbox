@@ -1,7 +1,10 @@
+import { Box, MenuItem, Select } from "@mui/material";
 import {
   GridColDef,
   gridExpandedSortedRowEntriesSelector,
+  GridRenderCellParams,
   useGridApiRef,
+  ValueOptions,
 } from "@mui/x-data-grid";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -14,7 +17,7 @@ type SampleRowDataType1 = {
   textColor?: string;
 };
 
-const rawData: SampleRowDataType1[] = [
+const rowData: SampleRowDataType1[] = [
   {
     id: 1,
     category: "果物",
@@ -88,6 +91,26 @@ const rawData: SampleRowDataType1[] = [
     selectItem2: "1",
   },
 ];
+
+type ValueOpt = {
+  value: string;
+  label: string;
+};
+const VAL_OPTS_SEL1: ValueOpt[] = [
+  { value: "0", label: "未選択" },
+  { value: "A", label: "選択A" },
+  { value: "B", label: "選択B" },
+  { value: "C", label: "選択C" },
+  { value: "D", label: "選択D" },
+];
+
+const VAL_OPTS_SEL2: ValueOpt[] = [
+  { value: "1", label: "選択1" },
+  { value: "2", label: "選択2" },
+  { value: "3", label: "選択3" },
+  { value: "4", label: "選択4" },
+];
+
 const INITIAL_PAGE_SIZE = 5;
 export const useGridSampleHooks = () => {
   const [pageSize, setPageSize] = useState(INITIAL_PAGE_SIZE);
@@ -101,6 +124,15 @@ export const useGridSampleHooks = () => {
   const filteredRowCountRef = useRef(0);
   // 強制再レンダリング用のトリガー。利用方法としては適切ではない。
   const [, forceUpdateState] = useState({});
+
+  const initialSet = rowData.reduce<Record<string, string>>((acc, row) => {
+    acc[row.id] = row.selectItem2;
+    return acc;
+  }, {});
+
+  // 選択項目値(rowデータの外で管理)
+  const [selectedItemSet, setSelectedItemSet] =
+    useState<Record<string, string>>(initialSet);
 
   // 表示色の加工サンプル
   // const processedData: SampleRowDataType1[] = rawData.map(
@@ -163,16 +195,40 @@ export const useGridSampleHooks = () => {
         width: 130,
         type: "singleSelect",
         editable: true,
-        valueOptions: [
-          { value: "0", label: "未選択" },
-          { value: "A", label: "選択A" },
-          { value: "B", label: "選択B" },
-          { value: "C", label: "選択C" },
-          { value: "D", label: "選択D" },
-        ],
+        valueOptions: VAL_OPTS_SEL1,
+      },
+      {
+        field: "selectItem2",
+        headerName: "選択項目カスタム",
+        width: 150,
+        renderCell: (
+          params: GridRenderCellParams<SampleRowDataType1, string>
+        ) => {
+          return (
+            <Select
+              value={selectedItemSet[params.id] || ""}
+              onChange={(event) => {
+                // 選択項目の状態を更新
+                setSelectedItemSet((prevState) => ({
+                  ...prevState,
+                  [params.id]: event.target.value,
+                }));
+              }}
+              displayEmpty={true}
+            >
+              {[{ value: "", label: "選択なし" }, ...VAL_OPTS_SEL2].map(
+                (opt, idx) => (
+                  <MenuItem key={idx} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                )
+              )}
+            </Select>
+          );
+        },
       },
     ],
-    []
+    [selectedItemSet]
   );
 
   useEffect(() => {
@@ -203,7 +259,7 @@ export const useGridSampleHooks = () => {
     pageSize,
     setPageSize,
     gridApiRef,
-    row: rawData,
+    row: rowData,
     columns,
     filteredRowCount,
     filteredRowCountRef,
