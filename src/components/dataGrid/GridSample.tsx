@@ -29,7 +29,7 @@ const INITIAL_PAGE_SIZE = 5;
 export const GridSample = () => {
   const [pageSize, setPageSize] = useState(INITIAL_PAGE_SIZE);
 
-  const apiRef = useGridApiRef();
+  const gridApiRef = useGridApiRef();
 
   const processedData = rawData.map((data, index, arr) => {
     const isDuplicate =
@@ -53,14 +53,14 @@ export const GridSample = () => {
     <div style={{ height: 400, width: "100%" }}>
       <button
         onClick={() => {
-          // API REFの利用はDataGrid Pro以上のみ
-          // const rows = gridExpandedSortedRowEntriesSelector(apiRef);
-          // console.log("rows", rows);
+          const rows = gridExpandedSortedRowEntriesSelector(gridApiRef);
+          console.log("rows", rows);
         }}
       >
         gridPaginatedVisibleSortedGridRowIdsSelector
       </button>
       <DataGrid
+        apiRef={gridApiRef}
         rows={processedData}
         slots={{ toolbar: GridToolbar }}
         initialState={{
