@@ -10,6 +10,7 @@ export const GridSample = () => {
     pageSize,
     setPageSize,
     row,
+    columns,
     filteredRowCount,
     filteredRowCountRef,
     handleUpdateFilteredRowsCount,
@@ -24,7 +25,7 @@ export const GridSample = () => {
       }}
     >
       <Box
-        sx={{ height: 400, width: "80%" }}
+        sx={{ height: 600, width: "80%" }}
         gap={1}
         display="flex"
         flexDirection="column"
@@ -51,23 +52,7 @@ export const GridSample = () => {
           apiRef={gridApiRef}
           rows={row}
           slots={{ toolbar: GridToolbar }}
-          columns={[
-            {
-              field: "category",
-              headerName: "分類名",
-              width: 130,
-              renderCell: (params) => (
-                <div style={{ color: params.row.textColor }}>
-                  {params.value}
-                </div>
-              ),
-            },
-            {
-              field: "item",
-              headerName: "商品名",
-              width: 130,
-            },
-          ]}
+          columns={columns}
           pageSizeOptions={[5, 10, 25, 100]}
           onPaginationModelChange={(model) => {
             console.log("onPaginationModelChange", model);

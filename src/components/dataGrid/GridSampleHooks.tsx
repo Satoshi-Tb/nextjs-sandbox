@@ -1,22 +1,92 @@
 import {
+  GridColDef,
   gridExpandedSortedRowEntriesSelector,
   useGridApiRef,
 } from "@mui/x-data-grid";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const rawData = [
-  { id: 1, category: "果物", item: "りんご" },
-  { id: 2, category: "果物", item: "すいか" },
-  { id: 3, category: "果物", item: "みかん" },
-  { id: 4, category: "果物", item: "いちご" },
-  { id: 5, category: "野菜", item: "なす" },
-  { id: 6, category: "野菜", item: "きゅうり" },
-  { id: 7, category: "野菜", item: "大根" },
-  { id: 8, category: "野菜", item: "ごぼう" },
-  { id: 9, category: "野菜", item: "キャベツ" },
-  { id: 10, category: "野菜", item: "長ネギ" },
-  { id: 11, category: "野菜", item: "玉ねぎ" },
-  { id: 12, category: "野菜", item: "にんじん" },
+type SampleRowDataType1 = {
+  id: number;
+  category: string;
+  item: string;
+  selectItem1: string;
+  selectItem2: string;
+  textColor?: string;
+};
+
+const rawData: SampleRowDataType1[] = [
+  {
+    id: 1,
+    category: "果物",
+    item: "りんご",
+    selectItem1: "A",
+    selectItem2: "1",
+  },
+  {
+    id: 2,
+    category: "果物",
+    item: "すいか",
+    selectItem1: "B",
+    selectItem2: "2",
+  },
+  {
+    id: 3,
+    category: "果物",
+    item: "みかん",
+    selectItem1: "C",
+    selectItem2: "3",
+  },
+  {
+    id: 4,
+    category: "果物",
+    item: "いちご",
+    selectItem1: "D",
+    selectItem2: "4",
+  },
+  { id: 5, category: "野菜", item: "なす", selectItem1: "0", selectItem2: "" },
+  {
+    id: 6,
+    category: "野菜",
+    item: "きゅうり",
+    selectItem1: "A",
+    selectItem2: "2",
+  },
+  { id: 7, category: "野菜", item: "大根", selectItem1: "A", selectItem2: "2" },
+  {
+    id: 8,
+    category: "野菜",
+    item: "ごぼう",
+    selectItem1: "A",
+    selectItem2: "3",
+  },
+  {
+    id: 9,
+    category: "野菜",
+    item: "キャベツ",
+    selectItem1: "B",
+    selectItem2: "2",
+  },
+  {
+    id: 10,
+    category: "野菜",
+    item: "長ネギ",
+    selectItem1: "B",
+    selectItem2: "3",
+  },
+  {
+    id: 11,
+    category: "野菜",
+    item: "玉ねぎ",
+    selectItem1: "C",
+    selectItem2: "3",
+  },
+  {
+    id: 12,
+    category: "野菜",
+    item: "にんじん",
+    selectItem1: "A",
+    selectItem2: "1",
+  },
 ];
 const INITIAL_PAGE_SIZE = 5;
 export const useGridSampleHooks = () => {
@@ -32,23 +102,26 @@ export const useGridSampleHooks = () => {
   // 強制再レンダリング用のトリガー。利用方法としては適切ではない。
   const [, forceUpdateState] = useState({});
 
-  const processedData = rawData.map((data, index, arr) => {
-    const isDuplicate =
-      index !== 0 && data.category === arr[index - 1].category;
-    const isFirstItemOfPage = index % pageSize === 0;
-    let textColor;
+  // 表示色の加工サンプル
+  // const processedData: SampleRowDataType1[] = rawData.map(
+  //   (data, index, arr) => {
+  //     const isDuplicate =
+  //       index !== 0 && data.category === arr[index - 1].category;
+  //     const isFirstItemOfPage = index % pageSize === 0;
+  //     let textColor;
 
-    if (isFirstItemOfPage) {
-      textColor = "black";
-    } else {
-      textColor = isDuplicate ? "white" : "black";
-    }
+  //     if (isFirstItemOfPage) {
+  //       textColor = "black";
+  //     } else {
+  //       textColor = isDuplicate ? "white" : "black";
+  //     }
 
-    return {
-      ...data,
-      textColor,
-    };
-  });
+  //     return {
+  //       ...data,
+  //       textColor,
+  //     };
+  //   }
+  // );
 
   const handleUpdateFilteredRowsCount = () => {
     const rows = gridExpandedSortedRowEntriesSelector(
@@ -59,6 +132,48 @@ export const useGridSampleHooks = () => {
     // 強制再レンダリング。これを実施しないと、描画内容が変化しない。
     forceUpdateState({});
   };
+
+  // カラム定義
+  const columns = useMemo<GridColDef[]>(
+    () => [
+      {
+        field: "id",
+        headerName: "ID",
+        width: 50,
+      },
+      {
+        field: "category",
+        headerName: "分類名",
+        width: 130,
+        renderCell: (params) => (
+          <div style={{ color: params.row.textColor ?? "black" }}>
+            {params.value}
+          </div>
+        ),
+      },
+      {
+        field: "item",
+        headerName: "商品名",
+        width: 130,
+        editable: true,
+      },
+      {
+        field: "selectItem1",
+        headerName: "選択値(標準)",
+        width: 130,
+        type: "singleSelect",
+        editable: true,
+        valueOptions: [
+          { value: "0", label: "未選択" },
+          { value: "A", label: "選択A" },
+          { value: "B", label: "選択B" },
+          { value: "C", label: "選択C" },
+          { value: "D", label: "選択D" },
+        ],
+      },
+    ],
+    []
+  );
 
   useEffect(() => {
     const updateFilteredRowCount = () => {
@@ -88,7 +203,8 @@ export const useGridSampleHooks = () => {
     pageSize,
     setPageSize,
     gridApiRef,
-    row: processedData,
+    row: rawData,
+    columns,
     filteredRowCount,
     filteredRowCountRef,
     handleUpdateFilteredRowsCount,
