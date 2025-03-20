@@ -1,5 +1,8 @@
-import { useGridApiRef } from "@mui/x-data-grid";
-import { useState } from "react";
+import {
+  gridExpandedSortedRowEntriesSelector,
+  useGridApiRef,
+} from "@mui/x-data-grid";
+import { useEffect, useRef, useState } from "react";
 
 const rawData = [
   { id: 1, category: "果物", item: "りんご" },
@@ -18,8 +21,16 @@ const rawData = [
 const INITIAL_PAGE_SIZE = 5;
 export const useGridSampleHooks = () => {
   const [pageSize, setPageSize] = useState(INITIAL_PAGE_SIZE);
+  const [filteredRowCount, setFilteredRowCount] = useState(0);
 
   const gridApiRef = useGridApiRef();
+
+  // useRefのテスト。useState版との比較のため、サンプル実装
+  // フィルタ後の行数を格納する。
+  // 本来はuseStateを利用して、適切に再レンダリングを促すのが正しい実装。
+  const filteredRowCountRef = useRef(0);
+  // 強制再レンダリング用のトリガー。利用方法としては適切ではない。
+  const [, forceUpdateState] = useState({});
 
   const processedData = rawData.map((data, index, arr) => {
     const isDuplicate =
@@ -39,10 +50,47 @@ export const useGridSampleHooks = () => {
     };
   });
 
+  const handleUpdateFilteredRowsCount = () => {
+    const rows = gridExpandedSortedRowEntriesSelector(
+      gridApiRef.current.state,
+      gridApiRef.current.instanceId
+    );
+    filteredRowCountRef.current = rows.length;
+    // 強制再レンダリング。これを実施しないと、描画内容が変化しない。
+    forceUpdateState({});
+  };
+
+  useEffect(() => {
+    const updateFilteredRowCount = () => {
+      console.log("new filter applyed");
+      if (gridApiRef.current) {
+        const rows = gridExpandedSortedRowEntriesSelector(
+          gridApiRef.current.state,
+          gridApiRef.current.instanceId
+        );
+        setFilteredRowCount(rows.length);
+      }
+    };
+    // 初期表示時
+    updateFilteredRowCount();
+
+    // フィルター変更時
+    const unsubscribe = gridApiRef.current.subscribeEvent(
+      "filteredRowsSet",
+      updateFilteredRowCount
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [gridApiRef]);
+
   return {
     pageSize,
     setPageSize,
     gridApiRef,
     row: processedData,
+    filteredRowCount,
+    filteredRowCountRef,
+    handleUpdateFilteredRowsCount,
   };
 };

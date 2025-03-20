@@ -1,21 +1,19 @@
 import React, { useState, useCallback, use, useRef } from "react";
-import {
-  DataGrid,
-  GridToolbar,
-  gridExpandedSortedRowEntriesSelector,
-} from "@mui/x-data-grid";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import Link from "next/link";
 import { useGridSampleHooks } from "./GridSampleHooks";
 import { Box, Button, Typography } from "@mui/material";
 
 export const GridSample = () => {
-  // useRefのテスト。フィルタ後の行数を格納する。
-  // 本来はuseStateを利用して、適切に再レンダリングを促すのが正しい実装。
-  const filteredRowCountRef = useRef(0);
-  // 強制再レンダリング用のトリガー。利用方法としては適切ではない。
-  const [, forceUpdate] = useState({});
-
-  const { gridApiRef, pageSize, setPageSize, row } = useGridSampleHooks();
+  const {
+    gridApiRef,
+    pageSize,
+    setPageSize,
+    row,
+    filteredRowCount,
+    filteredRowCountRef,
+    handleUpdateFilteredRowsCount,
+  } = useGridSampleHooks();
 
   return (
     <Box
@@ -34,25 +32,19 @@ export const GridSample = () => {
         justifyContent="flex-start"
       >
         <Link href="/">TOP</Link>
-        <Box display="flex" gap={1}>
+        <Box display="flex" gap={1} alignItems="center">
+          <Typography variant="body2" fontWeight="700">
+            フィルタ後の表示件数
+          </Typography>
+          <Typography variant="body2">{filteredRowCount}</Typography>
           <Button
             variant="outlined"
             color="success"
-            onClick={() => {
-              const rows = gridExpandedSortedRowEntriesSelector(
-                gridApiRef.current.state,
-                gridApiRef.current.instanceId
-              );
-              filteredRowCountRef.current = rows.length;
-              // 強制再レンダリング。これを実施しないと、描画内容が変化しない。
-              forceUpdate({});
-            }}
+            onClick={handleUpdateFilteredRowsCount}
           >
             フィルタ後の表示件数：最新化
           </Button>
-          <Typography variant="body2" alignContent="center">
-            {filteredRowCountRef.current}
-          </Typography>
+          <Typography variant="body2">{filteredRowCountRef.current}</Typography>
         </Box>
 
         <DataGrid
@@ -82,6 +74,8 @@ export const GridSample = () => {
             setPageSize(model.pageSize);
           }}
           onFilterModelChange={(model) => {
+            // memo:ここで取得できるのは、変更後のフィルタモデルのみ。
+            // フィルタ適用後の行情報は取得できないので注意
             console.log("onFilterModelChange", model);
             console.log("rows", row);
           }}
