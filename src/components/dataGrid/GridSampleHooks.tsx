@@ -7,7 +7,6 @@ import {
   GridRenderCellParams,
   GridValueGetterParams,
   useGridApiRef,
-  ValueOptions,
 } from "@mui/x-data-grid";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -216,11 +215,36 @@ export const useGridSampleHooks = () => {
             <Select
               value={params.value}
               onChange={(event) => {
+                const newValue = event.target.value;
+
                 // 選択項目の状態を更新
                 setSelectedItemSet((prevState) => ({
                   ...prevState,
-                  [params.id]: event.target.value,
+                  [params.id]: newValue,
                 }));
+
+                gridApiRef.current.setEditCellValue(
+                  {
+                    id: params.id,
+                    field: params.field,
+                    value: newValue,
+                  },
+                  event
+                );
+
+                // 直接フィルタ呼び出し→ただしく動作しない。挙動がおかしい
+                // gridApiRef.current.unstable_applyFilters();
+
+                // // 強制的にeditモード&終了
+                // // うまくいかず。「編集モードでないとstopできない」エラーが表示される。editModeの変更が反映されるまでラグがあるか？
+                // gridApiRef.current.startCellEditMode({
+                //   id: params.id,
+                //   field: params.field,
+                // });
+                // gridApiRef.current.stopCellEditMode({
+                //   id: params.id,
+                //   field: params.field,
+                // });
               }}
               displayEmpty={true}
             >
@@ -282,7 +306,7 @@ export const useGridSampleHooks = () => {
         ],
       },
     ],
-    [selectedItemSet]
+    [selectedItemSet, gridApiRef]
   );
 
   useEffect(() => {
