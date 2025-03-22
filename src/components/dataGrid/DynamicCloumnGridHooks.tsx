@@ -1,6 +1,8 @@
 import {
   Box,
+  FormControl,
   FormControlLabel,
+  InputLabel,
   MenuItem,
   Radio,
   RadioGroup,
@@ -138,7 +140,8 @@ export const useDynamicColumnGridHooks = () => {
   // 動的ラジオ項目の値セット
   const [radioValueSet, setRadioValueSet] = useState<RadioValueSetType>({});
 
-  const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
+  const { data, isLoading, error, mutate } =
+    useGetListWithColumnDefs(testDataId);
 
   if (error) {
     console.error("error", error);
@@ -374,7 +377,7 @@ export const useDynamicColumnGridHooks = () => {
         },
         filterOperators: [
           {
-            label: "次の値と等しい",
+            label: "...と等しい",
             value: "equals",
             getApplyFilterFn: (filterItem) => {
               console.log("selectItem:equalsFilter getApplyFilterFn(equals)", {
@@ -406,36 +409,44 @@ export const useDynamicColumnGridHooks = () => {
             InputComponent: (props: GridFilterInputValueProps) => {
               const { item, applyValue } = props;
               return (
-                <Select
-                  value={item.value || ""}
-                  onChange={(event) => {
-                    const newValue = { ...item, value: event.target.value };
+                <FormControl variant="standard">
+                  <InputLabel
+                    id="select-item-equqls-select-label"
+                    shrink={true}
+                  >
+                    Value
+                  </InputLabel>
+                  <Select
+                    labelId="select-item-equqls-select-label"
+                    value={item.value || ""}
+                    onChange={(event) => {
+                      const newValue = { ...item, value: event.target.value };
 
-                    console.log("selectItem:equalsFilter onChange", {
-                      newValue,
-                    });
-                    applyValue(newValue);
-                  }}
-                  sx={{ height: "100%", mt: "1rem" }}
-                >
-                  {[
-                    {
-                      optKey: "",
-                      optValue: "",
-                      optName: "選択してください",
-                    },
-                    {
-                      optKey: "0",
-                      optValue: "__NOT_SELECTED__",
-                      optName: "選択なし",
-                    },
-                    ...SAMPLE_SELECT_OPTIONS,
-                  ].map((opt, idx) => (
-                    <MenuItem key={idx} value={opt.optValue}>
-                      {opt.optName}
-                    </MenuItem>
-                  ))}
-                </Select>
+                      console.log("selectItem:equalsFilter onChange", {
+                        newValue,
+                      });
+                      applyValue(newValue);
+                    }}
+                  >
+                    {[
+                      {
+                        optKey: "",
+                        optValue: "",
+                        optName: "選択してください",
+                      },
+                      {
+                        optKey: "0",
+                        optValue: "__NOT_SELECTED__",
+                        optName: "選択なし",
+                      },
+                      ...SAMPLE_SELECT_OPTIONS,
+                    ].map((opt, idx) => (
+                      <MenuItem key={idx} value={opt.optValue}>
+                        {opt.optName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               );
             },
             getValueAsString: (value: string) =>
@@ -445,7 +456,7 @@ export const useDynamicColumnGridHooks = () => {
                     ?.optName || "",
           },
           {
-            label: "次の値と等しくない",
+            label: "...と等しくない",
             value: "notEquals",
             getApplyFilterFn: (filterItem) => {
               console.log("selectItem getApplyFilterFn(notEquals)", {
@@ -465,27 +476,35 @@ export const useDynamicColumnGridHooks = () => {
             InputComponent: (props: GridFilterInputValueProps) => {
               const { item, applyValue } = props;
               return (
-                <Select
-                  value={item.value || ""}
-                  onChange={(event) =>
-                    applyValue({ ...item, value: event.target.value })
-                  }
-                  sx={{ height: "100%", mt: "1rem" }}
-                >
-                  <MenuItem value="">選択してください</MenuItem>
-                  {[
-                    {
-                      optKey: "0",
-                      optValue: "__NOT_SELECTED__",
-                      optName: "選択なし",
-                    },
-                    ...SAMPLE_SELECT_OPTIONS,
-                  ].map((opt, idx) => (
-                    <MenuItem key={idx} value={opt.optValue}>
-                      {opt.optName}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <FormControl variant="standard">
+                  <InputLabel
+                    id="select-item-notequqls-select-label"
+                    shrink={true}
+                  >
+                    Value
+                  </InputLabel>
+                  <Select
+                    labelId="select-item-notequqls-select-label"
+                    value={item.value || ""}
+                    onChange={(event) =>
+                      applyValue({ ...item, value: event.target.value })
+                    }
+                  >
+                    <MenuItem value="">選択してください</MenuItem>
+                    {[
+                      {
+                        optKey: "0",
+                        optValue: "__NOT_SELECTED__",
+                        optName: "選択なし",
+                      },
+                      ...SAMPLE_SELECT_OPTIONS,
+                    ].map((opt, idx) => (
+                      <MenuItem key={idx} value={opt.optValue}>
+                        {opt.optName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               );
             },
             getValueAsString: (value: string) =>
@@ -514,6 +533,11 @@ export const useDynamicColumnGridHooks = () => {
                   }));
 
                   // バックエンド更新処理
+
+                  // 再描画
+                  mutate(
+                    `${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`
+                  );
                 }}
                 displayEmpty={true}
               >
@@ -536,7 +560,7 @@ export const useDynamicColumnGridHooks = () => {
       ...fixedColDefs,
       ...colDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
     ];
-  }, [colDefs, createDynamicColumnDefs, selectItemState]);
+  }, [colDefs, createDynamicColumnDefs, selectItemState, mutate, testDataId]);
 
   // 行編集イベント
   const processRowUpdate = (newRow: RowDataType, oldRow: RowDataType) => {
@@ -553,7 +577,7 @@ export const useDynamicColumnGridHooks = () => {
       `processRowUpdate for ${editedField} [id, value] = [${id}, ${value}]`
     );
     // データリフレッシュ
-    // mutate(`${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`);
+    mutate(`${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`);
 
     setEditedField(null); // 念のためクリア
 
