@@ -499,7 +499,7 @@ const HighLightSample3 = () => {
       <h2>html-react-parseのテスト</h2>
       <h4>ハイライト設定</h4>
       {sampleHighlightSettings.map((item, i) => (
-        <div>
+        <div key={i}>
           {i}:{item.keyword}, {item.color}
         </div>
       ))}

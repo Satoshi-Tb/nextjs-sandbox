@@ -147,6 +147,7 @@ const testRowData: RowDataType[][] = [
       id: 1,
       category: "果物",
       item: "りんご",
+      stdSelectItem: "1",
       selectItem: "1",
       detailItems: [
         {
@@ -185,6 +186,7 @@ const testRowData: RowDataType[][] = [
       id: 2,
       category: "果物",
       item: "すいか",
+      stdSelectItem: "2",
       selectItem: "2",
       detailItems: [
         {
@@ -223,6 +225,7 @@ const testRowData: RowDataType[][] = [
       id: 3,
       category: "果物",
       item: "みかん",
+      stdSelectItem: "3",
       selectItem: "3",
       detailItems: [
         {
@@ -261,6 +264,7 @@ const testRowData: RowDataType[][] = [
       id: 4,
       category: "果物",
       item: "いちご",
+      stdSelectItem: "4",
       selectItem: "4",
       detailItems: [
         {
@@ -299,6 +303,7 @@ const testRowData: RowDataType[][] = [
       id: 5,
       category: "野菜",
       item: "なす",
+      stdSelectItem: "5",
       selectItem: "5",
       detailItems: [
         {
@@ -337,6 +342,7 @@ const testRowData: RowDataType[][] = [
       id: 6,
       category: "野菜",
       item: "きゅうり",
+      stdSelectItem: "",
       selectItem: "",
       detailItems: [
         {
@@ -377,6 +383,7 @@ const testRowData: RowDataType[][] = [
       id: 11,
       category: "トップス",
       item: "クルーネックTシャツ",
+      stdSelectItem: "1",
       selectItem: "1",
       detailItems: [
         {
@@ -398,7 +405,8 @@ const testRowData: RowDataType[][] = [
       id: 12,
       category: "トップス",
       item: "コンパクトジャケット",
-      selectItem: "",
+      stdSelectItem: "1",
+      selectItem: "2",
       detailItems: [
         {
           id: 1201,

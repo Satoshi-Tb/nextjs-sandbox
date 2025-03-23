@@ -16,6 +16,8 @@ import { useDynamicColumnGridHooks } from "./DynamicCloumnGridHooks";
  * @returns
  */
 export const DynamicColumnGrid = () => {
+  console.log("★DynamicColumnGrid render");
+
   const {
     gridApiRef,
     rows,
@@ -82,6 +84,9 @@ export const DynamicColumnGrid = () => {
             console.log("onRowEditCommit", params);
           }}
           onCellEditStop={onCellEditStop}
+          onFilterModelChange={(params) => {
+            console.log("onFilterModelChange", params);
+          }}
           rowSelectionModel={rowSelectionModel}
           onRowSelectionModelChange={handleRowSelectionModelChange}
           checkboxSelection={true}

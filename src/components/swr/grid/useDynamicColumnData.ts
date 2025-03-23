@@ -1,4 +1,4 @@
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { fetcher } from "@/utils/fetcher";
 import type {
   ColDefType,
@@ -26,6 +26,6 @@ export const useGetListWithColumnDefs = (id: string | undefined) => {
     key,
     fetcher
   );
-  console.log("useGetListWithColumnDefs", { key, data });
-  return { data, error, isLoading };
+  console.log("fetch useGetListWithColumnDefs", { key, data });
+  return { data, error, isLoading, mutate };
 };

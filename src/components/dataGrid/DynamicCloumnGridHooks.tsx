@@ -1,11 +1,17 @@
 import {
+  Autocomplete,
   Box,
+  Chip,
+  FormControl,
   FormControlLabel,
+  InputLabel,
   MenuItem,
+  Popper,
   Radio,
   RadioGroup,
   Select,
   Switch,
+  TextField,
   Typography,
 } from "@mui/material";
 import {
@@ -24,8 +30,8 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 import { useRouter } from "next/router";
-import { mutate } from "swr";
 import envConfig from "@/utils/envConfig";
+import { PopperProps } from "@mui/material/Popper/BasePopper.types";
 
 export type ColDefType = {
   gridFieldName: string;
@@ -49,6 +55,7 @@ export type RowDataType = {
   id: number;
   category: string;
   item: string;
+  stdSelectItem: string;
   selectItem: string;
   detailItems: {
     id: number;
@@ -75,6 +82,9 @@ const SAMPLE_SELECT_OPTIONS: OptItemType[] = [
   { optKey: "sampleSelectOption", optValue: "4", optName: "選択値4" },
   { optKey: "sampleSelectOption", optValue: "5", optName: "選択値5" },
 ];
+
+// カラムフィルタ:未選択の場合のダミー値
+const NO_SELECTION_COLUMN_FILTER_VAL = "__NOT_SELECTED__";
 
 // カラムヘッダCSS生成用
 const categoryExists = (def: ColDefType) =>
@@ -137,7 +147,8 @@ export const useDynamicColumnGridHooks = () => {
   // 動的ラジオ項目の値セット
   const [radioValueSet, setRadioValueSet] = useState<RadioValueSetType>({});
 
-  const { data, isLoading, error } = useGetListWithColumnDefs(testDataId);
+  const { data, isLoading, error, mutate } =
+    useGetListWithColumnDefs(testDataId);
 
   if (error) {
     console.error("error", error);
@@ -347,42 +358,257 @@ export const useDynamicColumnGridHooks = () => {
         field: "item",
         headerName: "商品名",
         width: 130,
+        editable: true,
+      },
+      {
+        field: "stdSelectItem",
+        headerName: "選択項目標準",
+        width: 130,
+        type: "singleSelect",
+        editable: true,
+        valueOptions: [
+          { value: "0", label: "選択なし" }, // valueに空文字を設定すると、フィルタが正常に動作しない
+          { value: "1", label: "選択値1" },
+          { value: "2", label: "選択値2" },
+          { value: "3", label: "選択値3" },
+          { value: "4", label: "選択値4" },
+          { value: "5", label: "選択値5" },
+        ],
       },
       {
         field: "selectItem",
-        headerName: "選択項目",
-        width: 130,
+        headerName: "選択項目カスタム",
+        width: 150,
+        valueGetter(params) {
+          return selectItemState[params.id];
+        },
         filterOperators: [
           {
-            label: "次の値と等しい",
+            label: "...と等しい",
             value: "equals",
             getApplyFilterFn: (filterItem) => {
-              if (!filterItem.value) {
+              console.log("selectItem:equalsFilter getApplyFilterFn(equals)", {
+                selectItemState,
+                filterItem,
+              });
+              if (filterItem.value == null || filterItem.value === "") {
                 return null;
               }
-              return (params) => params.value === filterItem.value;
+              return (params: GridCellParams<RowDataType, string>) => {
+                //const value = selectItemState[params.id];
+                // paramsの内容以外だと、コール時点の状態で固定化される
+                // ゆえに、値変更してもフィルタの内容が反映されていない
+                // →propsの状態が変換してもgetApplyFilterFnは再評価されない
+                // getApplyFilterFnは、filterModelが変更されたときに再評価される
+                // getApplyFilterFnの返却するフィルタ関数に、引数追加することはできるか
+
+                // valueGetterを定義することで、コンポーネント外に定義したstateを参照可能にする。
+                // しかし、期待する挙動にならない
+
+                console.log("called applyFn", { params });
+
+                return (
+                  params.value === filterItem.value ||
+                  (filterItem.value === NO_SELECTION_COLUMN_FILTER_VAL &&
+                    !params.value)
+                );
+              };
             },
             InputComponent: (props: GridFilterInputValueProps) => {
               const { item, applyValue } = props;
               return (
-                <Select
-                  value={item.value || ""}
-                  onChange={(event) =>
-                    applyValue({ ...item, value: event.target.value })
-                  }
-                  sx={{ height: "100%", mt: "1rem" }}
-                >
-                  <MenuItem value="-1">選択してください</MenuItem>
-                  {[
-                    { optKey: "", optValue: "", optName: "選択なし" },
-                    ...SAMPLE_SELECT_OPTIONS,
-                  ].map((opt, idx) => (
-                    <MenuItem key={idx} value={opt.optValue}>
-                      {opt.optName}
-                    </MenuItem>
-                  ))}
-                </Select>
+                <FormControl variant="standard">
+                  <InputLabel
+                    id="select-item-equqls-select-label"
+                    shrink={true}
+                  >
+                    Value
+                  </InputLabel>
+                  <Select
+                    labelId="select-item-equqls-select-label"
+                    value={item.value || ""}
+                    onChange={(event) => {
+                      const newValue = { ...item, value: event.target.value };
+
+                      console.log("selectItem:equalsFilter onChange", {
+                        newValue,
+                      });
+                      applyValue(newValue);
+                    }}
+                  >
+                    {[
+                      {
+                        optKey: "sampleSelectOption",
+                        optValue: "",
+                        optName: "選択してください",
+                      },
+                      {
+                        optKey: "sampleSelectOption",
+                        optValue: NO_SELECTION_COLUMN_FILTER_VAL,
+                        optName: "未選択",
+                      },
+                      ...SAMPLE_SELECT_OPTIONS,
+                    ].map((opt, idx) => (
+                      <MenuItem key={idx} value={opt.optValue}>
+                        {opt.optName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               );
+            },
+            getValueAsString: (value: string) =>
+              value === NO_SELECTION_COLUMN_FILTER_VAL
+                ? "未選択"
+                : SAMPLE_SELECT_OPTIONS.find((opt) => opt.optValue === value)
+                    ?.optName || "",
+          },
+          {
+            label: "...と等しくない",
+            value: "notEquals",
+            getApplyFilterFn: (filterItem) => {
+              console.log("selectItem getApplyFilterFn(notEquals)", {
+                selectItemState,
+                filterItem,
+              });
+              if (filterItem.value == null || filterItem.value === "") {
+                return null;
+              }
+              return (params: GridCellParams<RowDataType, string>) => {
+                const value = selectItemState[params.id];
+                return filterItem.value === NO_SELECTION_COLUMN_FILTER_VAL
+                  ? !!value
+                  : value !== filterItem.value;
+              };
+            },
+            InputComponent: (props: GridFilterInputValueProps) => {
+              const { item, applyValue } = props;
+              return (
+                <FormControl variant="standard">
+                  <InputLabel
+                    id="select-item-notequqls-select-label"
+                    shrink={true}
+                  >
+                    Value
+                  </InputLabel>
+                  <Select
+                    labelId="select-item-notequqls-select-label"
+                    value={item.value || ""}
+                    onChange={(event) =>
+                      applyValue({ ...item, value: event.target.value })
+                    }
+                  >
+                    <MenuItem value="">選択してください</MenuItem>
+                    {[
+                      {
+                        optKey: "sampleSelectOption",
+                        optValue: NO_SELECTION_COLUMN_FILTER_VAL,
+                        optName: "未選択",
+                      },
+                      ...SAMPLE_SELECT_OPTIONS,
+                    ].map((opt, idx) => (
+                      <MenuItem key={idx} value={opt.optValue}>
+                        {opt.optName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              );
+            },
+            getValueAsString: (value: string) =>
+              value === NO_SELECTION_COLUMN_FILTER_VAL
+                ? "未選択"
+                : SAMPLE_SELECT_OPTIONS.find((opt) => opt.optValue === value)
+                    ?.optName || "",
+          },
+          {
+            label: "...を含む",
+            value: "isAnyOf",
+            getApplyFilterFn: (filterItem) => {
+              // console.log("isAnyOf getApplyFilterFn", { filterItem });
+              if (
+                !filterItem.value ||
+                !Array.isArray(filterItem.value) ||
+                filterItem.value.length === 0
+              ) {
+                return null;
+              }
+
+              // 未選択値の読み替え
+              const filteredValues = (filterItem.value as OptItemType[]).map(
+                (item) =>
+                  item.optValue === NO_SELECTION_COLUMN_FILTER_VAL
+                    ? ""
+                    : item.optValue
+              );
+
+              if (!filteredValues || filteredValues.length === 0) {
+                return null;
+              }
+
+              return (params): boolean => {
+                return filteredValues.includes(params.value);
+              };
+            },
+            InputComponent: (props: GridFilterInputValueProps) => {
+              const { item, applyValue } = props;
+
+              const options = [
+                {
+                  optKey: "sampleSelectOption",
+                  optValue: NO_SELECTION_COLUMN_FILTER_VAL,
+                  optName: "選択なし",
+                },
+                ...SAMPLE_SELECT_OPTIONS,
+              ];
+
+              // カスタムPopperコンポーネント（より広いドロップダウン表示用）
+              const CustomPopper = function (props: PopperProps) {
+                return (
+                  <Popper
+                    {...props}
+                    placement="bottom-start"
+                    style={{ width: 300 }}
+                  />
+                );
+              };
+
+              return (
+                <Autocomplete
+                  multiple
+                  options={options}
+                  getOptionLabel={(opt) => opt.optName}
+                  value={item.value || []}
+                  onChange={(event, value) => {
+                    // console.log("selectItem:isAnyOfFilter onChange", {
+                    //   item,
+                    //   value,
+                    // });
+                    const newValue = { ...item, value: value };
+                    applyValue(newValue);
+                  }}
+                  isOptionEqualToValue={(option, value) => {
+                    // console.log("isOptionEqualToValue", { option, value });
+                    return option.optValue === value.optValue;
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="選択..."
+                      variant="standard"
+                      label="value"
+                      InputLabelProps={{ shrink: true }}
+                      size="small"
+                    />
+                  )}
+                  PopperComponent={CustomPopper}
+                  disableCloseOnSelect
+                  size="small"
+                />
+              );
+            },
+            InputComponentProps: {
+              type: "array",
             },
           },
         ],
@@ -398,10 +624,18 @@ export const useDynamicColumnGridHooks = () => {
               <Select
                 value={selectItemState[param.id] || ""}
                 onChange={(event) => {
-                  setSelectItemState({
-                    ...selectItemState,
+                  // 選択項目の状態を更新　※これだけだと、フィルタリング状態には影響しない。
+                  setSelectItemState((prevState) => ({
+                    ...prevState,
                     [param.id]: event.target.value,
-                  });
+                  }));
+
+                  // バックエンド更新処理
+
+                  // 再描画
+                  mutate(
+                    `${envConfig.apiUrl}/api/grid/dynamic-column/list/${testDataId}`
+                  );
                 }}
                 displayEmpty={true}
               >
@@ -424,7 +658,7 @@ export const useDynamicColumnGridHooks = () => {
       ...fixedColDefs,
       ...colDefs.map<GridColDef>((def) => createDynamicColumnDefs(def)),
     ];
-  }, [colDefs, createDynamicColumnDefs, selectItemState]);
+  }, [colDefs, createDynamicColumnDefs, selectItemState, mutate, testDataId]);
 
   // 行編集イベント
   const processRowUpdate = (newRow: RowDataType, oldRow: RowDataType) => {

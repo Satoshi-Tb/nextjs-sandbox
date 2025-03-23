@@ -221,7 +221,7 @@ const HighLightSample4 = () => {
     <div>
       <h4>ハイライト設定</h4>
       {highlightSettings.map((item, i) => (
-        <div>
+        <div key={i}>
           {i}:{item.keyword}, {item.color}
         </div>
       ))}
