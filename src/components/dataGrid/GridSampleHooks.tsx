@@ -1,5 +1,6 @@
 import { Box, MenuItem, Select } from "@mui/material";
 import {
+  getGridSingleSelectOperators,
   GridCellParams,
   GridColDef,
   gridExpandedSortedRowEntriesSelector,
@@ -10,6 +11,7 @@ import {
   useGridApiContext,
   useGridApiRef,
 } from "@mui/x-data-grid";
+import { get } from "http";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type SampleRowDataType1 = {
@@ -59,7 +61,7 @@ const rowData: SampleRowDataType1[] = [
     id: 5,
     category: "野菜",
     item: "なす",
-    selectItem1: "0",
+    selectItem1: "",
     selectItem2: "",
     option: "option3",
   },
@@ -67,7 +69,7 @@ const rowData: SampleRowDataType1[] = [
     id: 6,
     category: "野菜",
     item: "きゅうり",
-    selectItem1: "A",
+    selectItem1: "",
     selectItem2: "2",
     option: "option3",
   },
@@ -126,7 +128,7 @@ type ValueOpt = {
   label: string;
 };
 const VAL_OPTS_SEL1: ValueOpt[] = [
-  { value: "0", label: "未選択" },
+  { value: "", label: "未選択" },
   { value: "A", label: "選択A" },
   { value: "B", label: "選択B" },
   { value: "C", label: "選択C" },
@@ -229,7 +231,57 @@ export const useGridSampleHooks = () => {
         width: 130,
         type: "singleSelect",
         editable: true,
-        valueOptions: VAL_OPTS_SEL1,
+        // 既存フィルタをカスタマイズして、ブランク値を選択可能にするサンプル。ブランク値を別の値に読み替えることで実現。
+        // 調べた限りブランク値をそのままフィルタ項目として利用するのは難しい。
+        // InputComponentである、GridFilterInputSingleSelectのメニューレンダリング関数renderSingleSelectOptions の修正が必要。
+        // ただ、上記関数のカスタマイズポイントがないので、結局、InputComponentの独自実装が必要になる。
+        valueOptions: VAL_OPTS_SEL1.map((op) =>
+          op.value === "" ? { value: "__NONE__", label: op.label } : op
+        ),
+        filterOperators: getGridSingleSelectOperators()
+          .filter((ope) => ["is", "not", "isAnyOf"].includes(ope.value))
+          .map((ope) => ({
+            ...ope,
+            getApplyFilterFn: (filterItem) => {
+              if (!filterItem.value) return null;
+
+              switch (ope.value) {
+                case "is": // 完全一致
+                  return (params) =>
+                    filterItem.value === "__NONE__"
+                      ? params.value === "" // "__NONE__" は空文字を意味する
+                      : params.value === filterItem.value;
+
+                case "not": // 一致しない
+                  return (params) =>
+                    filterItem.value === "__NONE__"
+                      ? params.value !== "" // "__NONE__" は空文字
+                      : params.value !== filterItem.value;
+
+                case "isAnyOf": // いずれかに一致
+                  if (
+                    !Array.isArray(filterItem.value) ||
+                    filterItem.value.length === 0
+                  )
+                    return null;
+                  return (params) => {
+                    return filterItem.value.includes("__NONE__")
+                      ? filterItem.value.includes(params.value) ||
+                          params.value === ""
+                      : filterItem.value.includes(params.value);
+                  };
+
+                default: // ありえない
+                  return null;
+              }
+            },
+            // ツールチップに項目名を表示させる
+            // TODO isAnyOfの場合、うまく表示されない
+            getValueAsString: (value) => {
+              const v = value === "__NONE__" ? "" : value;
+              return VAL_OPTS_SEL1.find((op) => op.value === v)?.label || "";
+            },
+          })),
       },
       {
         field: "selectItem2",
@@ -338,6 +390,7 @@ export const useGridSampleHooks = () => {
         ],
       },
       {
+        // シングルクリックでエディット可能な選択リストサンプル
         field: "option",
         headerName: "オプション",
         width: 150,
