@@ -297,6 +297,23 @@ export const useDynamicColumnGridHooks = () => {
         case INPUT_TYPE.SINGLE_SELECT:
           return {
             ...baseDef,
+            type: "singleSelect",
+            valueOptions: [
+              "選択なし",
+              ...(colDef.options?.map((opt) => opt.optName) || []),
+            ],
+            valueGetter: (
+              params: GridValueGetterParams<RowDataType, string>
+            ) => {
+              const val =
+                params.row.detailItems.find(
+                  (f) => f.gridFieldName === colDef.gridFieldName
+                )?.value || "";
+              return val === ""
+                ? "選択なし"
+                : colDef.options?.find((opt) => opt.optValue === val)
+                    ?.optName || "";
+            },
             renderCell: (params) => (
               <SelectCell
                 params={params}
