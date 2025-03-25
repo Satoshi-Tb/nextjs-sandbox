@@ -326,6 +326,20 @@ export const useDynamicColumnGridHooks = () => {
         case INPUT_TYPE.SWITCH:
           return {
             ...baseDef,
+            type: "singleSelect",
+            valueOptions: colDef.options?.map((opt) => opt.optName) || [],
+            valueGetter: (
+              params: GridValueGetterParams<RowDataType, string>
+            ) => {
+              const val =
+                params.row.detailItems.find(
+                  (f) => f.gridFieldName === colDef.gridFieldName
+                )?.value || "";
+              return (
+                colDef.options?.find((opt) => opt.optValue === val)?.optName ||
+                ""
+              );
+            },
             renderCell: (params) => (
               <SwitchCell
                 params={params}
