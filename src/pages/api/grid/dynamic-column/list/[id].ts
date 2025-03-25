@@ -187,7 +187,7 @@ const testRowData: RowDataType[][] = [
       category: "果物",
       item: "すいか",
       stdSelectItem: "2",
-      selectItem: "2",
+      selectItem: "",
       detailItems: [
         {
           id: 200,
@@ -304,7 +304,7 @@ const testRowData: RowDataType[][] = [
       category: "野菜",
       item: "なす",
       stdSelectItem: "5",
-      selectItem: "5",
+      selectItem: "4",
       detailItems: [
         {
           id: 500,
