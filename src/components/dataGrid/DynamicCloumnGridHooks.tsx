@@ -352,6 +352,23 @@ export const useDynamicColumnGridHooks = () => {
         case INPUT_TYPE.RADIO:
           return {
             ...baseDef,
+            type: "singleSelect",
+            valueOptions: [
+              "未選択",
+              ...(colDef.options?.map((opt) => opt.optName) || []),
+            ],
+            valueGetter: (
+              params: GridValueGetterParams<RowDataType, string>
+            ) => {
+              const val =
+                params.row.detailItems.find(
+                  (f) => f.gridFieldName === colDef.gridFieldName
+                )?.value || "";
+              return val === ""
+                ? "未選択"
+                : colDef.options?.find((opt) => opt.optValue === val)
+                    ?.optName || "";
+            },
             renderCell: (params) => (
               <RadioCell
                 params={params}
