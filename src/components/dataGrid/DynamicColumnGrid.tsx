@@ -64,6 +64,17 @@ export const DynamicColumnGrid = () => {
           <Button variant="outlined" onClick={handleCheckInput}>
             入力チェック
           </Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              gridApiRef.current?.setFilterModel({
+                items: [],
+                quickFilterValues: [],
+              });
+            }}
+          >
+            フィルター解除
+          </Button>
         </Stack>
         {error && (
           <Typography variant="body1" sx={{ color: "red", fontWeight: "bold" }}>
