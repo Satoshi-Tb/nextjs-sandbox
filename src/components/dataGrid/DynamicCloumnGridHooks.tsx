@@ -35,6 +35,7 @@ import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 import { useRouter } from "next/router";
 import envConfig from "@/utils/envConfig";
 import { PopperProps } from "@mui/material/Popper/BasePopper.types";
+import { gridSingleSelectColDef } from "./colDef/gridSingleSelectColDef";
 
 export type ColDefType = {
   gridFieldName: string;
@@ -48,7 +49,7 @@ export type ColDefType = {
   options?: OptItemType[];
   width?: number;
 };
-type OptItemType = {
+export type OptItemType = {
   optKey: string;
   optValue: string;
   optName: string;
@@ -99,7 +100,7 @@ const getHeaderClassName = (def: ColDefType) =>
 type SelectValueType = {
   [fieldName: string]: string;
 };
-type SelectValueSetType = {
+export type SelectValueSetType = {
   [rowId: number]: SelectValueType;
 };
 
@@ -294,33 +295,42 @@ export const useDynamicColumnGridHooks = () => {
             editable: true,
             renderCell: WrappedCell,
           };
+        // case INPUT_TYPE.SINGLE_SELECT:
+        //   return {
+        //     ...baseDef,
+        //     type: "singleSelect",
+        //     valueOptions: [
+        //       "選択なし",
+        //       ...(colDef.options?.map((opt) => opt.optName) || []),
+        //     ],
+        //     valueGetter: (
+        //       params: GridValueGetterParams<RowDataType, string>
+        //     ) => {
+        //       const val =
+        //         params.row.detailItems.find(
+        //           (f) => f.gridFieldName === colDef.gridFieldName
+        //         )?.value || "";
+        //       return val === ""
+        //         ? "選択なし"
+        //         : colDef.options?.find((opt) => opt.optValue === val)
+        //             ?.optName || "";
+        //     },
+        //     renderCell: (params) => (
+        //       <SelectCell
+        //         params={params}
+        //         colDef={colDef}
+        //         selectValueSet={selectValueSet}
+        //         setSelectValueSet={setSelectValueSet}
+        //       />
+        //     ),
+        //   };
         case INPUT_TYPE.SINGLE_SELECT:
           return {
-            ...baseDef,
-            type: "singleSelect",
-            valueOptions: [
-              "選択なし",
-              ...(colDef.options?.map((opt) => opt.optName) || []),
-            ],
-            valueGetter: (
-              params: GridValueGetterParams<RowDataType, string>
-            ) => {
-              const val =
-                params.row.detailItems.find(
-                  (f) => f.gridFieldName === colDef.gridFieldName
-                )?.value || "";
-              return val === ""
-                ? "選択なし"
-                : colDef.options?.find((opt) => opt.optValue === val)
-                    ?.optName || "";
-            },
-            renderCell: (params) => (
-              <SelectCell
-                params={params}
-                colDef={colDef}
-                selectValueSet={selectValueSet}
-                setSelectValueSet={setSelectValueSet}
-              />
+            ...gridSingleSelectColDef(
+              baseDef,
+              colDef,
+              selectValueSet,
+              setSelectValueSet
             ),
           };
         case INPUT_TYPE.SWITCH:
