@@ -164,7 +164,9 @@ export const useDynamicColumnGridHooks = () => {
   // 初期値設定
   useEffect(() => {
     console.log("rows changed", { rows: rowData, colDefs });
-    if (rowData.length > 0) {
+    if (rowData.length > 0 && colDefs.length > 0) {
+      // データ取得できた場合、初期値設定
+
       // 選択項目の初期値設定
       const initialSelectItemState = rowData.reduce<{
         [rowId: string]: string;
