@@ -120,6 +120,8 @@ type RadioValueSetType = {
  * @returns 動的適宜グリッドデータ（hooks）
  */
 export const useDynamicColumnGridHooks = () => {
+  console.log("★useDynamicColumnGridHooks再レンダリング");
+
   const gridApiRef = useGridApiRef();
 
   const router = useRouter();
@@ -163,7 +165,9 @@ export const useDynamicColumnGridHooks = () => {
 
   // 初期値設定
   useEffect(() => {
-    console.log("rows changed", { rows: rowData, colDefs });
+    let isMounted = true; // レースコンディション回避用
+
+    console.log("component mounted", { rows: rowData, colDefs });
     if (rowData.length > 0 && colDefs.length > 0) {
       // データ取得できた場合、初期値設定
 
@@ -174,7 +178,6 @@ export const useDynamicColumnGridHooks = () => {
         acc[row.id] = row.selectItem;
         return acc;
       }, {});
-      setSelectItemState(initialSelectItemState);
 
       // 選択項目の値セット初期化
       const singleSelectFields = colDefs
@@ -194,7 +197,6 @@ export const useDynamicColumnGridHooks = () => {
         },
         {}
       );
-      setSelectValueSet(initialSelectValueSet);
 
       // スイッチ選択項目の値セット初期化
       const switchFields = colDefs
@@ -214,7 +216,6 @@ export const useDynamicColumnGridHooks = () => {
         },
         {}
       );
-      setSwitchValueSet(initialSwitchValueSet);
 
       // ラジオ項目の値セット初期化
       const radioFields = colDefs
@@ -234,8 +235,20 @@ export const useDynamicColumnGridHooks = () => {
         },
         {}
       );
-      setRadioValueSet(initialRadioValueSet);
+
+      if (isMounted) {
+        // コンポーネントマウント状態の場合のみ、状態を更新
+        setSelectItemState(initialSelectItemState);
+        setSelectValueSet(initialSelectValueSet);
+        setSwitchValueSet(initialSwitchValueSet);
+        setRadioValueSet(initialRadioValueSet);
+      }
     }
+
+    return () => {
+      console.log("component unmounted");
+      isMounted = false; // マウント状態解除
+    };
   }, [rowData, colDefs]);
 
   // カラムヘッダーの背景色

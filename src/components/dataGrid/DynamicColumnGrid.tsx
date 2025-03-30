@@ -16,8 +16,6 @@ import { useDynamicColumnGridHooks } from "./DynamicCloumnGridHooks";
  * @returns
  */
 export const DynamicColumnGrid = () => {
-  console.log("★DynamicColumnGrid render");
-
   const {
     gridApiRef,
     rows,
