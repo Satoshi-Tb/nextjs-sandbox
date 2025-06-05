@@ -72,6 +72,17 @@ function Home() {
         <li>
           <Link href="/samples/basic">render test</Link>
         </li>
+
+        <li>
+          <Link href="/samples/highlight-words/simple-highlight">
+            simple-highlight
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/highlight-words/multicolor-highlight">
+            multicolor-highlight
+          </Link>
+        </li>
       </ul>
     </div>
   );
