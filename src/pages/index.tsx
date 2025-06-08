@@ -74,12 +74,12 @@ function Home() {
         </li>
 
         <li>
-          <Link href="/samples/highlight-words/simple-highlight">
+          <Link href="/samples/manual-highlight/simple-highlight">
             simple-highlight
           </Link>
         </li>
         <li>
-          <Link href="/samples/highlight-words/multicolor-highlight">
+          <Link href="/samples/manual-highlight/multicolor-highlight">
             multicolor-highlight
           </Link>
         </li>
