@@ -1,7 +1,9 @@
 // HighlightEditor.tsx
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import rangy from "rangy";
 import "rangy/lib/rangy-classapplier";
+import useSWR from "swr";
+import Link from "next/link";
 
 rangy.init();
 
@@ -10,6 +12,8 @@ type Highlight = {
   color: string;
 };
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 const HIGHLIGHT_COLORS = ["#ffeb3b", "#b2ff59", "#80d8ff"];
 
 export const RangyHighlightSample: React.FC = () => {
@@ -17,14 +21,33 @@ export const RangyHighlightSample: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>(
     HIGHLIGHT_COLORS[0]
   );
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
 
-  const applyHighlight = () => {
+  // 初期表示データ
+  const { data, isLoading } = useSWR("/api/highlight/document", fetcher);
+
+  // ハイライト適用データ
+  const { data: highlightData, mutate: reloadHighlight } = useSWR(
+    "/api/highlight/highlighted",
+    fetcher
+  );
+
+  useEffect(() => {
+    // ハイライトデータセット
+    if (highlightData?.html && contentRef.current) {
+      contentRef.current.innerHTML = highlightData.html;
+    }
+  }, [highlightData]);
+
+  const applyHighlight = async () => {
+    // 選択状態取得
     const selection = rangy.getSelection();
 
     console.log("applyHighlight", selection);
-
     if (!selection || selection.isCollapsed) return;
+
+    // 選択エリア判定
+    const range = selection.getRangeAt(0);
+    if (!contentRef.current?.contains(range.commonAncestorContainer)) return;
 
     const id = `hl-${Date.now()}`;
     const cssClass = `highlight-${id}`;
@@ -34,29 +57,23 @@ export const RangyHighlightSample: React.FC = () => {
       elementProperties: {
         id: id,
         style: { backgroundColor: selectedColor, cursor: "pointer" },
-        onclick: () => removeHighlight(id),
       },
     });
     console.log("applyHighlight", applier);
     applier.applyToSelection();
-    setHighlights((prev) => [...prev, { id, color: selectedColor }]);
     selection.removeAllRanges();
+    // 保存用にinnerHTMLをサーバーにPOST
+    if (contentRef.current) {
+      await fetch("/api/highlight/highlighted", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html: contentRef.current.innerHTML }),
+      });
+      reloadHighlight();
+    }
   };
 
-  const removeHighlight = (id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    const range = rangy.createRange();
-    range.selectNodeContents(el);
-    (rangy.getSelection() as any).setSingleRange(range);
-
-    const applier = (rangy as any).createClassApplier(`highlight-${id}`, {
-      elementTagName: "mark",
-    });
-    applier.undoToSelection();
-    setHighlights((prev) => prev.filter((h) => h.id !== id));
-  };
+  if (isLoading) return <p>Loading...</p>;
 
   return (
     <div>
@@ -92,14 +109,10 @@ export const RangyHighlightSample: React.FC = () => {
           padding: 12,
           lineHeight: 1.6,
         }}
-        dangerouslySetInnerHTML={{
-          __html: `
-            <p><b>React</b>はFacebookが開発した<strong>UIライブラリ</strong>であり、</p>
-            <p><span style="color:blue">コンポーネント指向</span>と仮想DOMによる高速描画を特徴としています。</p>
-            <p>さらに、<sup>Next.js</sup>などのフレームワークとも併用されます。</p>
-          `,
-        }}
+        dangerouslySetInnerHTML={{ __html: data.html }}
       />
+      {/* フッター */}
+      <Link href="/">TOP</Link>
     </div>
   );
 };
