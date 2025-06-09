@@ -83,6 +83,11 @@ function Home() {
             multicolor-highlight
           </Link>
         </li>
+        <li>
+          <Link href="/samples/manual-highlight/rangy-highlight-sample">
+            rangy-highlight-sample
+          </Link>
+        </li>
       </ul>
     </div>
   );
