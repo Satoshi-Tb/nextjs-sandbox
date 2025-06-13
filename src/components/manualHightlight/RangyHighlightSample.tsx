@@ -23,7 +23,10 @@ export const RangyHighlightSample: React.FC = () => {
   );
 
   // 初期表示データ
-  const { data, isLoading } = useSWR("/api/highlight/document", fetcher);
+  const { data: initialData, isLoading } = useSWR(
+    "/api/highlight/document",
+    fetcher
+  );
 
   // ハイライト適用データ
   const { data: highlightData, mutate: reloadHighlight } = useSWR(
@@ -37,6 +40,58 @@ export const RangyHighlightSample: React.FC = () => {
       contentRef.current.innerHTML = highlightData.html;
     }
   }, [highlightData]);
+
+  useEffect(() => {
+    // ハイライト削除用のイベントセット
+    // TODO イベント動作が不安定
+    const container = contentRef.current;
+    if (!container) return;
+
+    const handleClick = async (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      console.log("click highlight:start", { target });
+      if (target.tagName === "MARK") {
+        const cssClass = Array.from(target.classList).find((cls) =>
+          cls.startsWith("highlight-")
+        );
+        console.log("click highlight:targetclass", { cssClass });
+        if (!cssClass) return;
+
+        const range = rangy.createRange();
+
+        // range.selectNodeContents(target);
+        // console.log("click highlight:createrange", { range });
+
+        // (rangy.getSelection() as any).setSingleRange(range);
+
+        // const applier = (rangy as any).createClassApplier(cssClass);
+
+        range.selectNode(target);
+        console.log("click highlight:createrange", { range });
+        rangy.getSelection().removeAllRanges();
+        rangy.getSelection().addRange(range);
+        console.log("click highlight:resetrange", { range });
+        const applier = (rangy as any).createClassApplier(cssClass, {
+          elementTagName: "mark",
+        });
+        console.log("click highlight:applier", { applier });
+
+        applier.undoToSelection();
+
+        if (contentRef.current) {
+          await fetch("/api/highlight/highlighted", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ html: contentRef.current.innerHTML }),
+          });
+          reloadHighlight();
+        }
+      }
+    };
+
+    container.addEventListener("click", handleClick);
+    return () => container.removeEventListener("click", handleClick);
+  }, [reloadHighlight]);
 
   const applyHighlight = async () => {
     // 選択状態取得
@@ -52,16 +107,24 @@ export const RangyHighlightSample: React.FC = () => {
     const id = `hl-${Date.now()}`;
     const cssClass = `highlight-${id}`;
 
+    // 選択範囲にハイライトマークアップを適用する
+    // DOMを直接操作する
     const applier = (rangy as any).createClassApplier(cssClass, {
       elementTagName: "mark",
       elementProperties: {
         id: id,
         style: { backgroundColor: selectedColor, cursor: "pointer" },
       },
+      onclick: () => {
+        // note:このイベントハンドラは、html再レンダリングのタイミングで削除されるので、動作しない
+        console.log("applier onclick");
+      },
     });
+
     console.log("applyHighlight", applier);
     applier.applyToSelection();
     selection.removeAllRanges();
+
     // 保存用にinnerHTMLをサーバーにPOST
     if (contentRef.current) {
       await fetch("/api/highlight/highlighted", {
@@ -109,7 +172,7 @@ export const RangyHighlightSample: React.FC = () => {
           padding: 12,
           lineHeight: 1.6,
         }}
-        dangerouslySetInnerHTML={{ __html: data.html }}
+        dangerouslySetInnerHTML={{ __html: initialData.html }}
       />
       {/* フッター */}
       <Link href="/">TOP</Link>
