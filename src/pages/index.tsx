@@ -88,6 +88,11 @@ function Home() {
             rangy-highlight-sample
           </Link>
         </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-sample">
+            manual-highlight-sample
+          </Link>
+        </li>
       </ul>
     </div>
   );
