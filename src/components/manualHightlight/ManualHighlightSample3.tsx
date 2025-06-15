@@ -52,7 +52,7 @@ export const ManualHighlightSample3 = () => {
       return;
 
     const serialized = serializeRange(range, contentRef.current);
-    applyUnderline(serialized);
+    wrapRangeWithSpans(range);
 
     const merged = mergeHighlights([...highlights, serialized]);
     setHighlights(merged);
@@ -120,13 +120,19 @@ export const ManualHighlightSample3 = () => {
     return range;
   };
 
-  const applyUnderline = (data: UnderlineRange) => {
-    const range = deserializeRange(data, contentRef.current!);
-    if (range.collapsed) return;
+  const wrapRangeWithSpans = (range: Range) => {
+    const contents = range.extractContents();
     const span = document.createElement("span");
     span.className = UNDERLINE_CLASS;
     span.style.borderBottom = "3px solid red";
-    range.surroundContents(span);
+    span.appendChild(contents);
+    range.insertNode(span);
+  };
+
+  const applyUnderline = (data: UnderlineRange) => {
+    const range = deserializeRange(data, contentRef.current!);
+    if (range.collapsed) return;
+    wrapRangeWithSpans(range);
   };
 
   const restoreContent = () => {
