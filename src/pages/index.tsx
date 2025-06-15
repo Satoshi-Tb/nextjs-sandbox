@@ -90,7 +90,13 @@ function Home() {
         </li>
         <li>
           <Link href="/samples/manual-highlight/manual-highlight-sample">
-            manual-highlight-sample
+            manual-highlight-sample(Range利用, 選択位置情報のみ保存)
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-sample2">
+            manual-highlight-sample(Range利用,
+            ドキュメント構造と選択位置情報のみ保存)
           </Link>
         </li>
       </ul>
