@@ -54,11 +54,9 @@ function Home() {
             data grid with dynamic row definition
           </Link>
         </li>
-
         <li>
           <Link href="/samples/grid/sample1">grid</Link>
         </li>
-
         <li>
           <Link href="/samples/hoc/sample1">HOC</Link>
         </li>
@@ -68,11 +66,9 @@ function Home() {
         <li>
           <Link href="/samples/tab">tab basic</Link>
         </li>
-
         <li>
           <Link href="/samples/basic">render test</Link>
         </li>
-
         <li>
           <Link href="/samples/manual-highlight/simple-highlight">
             simple-highlight
@@ -101,6 +97,11 @@ function Home() {
         <li>
           <Link href="/samples/manual-highlight/manual-highlight-sample3">
             manual-highlight-sample(Path形式による永続化その２)
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/range-serializer-sample">
+            range-serializer-sample
           </Link>
         </li>
       </ul>
