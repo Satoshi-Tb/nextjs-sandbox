@@ -77,7 +77,7 @@ const RangyApp: React.FC = () => {
   useEffect(() => {
     if (!contentRef.current) return;
 
-    // 既存のハイライトをすべて除去（CSS属性セレクタで確実に検索）
+    // 既存のハイライトをすべて除去してDOM構造をリセット
     const allUnderlines = contentRef.current.querySelectorAll(
       '[class*="rangy-underline"]'
     );
@@ -91,8 +91,11 @@ const RangyApp: React.FC = () => {
       }
     });
 
+    // DOM正規化（隣接するテキストノードをマージ）
+    contentRef.current.normalize();
+
     // 保存されているハイライトを順に適用
-    serializedRanges.forEach((savedRange) => {
+    serializedRanges.forEach((savedRange, index) => {
       try {
         const range = rangy.deserializeRange(
           savedRange.serialized,
@@ -112,14 +115,22 @@ const RangyApp: React.FC = () => {
             }
           );
           applier.applyToRange(range);
+        } else {
+          console.warn(
+            `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
+            savedRange.serialized
+          );
         }
       } catch (err) {
-        console.warn(`ハイライト適用エラー (ID: ${savedRange.id}):`, err);
+        console.warn(
+          `ハイライト適用エラー (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
+          err
+        );
       }
     });
   }, [serializedRanges]);
 
-  // マウスアップ時の範囲選択処理（シリアライズと状態更新のみ）
+  // マウスアップ時の範囲選択処理（元のDOM状態でシリアライズ）
   const handleMouseUp = (): void => {
     setTimeout(() => {
       try {
@@ -135,33 +146,59 @@ const RangyApp: React.FC = () => {
           return;
         }
 
-        const serialized = rangy.serializeRange(
-          range,
-          true,
-          contentRef.current
-        );
+        // 重要: 元のDOM構造（ハイライト適用前）でシリアライズを取得
+        // まず一時的にすべてのハイライトを除去
+        const tempRemovedRanges = [...serializedRanges];
 
-        if (serialized) {
-          // 新しい範囲を状態に追加（描画更新はuseEffectで処理）
-          const newRange: SavedRange = {
-            id: Date.now(),
-            order: orderCounter,
-            serialized: serialized,
-            text: selectedText,
-            timestamp: new Date().toLocaleString(),
-          };
+        // DOM構造をクリーンな状態に戻す
+        if (contentRef.current) {
+          const allUnderlines = contentRef.current.querySelectorAll(
+            '[class*="rangy-underline"]'
+          );
+          allUnderlines.forEach((element) => {
+            const parent = element.parentNode;
+            if (parent) {
+              while (element.firstChild) {
+                parent.insertBefore(element.firstChild, element);
+              }
+              parent.removeChild(element);
+            }
+          });
+          contentRef.current.normalize();
+        }
 
-          setSerializedRanges((prev) => [...prev, newRange]);
-          setOrderCounter((prev) => prev + 1);
-          setMessage(
-            `範囲を保存しました: "${selectedText.substring(0, 30)}${
-              selectedText.length > 30 ? "..." : ""
-            }"`
+        // クリーンなDOM状態で新しい選択範囲を取得し直す
+        const cleanSelection = rangy.getSelection();
+        if (cleanSelection.rangeCount > 0) {
+          const cleanRange = cleanSelection.getRangeAt(0);
+          const serialized = rangy.serializeRange(
+            cleanRange,
+            true,
+            contentRef.current
           );
 
-          // 選択を解除
-          selection.removeAllRanges();
+          if (serialized) {
+            // 新しい範囲を状態に追加
+            const newRange: SavedRange = {
+              id: Date.now(),
+              order: orderCounter,
+              serialized: serialized,
+              text: selectedText,
+              timestamp: new Date().toLocaleString(),
+            };
+
+            setSerializedRanges((prev) => [...prev, newRange]);
+            setOrderCounter((prev) => prev + 1);
+            setMessage(
+              `範囲を保存しました: "${selectedText.substring(0, 30)}${
+                selectedText.length > 30 ? "..." : ""
+              }"`
+            );
+          }
         }
+
+        // 選択を解除
+        selection.removeAllRanges();
       } catch (err) {
         setMessage(
           `エラー: 範囲処理中にエラーが発生しました - ${
@@ -169,7 +206,7 @@ const RangyApp: React.FC = () => {
           }`
         );
       }
-    }, 10); // 少し遅延させて選択状態を確実に取得
+    }, 10);
   };
 
   // 下線をクリア
