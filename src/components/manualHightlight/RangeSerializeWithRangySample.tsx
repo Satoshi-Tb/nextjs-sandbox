@@ -49,21 +49,19 @@ const SAMPLE_TEXT = `
 <p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='50'%3E%3Crect width='100' height='50' fill='%23e3f2fd'/%3E%3Ctext x='50' y='30' text-anchor='middle' fill='%23333'%3E図表1%3C/text%3E%3C/svg%3E" alt="サンプル図表" style="vertical-align: middle;"/> この図表は技術の進歩を示しています。</p>
 `;
 
-rangy.init();
-
 export const RangyApp: React.FC = () => {
   const [serializedRanges, setSerializedRanges] = useState<SavedRange[]>([]);
   const [deserializeInput, setDeserializeInput] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   // Rangyの初期化
-  //   if (typeof window !== "undefined") {
-  //     rangy.init();
-  //     setMessage("Rangyライブラリが初期化されました");
-  //   }
-  // }, []);
+  useEffect(() => {
+    // Rangyの初期化
+    if (typeof window !== "undefined") {
+      rangy.init();
+      setMessage("Rangyライブラリが初期化されました");
+    }
+  }, []);
 
   // 選択範囲の取得とシリアライズ
   const handleSerialize = (): void => {
