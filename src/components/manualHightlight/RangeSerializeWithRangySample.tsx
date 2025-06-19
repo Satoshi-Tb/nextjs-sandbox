@@ -77,7 +77,7 @@ const RangyApp: React.FC = () => {
   useEffect(() => {
     if (!contentRef.current) return;
 
-    // 既存のハイライトをすべて除去してDOM構造をリセット
+    // 既存のハイライトをすべて除去してDOM構造を完全にリセット
     const allUnderlines = contentRef.current.querySelectorAll(
       '[class*="rangy-underline"]'
     );
@@ -91,11 +91,39 @@ const RangyApp: React.FC = () => {
       }
     });
 
-    // DOM正規化（隣接するテキストノードをマージ）
+    // DOM正規化（隣接するテキストノードをマージして元の状態に戻す）
     contentRef.current.normalize();
 
-    // 保存されているハイライトを順に適用
-    serializedRanges.forEach((savedRange, index) => {
+    // 重要: 選択順序でソートして、元のDOM構造での位置順に適用
+    const sortedRanges = [...serializedRanges].sort((a, b) => {
+      // シリアライズデータから開始位置を抽出して比較
+      const getStartPosition = (serialized: string) => {
+        // "2/3:7,2/3:11" のような形式から開始位置 "2/3:7" を抽出
+        const parts = serialized.split(",");
+        if (parts.length > 0) {
+          const startPart = parts[0];
+          const pathAndOffset = startPart.split(":");
+          if (pathAndOffset.length === 2) {
+            const path = pathAndOffset[0].split("/").map(Number);
+            const offset = Number(pathAndOffset[1]);
+            // パスとオフセットを組み合わせて比較用の値を作成
+            return (
+              path.reduce(
+                (acc, val, index) =>
+                  acc + val * Math.pow(1000, path.length - index - 1),
+                0
+              ) + offset
+            );
+          }
+        }
+        return 0;
+      };
+
+      return getStartPosition(a.serialized) - getStartPosition(b.serialized);
+    });
+
+    // ソート済みの範囲を順番に適用（DOM構造を段階的に変更）
+    sortedRanges.forEach((savedRange, index) => {
       try {
         const range = rangy.deserializeRange(
           savedRange.serialized,
@@ -115,6 +143,9 @@ const RangyApp: React.FC = () => {
             }
           );
           applier.applyToRange(range);
+
+          // 各適用後にDOMを正規化
+          contentRef.current.normalize();
         } else {
           console.warn(
             `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
