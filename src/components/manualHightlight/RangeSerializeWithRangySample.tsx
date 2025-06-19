@@ -5,17 +5,25 @@ import {
   Button,
   Box,
   Paper,
-  TextField,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ClearAllIcon from "@mui/icons-material/ClearAll";
-/// <reference types="rangy/lib/rangy-serializer" />
-/// <reference types="rangy/lib/rangy-classapplier" />
+import ListIcon from "@mui/icons-material/List";
 import * as rangy from "rangy";
 import "rangy/lib/rangy-serializer";
 import "rangy/lib/rangy-classapplier";
@@ -23,6 +31,7 @@ import "rangy/lib/rangy-classapplier";
 // 保存された範囲の型定義
 interface SavedRange {
   id: number;
+  order: number;
   serialized: string;
   text: string;
   timestamp: string;
@@ -49,10 +58,11 @@ const SAMPLE_TEXT = `
 <p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='50'%3E%3Crect width='100' height='50' fill='%23e3f2fd'/%3E%3Ctext x='50' y='30' text-anchor='middle' fill='%23333'%3E図表1%3C/text%3E%3C/svg%3E" alt="サンプル図表" style="vertical-align: middle;"/> この図表は技術の進歩を示しています。</p>
 `;
 
-export const RangyApp: React.FC = () => {
+const RangyApp: React.FC = () => {
   const [serializedRanges, setSerializedRanges] = useState<SavedRange[]>([]);
-  const [deserializeInput, setDeserializeInput] = useState<string>("");
   const [message, setMessage] = useState<string>("");
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+  const [orderCounter, setOrderCounter] = useState<number>(1);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,87 +73,73 @@ export const RangyApp: React.FC = () => {
     }
   }, []);
 
-  // 選択範囲の取得とシリアライズ
-  const handleSerialize = (): void => {
-    try {
-      const selection = rangy.getSelection();
-      if (selection.rangeCount === 0) {
-        setMessage("エラー: テキストが選択されていません");
-        return;
-      }
+  // マウスアップ時の範囲選択処理
+  const handleMouseUp = (): void => {
+    setTimeout(() => {
+      try {
+        const selection = rangy.getSelection();
+        if (selection.rangeCount === 0) {
+          return;
+        }
 
-      const range = selection.getRangeAt(0);
-      const serialized = rangy.serializeRange(range, true, contentRef.current);
-      const selectedText = range.toString();
+        const range = selection.getRangeAt(0);
+        const selectedText = range.toString().trim();
 
-      if (serialized && selectedText) {
-        const newRange: SavedRange = {
-          id: Date.now(),
-          serialized: serialized,
-          text: selectedText,
-          timestamp: new Date().toLocaleString(),
-        };
+        if (!selectedText) {
+          return;
+        }
 
-        setSerializedRanges((prev) => [...prev, newRange]);
-        setMessage(
-          `成功: 範囲を保存しました "${selectedText.substring(0, 30)}${
-            selectedText.length > 30 ? "..." : ""
-          }"`
+        const serialized = rangy.serializeRange(
+          range,
+          true,
+          contentRef.current
         );
 
-        // 選択を解除
-        selection.removeAllRanges();
-      } else {
-        setMessage("エラー: 範囲のシリアライズに失敗しました");
-      }
-    } catch (err) {
-      setMessage(
-        `エラー: シリアライズ中にエラーが発生しました - ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      );
-    }
-  };
+        if (serialized) {
+          // 既存の下線を削除
+          clearUnderlines();
 
-  // デシリアライズして範囲に下線を設定
-  const handleDeserialize = (): void => {
-    if (!deserializeInput.trim()) {
-      setMessage("エラー: 入力が空です");
-      return;
-    }
-
-    try {
-      // 既存の下線を削除
-      clearUnderlines();
-
-      const range = rangy.deserializeRange(
-        deserializeInput.trim(),
-        contentRef.current
-      );
-      if (range) {
-        // 下線のスタイルを適用
-        const applier = rangy.createCssClassApplier("rangy-underline", {
-          elementTagName: "span",
-          elementProperties: {
-            style: {
-              borderBottom: "3px solid red",
-              textDecoration: "none",
+          // 新しい下線を設定
+          const applier = rangy.createCssClassApplier("rangy-underline", {
+            elementTagName: "span",
+            elementProperties: {
+              style: {
+                borderBottom: "3px solid red",
+                textDecoration: "none",
+              },
             },
-          },
-        });
+          });
 
-        applier.applyToRange(range);
-        setMessage("成功: 範囲に下線を設定しました");
-      } else {
-        setMessage("エラー: 無効なシリアライズデータです");
+          applier.applyToRange(range);
+
+          // 範囲を保存
+          const newRange: SavedRange = {
+            id: Date.now(),
+            order: orderCounter,
+            serialized: serialized,
+            text: selectedText,
+            timestamp: new Date().toLocaleString(),
+          };
+
+          setSerializedRanges((prev) => [...prev, newRange]);
+          setOrderCounter((prev) => prev + 1);
+          setMessage(
+            `範囲を保存しました: "${selectedText.substring(0, 30)}${
+              selectedText.length > 30 ? "..." : ""
+            }"`
+          );
+
+          // 選択を解除
+          selection.removeAllRanges();
+        }
+      } catch (err) {
+        setMessage(
+          `エラー: 範囲処理中にエラーが発生しました - ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
       }
-    } catch (err) {
-      setMessage(
-        `エラー: デシリアライズ中にエラーが発生しました - ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      );
-    }
+    }, 10); // 少し遅延させて選択状態を確実に取得
   };
 
   // 下線をクリア
@@ -172,14 +168,52 @@ export const RangyApp: React.FC = () => {
   // すべての保存範囲を削除
   const handleClearAll = (): void => {
     setSerializedRanges([]);
+    setOrderCounter(1);
     clearUnderlines();
     setMessage("成功: すべての範囲を削除しました");
   };
 
-  // 保存された範囲をテキストエリアに設定
-  const handleUseRange = (serialized: string): void => {
-    setDeserializeInput(serialized);
-    setMessage("シリアライズデータをテキストエリアに設定しました");
+  // ダイアログを開く
+  const handleOpenDialog = (): void => {
+    setDialogOpen(true);
+  };
+
+  // ダイアログを閉じる
+  const handleCloseDialog = (): void => {
+    setDialogOpen(false);
+  };
+
+  // 保存された範囲を復元（下線表示）
+  const handleRestoreRange = (serialized: string): void => {
+    try {
+      // 既存の下線を削除
+      clearUnderlines();
+
+      const range = rangy.deserializeRange(serialized, contentRef.current);
+      if (range) {
+        // 下線のスタイルを適用
+        const applier = rangy.createCssClassApplier("rangy-underline", {
+          elementTagName: "span",
+          elementProperties: {
+            style: {
+              borderBottom: "3px solid red",
+              textDecoration: "none",
+            },
+          },
+        });
+
+        applier.applyToRange(range);
+        setMessage("範囲に下線を復元しました");
+      } else {
+        setMessage("エラー: 範囲の復元に失敗しました");
+      }
+    } catch (err) {
+      setMessage(
+        `エラー: 範囲復元中にエラーが発生しました - ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    }
   };
 
   return (
@@ -210,12 +244,13 @@ export const RangyApp: React.FC = () => {
       {/* サンプルテキストエリア */}
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
-          サンプルテキスト
+          サンプルテキスト（範囲選択すると自動で下線が設定されます）
         </Typography>
 
         <Box
           ref={contentRef}
           dangerouslySetInnerHTML={{ __html: SAMPLE_TEXT }}
+          onMouseUp={handleMouseUp}
           sx={{
             border: "1px solid #ccc",
             borderRadius: 1,
@@ -235,8 +270,13 @@ export const RangyApp: React.FC = () => {
         />
 
         <Box sx={{ mt: 2 }}>
-          <Button variant="contained" onClick={handleSerialize} sx={{ mr: 1 }}>
-            シリアライズ
+          <Button
+            variant="contained"
+            onClick={handleOpenDialog}
+            startIcon={<ListIcon />}
+            sx={{ mr: 1 }}
+          >
+            下線一覧 ({serializedRanges.length})
           </Button>
           <Button variant="outlined" onClick={clearUnderlines}>
             下線クリア
@@ -244,102 +284,121 @@ export const RangyApp: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* デシリアライズエリア */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          デシリアライズ
-        </Typography>
-        <TextField
-          fullWidth
-          multiline
-          rows={3}
-          value={deserializeInput}
-          onChange={(e) => setDeserializeInput(e.target.value)}
-          placeholder="シリアライズデータを入力してください"
-          variant="outlined"
-          sx={{ mb: 2 }}
-        />
-        <Button
-          variant="contained"
-          color="success"
-          onClick={handleDeserialize}
-          disabled={!deserializeInput.trim()}
-        >
-          デシリアライズ
-        </Button>
-      </Paper>
-
-      {/* 保存された範囲一覧 */}
-      <Paper sx={{ p: 2 }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={2}
-        >
-          <Typography variant="h6">
-            保存された範囲 ({serializedRanges.length})
-          </Typography>
-          <IconButton
-            color="error"
-            onClick={handleClearAll}
-            disabled={serializedRanges.length === 0}
+      {/* 下線一覧ダイアログ */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
           >
-            <ClearAllIcon />
-          </IconButton>
-        </Box>
+            <Typography variant="h6">
+              下線一覧 ({serializedRanges.length}件)
+            </Typography>
+            <IconButton
+              color="error"
+              onClick={handleClearAll}
+              disabled={serializedRanges.length === 0}
+              title="すべて削除"
+            >
+              <ClearAllIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
 
-        {serializedRanges.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            保存された範囲はありません
-          </Typography>
-        ) : (
-          <List>
-            {serializedRanges.map((range) => (
-              <ListItem key={range.id} sx={{ px: 0 }}>
-                <ListItemText
-                  primary={
-                    range.text.substring(0, 50) +
-                    (range.text.length > 50 ? "..." : "")
-                  }
-                  secondary={
-                    <Box>
-                      <Typography variant="caption" display="block">
-                        {range.timestamp}
-                      </Typography>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        value={range.serialized}
-                        onClick={() => handleUseRange(range.serialized)}
-                        sx={{
-                          mt: 1,
-                          cursor: "pointer",
-                          "& .MuiInputBase-input": { fontSize: "0.8rem" },
-                        }}
-                        title="クリックでデシリアライズエリアに設定"
-                        InputProps={{ readOnly: true }}
-                      />
-                    </Box>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    color="error"
-                    onClick={() => handleDeleteRange(range.id)}
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
+        <DialogContent>
+          {serializedRanges.length === 0 ? (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              align="center"
+              sx={{ py: 4 }}
+            >
+              保存された下線はありません
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>順番</TableCell>
+                    <TableCell>選択テキスト</TableCell>
+                    <TableCell>シリアライズデータ</TableCell>
+                    <TableCell>作成日時</TableCell>
+                    <TableCell align="center">操作</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {serializedRanges.map((range) => (
+                    <TableRow key={range.id} hover>
+                      <TableCell>{range.order}</TableCell>
+                      <TableCell sx={{ maxWidth: 200 }}>
+                        <Typography
+                          variant="body2"
+                          title={range.text}
+                          sx={{
+                            cursor: "pointer",
+                            "&:hover": { textDecoration: "underline" },
+                          }}
+                          onClick={() => handleRestoreRange(range.serialized)}
+                        >
+                          {range.text.length > 50
+                            ? `${range.text.substring(0, 50)}...`
+                            : range.text}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 300 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontFamily: "monospace",
+                            fontSize: "0.8rem",
+                            wordBreak: "break-all",
+                            cursor: "pointer",
+                            "&:hover": { backgroundColor: "#f5f5f5" },
+                          }}
+                          title="クリックで下線を復元"
+                          onClick={() => handleRestoreRange(range.serialized)}
+                        >
+                          {range.serialized.length > 80
+                            ? `${range.serialized.substring(0, 80)}...`
+                            : range.serialized}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {range.timestamp}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDeleteRange(range.id)}
+                          size="small"
+                          title="削除"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>閉じる</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
+
+export default RangyApp;

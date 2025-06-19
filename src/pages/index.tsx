@@ -104,6 +104,11 @@ function Home() {
             range-serializer-sample
           </Link>
         </li>
+        <li>
+          <Link href="/samples/manual-highlight/range-serializer-with-rangy-sample">
+            range-serializer-with-rangy-sample
+          </Link>
+        </li>
       </ul>
     </div>
   );
