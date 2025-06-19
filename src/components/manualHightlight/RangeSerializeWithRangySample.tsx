@@ -73,7 +73,53 @@ const RangyApp: React.FC = () => {
     }
   }, []);
 
-  // マウスアップ時の範囲選択処理
+  // serializedRangesが変更された時にハイライトを更新
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    // 既存のハイライトをすべて除去（CSS属性セレクタで確実に検索）
+    const allUnderlines = contentRef.current.querySelectorAll(
+      '[class*="rangy-underline"]'
+    );
+    allUnderlines.forEach((element) => {
+      const parent = element.parentNode;
+      if (parent) {
+        while (element.firstChild) {
+          parent.insertBefore(element.firstChild, element);
+        }
+        parent.removeChild(element);
+      }
+    });
+
+    // 保存されているハイライトを順に適用
+    serializedRanges.forEach((savedRange) => {
+      try {
+        const range = rangy.deserializeRange(
+          savedRange.serialized,
+          contentRef.current
+        );
+        if (range) {
+          const applier = rangy.createCssClassApplier(
+            `rangy-underline-${savedRange.id}`,
+            {
+              elementTagName: "span",
+              elementProperties: {
+                style: {
+                  borderBottom: "3px solid red",
+                  textDecoration: "none",
+                },
+              },
+            }
+          );
+          applier.applyToRange(range);
+        }
+      } catch (err) {
+        console.warn(`ハイライト適用エラー (ID: ${savedRange.id}):`, err);
+      }
+    });
+  }, [serializedRanges]);
+
+  // マウスアップ時の範囲選択処理（シリアライズと状態更新のみ）
   const handleMouseUp = (): void => {
     setTimeout(() => {
       try {
@@ -96,23 +142,7 @@ const RangyApp: React.FC = () => {
         );
 
         if (serialized) {
-          // 既存の下線を削除
-          clearUnderlines();
-
-          // 新しい下線を設定
-          const applier = rangy.createCssClassApplier("rangy-underline", {
-            elementTagName: "span",
-            elementProperties: {
-              style: {
-                borderBottom: "3px solid red",
-                textDecoration: "none",
-              },
-            },
-          });
-
-          applier.applyToRange(range);
-
-          // 範囲を保存
+          // 新しい範囲を状態に追加（描画更新はuseEffectで処理）
           const newRange: SavedRange = {
             id: Date.now(),
             order: orderCounter,
@@ -145,9 +175,27 @@ const RangyApp: React.FC = () => {
   // 下線をクリア
   const clearUnderlines = (): void => {
     if (contentRef.current) {
-      const underlinedElements =
-        contentRef.current.querySelectorAll(".rangy-underline");
-      underlinedElements.forEach((element) => {
+      // 各範囲のクラス名で検索して削除
+      serializedRanges.forEach((savedRange) => {
+        const underlinedElements = contentRef.current!.querySelectorAll(
+          `.rangy-underline-${savedRange.id}`
+        );
+        underlinedElements.forEach((element) => {
+          const parent = element.parentNode;
+          if (parent) {
+            while (element.firstChild) {
+              parent.insertBefore(element.firstChild, element);
+            }
+            parent.removeChild(element);
+          }
+        });
+      });
+
+      // CSS属性セレクタで全ての下線要素を検索（より確実な方法）
+      const allUnderlines = contentRef.current.querySelectorAll(
+        '[class*="rangy-underline"]'
+      );
+      allUnderlines.forEach((element) => {
         const parent = element.parentNode;
         if (parent) {
           while (element.firstChild) {
@@ -169,7 +217,6 @@ const RangyApp: React.FC = () => {
   const handleClearAll = (): void => {
     setSerializedRanges([]);
     setOrderCounter(1);
-    clearUnderlines();
     setMessage("成功: すべての範囲を削除しました");
   };
 
@@ -185,34 +232,23 @@ const RangyApp: React.FC = () => {
 
   // 保存された範囲を復元（下線表示）
   const handleRestoreRange = (serialized: string): void => {
-    try {
-      // 既存の下線を削除
-      clearUnderlines();
+    // 特定の範囲のみを復元する場合は、該当範囲のみの配列を作成して状態更新
+    const targetRange = serializedRanges.find(
+      (range) => range.serialized === serialized
+    );
+    if (targetRange) {
+      // 一時的に該当範囲のみを表示
+      setSerializedRanges([targetRange]);
+      setMessage("範囲に下線を復元しました");
 
-      const range = rangy.deserializeRange(serialized, contentRef.current);
-      if (range) {
-        // 下線のスタイルを適用
-        const applier = rangy.createCssClassApplier("rangy-underline", {
-          elementTagName: "span",
-          elementProperties: {
-            style: {
-              borderBottom: "3px solid red",
-              textDecoration: "none",
-            },
-          },
+      // 3秒後に全範囲を復元
+      setTimeout(() => {
+        setSerializedRanges((prev) => {
+          // 元の配列を復元（targetRangeが含まれているかチェック）
+          const originalRanges = [...serializedRanges];
+          return originalRanges;
         });
-
-        applier.applyToRange(range);
-        setMessage("範囲に下線を復元しました");
-      } else {
-        setMessage("エラー: 範囲の復元に失敗しました");
-      }
-    } catch (err) {
-      setMessage(
-        `エラー: 範囲復元中にエラーが発生しました - ${
-          err instanceof Error ? err.message : String(err)
-        }`
-      );
+      }, 3000);
     }
   };
 
@@ -278,7 +314,7 @@ const RangyApp: React.FC = () => {
           >
             下線一覧 ({serializedRanges.length})
           </Button>
-          <Button variant="outlined" onClick={clearUnderlines}>
+          <Button variant="outlined" onClick={() => setSerializedRanges([])}>
             下線クリア
           </Button>
         </Box>
