@@ -94,35 +94,47 @@ const RangyApp: React.FC = () => {
     // DOM正規化（隣接するテキストノードをマージして元の状態に戻す）
     contentRef.current.normalize();
 
-    // 重要: 選択順序でソートして、元のDOM構造での位置順に適用
+    // 戦略: 文書の後方から前方に向かって適用（後ろの要素から適用すると前の位置が変わらない）
     const sortedRanges = [...serializedRanges].sort((a, b) => {
-      // シリアライズデータから開始位置を抽出して比較
+      // シリアライズデータから開始位置を抽出
       const getStartPosition = (serialized: string) => {
-        // "2/3:7,2/3:11" のような形式から開始位置 "2/3:7" を抽出
-        const parts = serialized.split(",");
-        if (parts.length > 0) {
-          const startPart = parts[0];
-          const pathAndOffset = startPart.split(":");
-          if (pathAndOffset.length === 2) {
-            const path = pathAndOffset[0].split("/").map(Number);
-            const offset = Number(pathAndOffset[1]);
-            // パスとオフセットを組み合わせて比較用の値を作成
-            return (
-              path.reduce(
-                (acc, val, index) =>
-                  acc + val * Math.pow(1000, path.length - index - 1),
-                0
-              ) + offset
-            );
+        try {
+          // "2/3:7,2/3:11" のような形式から開始位置を数値化
+          const parts = serialized.split(",");
+          if (parts.length > 0) {
+            const startPart = parts[0];
+            const pathAndOffset = startPart.split(":");
+            if (pathAndOffset.length === 2) {
+              const path = pathAndOffset[0].split("/").map(Number);
+              const offset = Number(pathAndOffset[1]);
+              // パス要素を重み付きで計算（より深い階層ほど大きな重み）
+              let position = 0;
+              for (let i = 0; i < path.length; i++) {
+                position += path[i] * Math.pow(1000, path.length - i - 1);
+              }
+              return position + offset;
+            }
           }
+        } catch (e) {
+          console.warn("位置解析エラー:", serialized, e);
         }
         return 0;
       };
 
-      return getStartPosition(a.serialized) - getStartPosition(b.serialized);
+      // 降順ソート（後ろの要素から適用）
+      return getStartPosition(b.serialized) - getStartPosition(a.serialized);
     });
 
-    // ソート済みの範囲を順番に適用（DOM構造を段階的に変更）
+    console.log(
+      "適用順序（後方から前方）:",
+      sortedRanges.map((r) => ({
+        order: r.order,
+        text: r.text,
+        serialized: r.serialized,
+      }))
+    );
+
+    // 後方の要素から順番に適用（前の要素の位置に影響しない）
     sortedRanges.forEach((savedRange, index) => {
       try {
         const range = rangy.deserializeRange(
@@ -143,9 +155,10 @@ const RangyApp: React.FC = () => {
             }
           );
           applier.applyToRange(range);
-
-          // 各適用後にDOMを正規化
-          contentRef.current.normalize();
+          console.log(
+            `適用成功 (${index + 1}/${sortedRanges.length}):`,
+            savedRange.text
+          );
         } else {
           console.warn(
             `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
