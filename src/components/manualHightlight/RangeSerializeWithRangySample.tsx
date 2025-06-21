@@ -137,12 +137,12 @@ const RangyApp: React.FC = () => {
     // 後方の要素から順番に適用（前の要素の位置に影響しない）
     sortedRanges.forEach((savedRange, index) => {
       try {
-        const range = rangy.deserializeRange(
+        const range = (rangy as any).deserializeRange(
           savedRange.serialized,
           contentRef.current
         );
         if (range) {
-          const applier = rangy.createCssClassApplier(
+          const applier = (rangy as any).createCssClassApplier(
             `rangy-underline-${savedRange.id}`,
             {
               elementTagName: "span",
@@ -215,7 +215,7 @@ const RangyApp: React.FC = () => {
         const cleanSelection = rangy.getSelection();
         if (cleanSelection.rangeCount > 0) {
           const cleanRange = cleanSelection.getRangeAt(0);
-          const serialized = rangy.serializeRange(
+          const serialized = (rangy as any).serializeRange(
             cleanRange,
             true,
             contentRef.current
