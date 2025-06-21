@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ClearAllIcon from "@mui/icons-material/ClearAll";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ListIcon from "@mui/icons-material/List";
 import * as rangy from "rangy";
 import "rangy/lib/rangy-serializer";
@@ -60,7 +60,6 @@ const SAMPLE_TEXT = `
 
 const RangyApp: React.FC = () => {
   const [serializedRanges, setSerializedRanges] = useState<SavedRange[]>([]);
-  const [message, setMessage] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [orderCounter, setOrderCounter] = useState<number>(1);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -69,7 +68,7 @@ const RangyApp: React.FC = () => {
     // Rangyの初期化
     if (typeof window !== "undefined") {
       rangy.init();
-      setMessage("Rangyライブラリが初期化されました");
+      console.log("Rangyライブラリが初期化されました");
     }
   }, []);
 
@@ -175,6 +174,7 @@ const RangyApp: React.FC = () => {
   }, [serializedRanges]);
 
   // マウスアップ時の範囲選択処理（元のDOM状態でシリアライズ）
+  // TODO 範囲選択に失敗するケースがある
   const handleMouseUp = (): void => {
     setTimeout(() => {
       try {
@@ -233,7 +233,7 @@ const RangyApp: React.FC = () => {
 
             setSerializedRanges((prev) => [...prev, newRange]);
             setOrderCounter((prev) => prev + 1);
-            setMessage(
+            console.log(
               `範囲を保存しました: "${selectedText.substring(0, 30)}${
                 selectedText.length > 30 ? "..." : ""
               }"`
@@ -244,7 +244,7 @@ const RangyApp: React.FC = () => {
         // 選択を解除
         selection.removeAllRanges();
       } catch (err) {
-        setMessage(
+        console.error(
           `エラー: 範囲処理中にエラーが発生しました - ${
             err instanceof Error ? err.message : String(err)
           }`
@@ -291,14 +291,14 @@ const RangyApp: React.FC = () => {
   // 特定の保存範囲を削除
   const handleDeleteRange = (id: number): void => {
     setSerializedRanges((prev) => prev.filter((range) => range.id !== id));
-    setMessage("成功: 範囲を削除しました");
+    console.log("範囲を削除しました");
   };
 
   // すべての保存範囲を削除
   const handleClearAll = (): void => {
     setSerializedRanges([]);
     setOrderCounter(1);
-    setMessage("成功: すべての範囲を削除しました");
+    console.log("すべての範囲を削除しました");
   };
 
   // ダイアログを開く
@@ -320,7 +320,7 @@ const RangyApp: React.FC = () => {
     if (targetRange) {
       // 一時的に該当範囲のみを表示
       setSerializedRanges([targetRange]);
-      setMessage("範囲に下線を復元しました");
+      console.log("範囲に下線を復元しました");
 
       // 3秒後に全範囲を復元
       setTimeout(() => {
@@ -339,30 +339,28 @@ const RangyApp: React.FC = () => {
         Rangy Range Selection Demo
       </Typography>
 
-      {/* メッセージ表示 */}
-      {message && (
-        <Box
-          sx={{
-            mb: 2,
-            p: 1,
-            bgcolor: message.startsWith("エラー") ? "#ffebee" : "#e8f5e8",
-            borderRadius: 1,
-          }}
-        >
-          <Typography
-            variant="body2"
-            color={message.startsWith("エラー") ? "error" : "success"}
-          >
-            {message}
-          </Typography>
-        </Box>
-      )}
-
       {/* サンプルテキストエリア */}
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ p: 2, mb: 2, position: "relative" }}>
         <Typography variant="h6" gutterBottom>
           サンプルテキスト（範囲選択すると自動で下線が設定されます）
         </Typography>
+
+        {/* 右上にフローティングボタン */}
+        <Button
+          variant="contained"
+          onClick={handleOpenDialog}
+          startIcon={<ListIcon />}
+          sx={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 1,
+            minWidth: "auto",
+            px: 2,
+          }}
+        >
+          下線一覧 ({serializedRanges.length})
+        </Button>
 
         <Box
           ref={contentRef}
@@ -385,20 +383,6 @@ const RangyApp: React.FC = () => {
             },
           }}
         />
-
-        <Box sx={{ mt: 2 }}>
-          <Button
-            variant="contained"
-            onClick={handleOpenDialog}
-            startIcon={<ListIcon />}
-            sx={{ mr: 1 }}
-          >
-            下線一覧 ({serializedRanges.length})
-          </Button>
-          <Button variant="outlined" onClick={() => setSerializedRanges([])}>
-            下線クリア
-          </Button>
-        </Box>
       </Paper>
 
       {/* 下線一覧ダイアログ */}
@@ -417,14 +401,16 @@ const RangyApp: React.FC = () => {
             <Typography variant="h6">
               下線一覧 ({serializedRanges.length}件)
             </Typography>
-            <IconButton
-              color="error"
-              onClick={handleClearAll}
-              disabled={serializedRanges.length === 0}
-              title="すべて削除"
-            >
-              <ClearAllIcon />
-            </IconButton>
+            <Box display="flex" alignItems="center">
+              <Button
+                onClick={handleClearAll}
+                disabled={serializedRanges.length === 0}
+                color="error"
+              >
+                <Typography variant="body2">すべて削除</Typography>
+                <DeleteForeverIcon />
+              </Button>
+            </Box>
           </Box>
         </DialogTitle>
 
