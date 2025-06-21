@@ -179,7 +179,7 @@ const RangyApp: React.FC = () => {
   }, [serializedRanges]);
 
   // マウスアップ時の範囲選択処理（元のDOM状態でシリアライズ）
-  // TODO 範囲選択に失敗するケースがある
+  // TODO 範囲選択が重なる場合に失敗する。設定済ハイライトの前方から新しくハイライトを設定し、それぞれが重なると、範囲設定エラーになる
   const handleMouseUp = (): void => {
     setTimeout(() => {
       try {
