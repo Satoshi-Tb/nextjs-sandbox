@@ -60,6 +60,7 @@ const SAMPLE_TEXT = `
 
 const RangyApp: React.FC = () => {
   const [serializedRanges, setSerializedRanges] = useState<SavedRange[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [orderCounter, setOrderCounter] = useState<number>(1);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -133,6 +134,8 @@ const RangyApp: React.FC = () => {
       }))
     );
 
+    const messages: string[] = [];
+
     // 後方の要素から順番に適用（前の要素の位置に影響しない）
     sortedRanges.forEach((savedRange, index) => {
       try {
@@ -159,18 +162,20 @@ const RangyApp: React.FC = () => {
             savedRange.text
           );
         } else {
-          console.warn(
-            `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
-            savedRange.serialized
-          );
+          const warnMessage = `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`;
+          console.warn(warnMessage, savedRange.serialized);
+          messages.push(warnMessage);
         }
       } catch (err) {
-        console.warn(
-          `ハイライト適用エラー (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
-          err
-        );
+        const warnMessage = `ハイライト適用エラー (順序: ${savedRange.order}, ID: ${savedRange.id}):`;
+        console.warn(warnMessage, err);
+        setErrorMessage(warnMessage);
       }
     });
+
+    if (messages.length > 0) {
+      setErrorMessage(messages.join("\n"));
+    }
   }, [serializedRanges]);
 
   // マウスアップ時の範囲選択処理（元のDOM状態でシリアライズ）
@@ -244,11 +249,11 @@ const RangyApp: React.FC = () => {
         // 選択を解除
         selection.removeAllRanges();
       } catch (err) {
-        console.error(
-          `エラー: 範囲処理中にエラーが発生しました - ${
-            err instanceof Error ? err.message : String(err)
-          }`
-        );
+        const errorMsg = `エラー: 範囲処理中にエラーが発生しました - ${
+          err instanceof Error ? err.message : String(err)
+        }`;
+        console.error(errorMsg);
+        setErrorMessage(errorMsg);
       }
     }, 10);
   };
@@ -311,78 +316,76 @@ const RangyApp: React.FC = () => {
     setDialogOpen(false);
   };
 
-  // 保存された範囲を復元（下線表示）
-  const handleRestoreRange = (serialized: string): void => {
-    // 特定の範囲のみを復元する場合は、該当範囲のみの配列を作成して状態更新
-    const targetRange = serializedRanges.find(
-      (range) => range.serialized === serialized
-    );
-    if (targetRange) {
-      // 一時的に該当範囲のみを表示
-      setSerializedRanges([targetRange]);
-      console.log("範囲に下線を復元しました");
-
-      // 3秒後に全範囲を復元
-      setTimeout(() => {
-        setSerializedRanges((prev) => {
-          // 元の配列を復元（targetRangeが含まれているかチェック）
-          const originalRanges = [...serializedRanges];
-          return originalRanges;
-        });
-      }, 3000);
-    }
-  };
-
   return (
     <Container maxWidth="md" sx={{ py: 2 }}>
       <Typography variant="h4" component="h1" gutterBottom>
         Rangy Range Selection Demo
       </Typography>
 
+      {/* エラーメッセージ表示 */}
+      {errorMessage && (
+        <Box sx={{ mb: 2, p: 1, bgcolor: "#ffebee", borderRadius: 1 }}>
+          <Typography
+            variant="body2"
+            color="error"
+            onClick={() => setErrorMessage("")}
+            sx={{ cursor: "pointer" }}
+          >
+            {errorMessage} (クリックで閉じる)
+          </Typography>
+        </Box>
+      )}
+
       {/* サンプルテキストエリア */}
-      <Paper sx={{ p: 2, mb: 2, position: "relative" }}>
+      <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           サンプルテキスト（範囲選択すると自動で下線が設定されます）
         </Typography>
 
-        {/* 右上にフローティングボタン */}
-        <Button
-          variant="contained"
-          onClick={handleOpenDialog}
-          startIcon={<ListIcon />}
-          sx={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            zIndex: 1,
-            minWidth: "auto",
-            px: 2,
-          }}
-        >
-          下線一覧 ({serializedRanges.length})
-        </Button>
+        {/* 親コンテナ（相対位置指定） */}
+        <Box sx={{ position: "relative" }}>
+          {/* サンプルテキスト表示エリア */}
+          <Box
+            ref={contentRef}
+            dangerouslySetInnerHTML={{ __html: SAMPLE_TEXT }}
+            onMouseUp={handleMouseUp}
+            sx={{
+              border: "1px solid #ccc",
+              borderRadius: 1,
+              p: 2,
+              minHeight: 200,
+              backgroundColor: "#fafafa",
+              userSelect: "text",
+              "& h2": { color: "#1976d2", mt: 0 },
+              "& blockquote": {
+                borderLeft: "4px solid #1976d2",
+                pl: 2,
+                ml: 0,
+                fontStyle: "italic",
+                backgroundColor: "#f0f0f0",
+              },
+            }}
+          />
 
-        <Box
-          ref={contentRef}
-          dangerouslySetInnerHTML={{ __html: SAMPLE_TEXT }}
-          onMouseUp={handleMouseUp}
-          sx={{
-            border: "1px solid #ccc",
-            borderRadius: 1,
-            p: 2,
-            minHeight: 200,
-            backgroundColor: "#fafafa",
-            userSelect: "text",
-            "& h2": { color: "#1976d2", mt: 0 },
-            "& blockquote": {
-              borderLeft: "4px solid #1976d2",
-              pl: 2,
-              ml: 0,
-              fontStyle: "italic",
-              backgroundColor: "#f0f0f0",
-            },
-          }}
-        />
+          {/* オーバーレイボタン（絶対位置指定） */}
+          <Button
+            variant="contained"
+            onClick={handleOpenDialog}
+            startIcon={<ListIcon />}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 10,
+              minWidth: "auto",
+              px: 2,
+              py: 1,
+              fontSize: "0.875rem",
+            }}
+          >
+            下線一覧 ({serializedRanges.length})
+          </Button>
+        </Box>
       </Paper>
 
       {/* 下線一覧ダイアログ */}
@@ -441,15 +444,7 @@ const RangyApp: React.FC = () => {
                     <TableRow key={range.id} hover>
                       <TableCell>{range.order}</TableCell>
                       <TableCell sx={{ maxWidth: 200 }}>
-                        <Typography
-                          variant="body2"
-                          title={range.text}
-                          sx={{
-                            cursor: "pointer",
-                            "&:hover": { textDecoration: "underline" },
-                          }}
-                          onClick={() => handleRestoreRange(range.serialized)}
-                        >
+                        <Typography variant="body2" title={range.text}>
                           {range.text.length > 50
                             ? `${range.text.substring(0, 50)}...`
                             : range.text}
@@ -462,11 +457,7 @@ const RangyApp: React.FC = () => {
                             fontFamily: "monospace",
                             fontSize: "0.8rem",
                             wordBreak: "break-all",
-                            cursor: "pointer",
-                            "&:hover": { backgroundColor: "#f5f5f5" },
                           }}
-                          title="クリックで下線を復元"
-                          onClick={() => handleRestoreRange(range.serialized)}
                         >
                           {range.serialized.length > 80
                             ? `${range.serialized.substring(0, 80)}...`
