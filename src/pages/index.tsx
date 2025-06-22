@@ -109,6 +109,11 @@ function Home() {
             Rangyを利用した手動ハイライトデモ
           </Link>
         </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-with-xpath">
+            RangeAPIを利用した手動ハイライトデモ。永続化はXPath形式
+          </Link>
+        </li>
       </ul>
     </div>
   );
