@@ -105,8 +105,8 @@ function Home() {
           </Link>
         </li>
         <li>
-          <Link href="/samples/manual-highlight/range-serializer-with-rangy-sample">
-            range-serializer-with-rangy-sample
+          <Link href="/samples/manual-highlight/manual-highlight-with-rangy">
+            Rangyを利用した手動ハイライトデモ
           </Link>
         </li>
       </ul>

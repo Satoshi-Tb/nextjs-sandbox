@@ -4,6 +4,7 @@ import {
   RangyManualHighlightArea,
   SavedRange,
 } from "./RangyManualHighlightArea";
+import Link from "next/link";
 
 // RangyManualHighlightAreaコンポーネントのデモアプリ
 
@@ -93,6 +94,8 @@ const DemoApp: React.FC = () => {
           },
         }}
       />
+      {/* フッター */}
+      <Link href="/">TOP</Link>
     </Container>
   );
 };
