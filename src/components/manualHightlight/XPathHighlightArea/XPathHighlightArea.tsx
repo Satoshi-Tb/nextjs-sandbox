@@ -56,16 +56,13 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
   // XPathユーティリティ関数群
   const XPathUtils = {
     /**
-     * DOMノードからXPathを生成
+     * DOMノードから相対XPathを生成
      * @param node - 対象のDOMノード
-     * @param root - ルート要素（デフォルトはdocument）
-     * @returns XPath文字列
+     * @param root - ルート要素
+     * @returns 相対XPath文字列（./ で開始）
      */
-    getXPath: (
-      node: Node,
-      root: Element = document.documentElement
-    ): string => {
-      if (node === root) return "";
+    getXPath: (node: Node, root: Element): string => {
+      if (node === root) return ".";
 
       let path = "";
       let current = node;
@@ -104,19 +101,21 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
         current = current.parentNode!;
       }
 
-      return path;
+      // 相対パス形式で返す（./ で開始）
+      return `.${path}`;
     },
 
     /**
-     * XPathからDOMノードを取得
-     * @param xpath - XPath文字列
+     * 相対XPathからDOMノードを取得
+     * @param xpath - 相対XPath文字列（./ で開始）
      * @param root - 検索のルート要素
      * @returns 見つかったノードまたはnull
      */
     getNodeByXPath: (xpath: string, root: Element): Node | null => {
-      if (!xpath) return root;
+      if (!xpath || xpath === ".") return root;
 
       try {
+        // 相対XPathとして評価
         const result = document.evaluate(
           xpath,
           root,
@@ -129,6 +128,60 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
         console.warn("XPath evaluation failed:", xpath, error);
         return null;
       }
+    },
+
+    /**
+     * XPathを解析して文書順序比較用の数値配列を生成
+     * @param xpath - 相対XPath文字列
+     * @returns 文書順序を表す数値配列
+     */
+    parseXPathToOrder: (xpath: string): number[] => {
+      if (!xpath || xpath === ".") return [0];
+
+      // ./p[1]/strong[2]/text()[1] のような形式を解析
+      const cleanPath = xpath.replace(/^\.\//, ""); // ./ を除去
+      const segments = cleanPath.split("/");
+      const order: number[] = [];
+
+      segments.forEach((segment) => {
+        if (segment) {
+          // tagname[index] または text()[index] の形式から index を抽出
+          const match = segment.match(/\[(\d+)\]$/);
+          if (match) {
+            order.push(parseInt(match[1], 10));
+          } else {
+            order.push(1); // インデックスがない場合は1
+          }
+        }
+      });
+
+      return order;
+    },
+
+    /**
+     * 2つのXPathの文書順序を比較
+     * @param xpathA - 比較対象A
+     * @param xpathB - 比較対象B
+     * @returns A < B なら負数、A > B なら正数、同じなら0
+     */
+    compareXPathOrder: (xpathA: string, xpathB: string): number => {
+      const orderA = XPathUtils.parseXPathToOrder(xpathA);
+      const orderB = XPathUtils.parseXPathToOrder(xpathB);
+
+      // 深さの浅い方から比較
+      const maxLength = Math.max(orderA.length, orderB.length);
+
+      for (let i = 0; i < maxLength; i++) {
+        const valA = orderA[i] || 0;
+        const valB = orderB[i] || 0;
+
+        if (valA !== valB) {
+          return valA - valB;
+        }
+      }
+
+      // ここまで来たら同じ位置、深さの差で判定
+      return orderA.length - orderB.length;
     },
 
     /**
@@ -189,6 +242,39 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
         console.warn("Range deserialization failed:", savedRange, error);
         return null;
       }
+    },
+    /**
+     * 2つの範囲の文書順序を比較（詳細版）
+     * @param rangeA - 範囲A
+     * @param rangeB - 範囲B
+     * @returns A < B なら負数、A > B なら正数、同じなら0
+     */
+    compareRangeOrder: (rangeA: SavedRange, rangeB: SavedRange): number => {
+      // まず開始位置で比較
+      const startCompare = XPathUtils.compareXPathOrder(
+        rangeA.startXPath,
+        rangeB.startXPath
+      );
+      if (startCompare !== 0) {
+        return startCompare;
+      }
+
+      // 開始XPathが同じ場合は開始オフセットで比較
+      if (rangeA.startOffset !== rangeB.startOffset) {
+        return rangeA.startOffset - rangeB.startOffset;
+      }
+
+      // 開始位置が完全に同じ場合は終了位置で比較
+      const endCompare = XPathUtils.compareXPathOrder(
+        rangeA.endXPath,
+        rangeB.endXPath
+      );
+      if (endCompare !== 0) {
+        return endCompare;
+      }
+
+      // 最後に終了オフセットで比較
+      return rangeA.endOffset - rangeB.endOffset;
     },
   };
 
@@ -296,12 +382,9 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
       HighlightManager.clearAllHighlights();
 
       // XPathの文書順序に基づいてソート（後方から適用するため降順）
+      // 構造的な比較を使用して正確な文書順序を判定
       const sortedRanges = [...savedRanges].sort((a, b) => {
-        // 単純なXPath文字列比較（より精密な比較も可能）
-        if (a.startXPath !== b.startXPath) {
-          return b.startXPath.localeCompare(a.startXPath);
-        }
-        return b.startOffset - a.startOffset;
+        return -XPathUtils.compareRangeOrder(a, b); // 降順（後方から前方）
       });
 
       console.log(
@@ -309,7 +392,8 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
         sortedRanges.map((r) => ({
           order: r.order,
           text: r.text.substring(0, 20) + "...",
-          xpath: r.startXPath,
+          startXPath: r.startXPath,
+          startOffset: r.startOffset,
         }))
       );
 
@@ -429,7 +513,7 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
               selectedText.length > 30 ? "..." : ""
             }"`
           );
-          console.log("XPath情報:", {
+          console.log("XPath情報（相対パス）:", {
             start: `${newRange.startXPath}[${newRange.startOffset}]`,
             end: `${newRange.endXPath}[${newRange.endOffset}]`,
           });
