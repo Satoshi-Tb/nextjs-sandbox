@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  Container,
-  Typography,
-  Button,
   Box,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,6 +12,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
+  IconButton,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
@@ -29,38 +23,25 @@ import "rangy/lib/rangy-serializer";
 import "rangy/lib/rangy-classapplier";
 
 // 保存された範囲の型定義
-interface SavedRange {
+export type SavedRange = {
   id: number;
   order: number;
   serialized: string;
   text: string;
   timestamp: string;
-}
+};
 
-// サンプルテキスト（複数のHTML要素を含む）
-const SAMPLE_TEXT = `
-<h2>科学技術の進歩について</h2>
-<p>現代社会における<strong>科学技術の発展</strong>は目覚ましく、私たちの生活に大きな変化をもたらしています。</p>
-<p>特に以下の分野で顕著な進歩が見られます：</p>
-<ul>
-  <li><span style="color: blue;">人工知能（AI）</span>の発達</li>
-  <li>量子コンピュータの研究 <sup>1</sup></li>
-  <li>バイオテクノロジーの応用</li>
-</ul>
-<p>これらの技術は、<u>医療</u>、<em>教育</em>、<mark>環境保護</mark>など様々な分野で活用されています。</p>
-<blockquote>
-  「技術は人類の未来を切り開く鍵である」<br/>
-  - 科学者 田中博士
-</blockquote>
-<p>化学式の例：H<sub>2</sub>O（水）、CO<sub>2</sub>（二酸化炭素）</p>
-<p>数学の公式：E = mc<sup>2</sup></p>
-<p>詳細については、<a href="#more-info" style="color: #1976d2;">こちらのリンク</a>をご覧ください。</p>
-<p><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='50'%3E%3Crect width='100' height='50' fill='%23e3f2fd'/%3E%3Ctext x='50' y='30' text-anchor='middle' fill='%23333'%3E図表1%3C/text%3E%3C/svg%3E" alt="サンプル図表" style="vertical-align: middle;"/> この図表は技術の進歩を示しています。</p>
-`;
+type RangyManualHighlightAreaProps = {
+  html: string; // ハイライト設定対象のHTMLドキュメント
+  onError?: (error: Error) => void; // エラー発生時のハンドラ
+  onRangeSelect?: (range: SavedRange) => void; // 範囲選択された場合のハンドラ。範囲永続化API実行などの利用を想定
+  onRangeDelete?: (id: number) => void; // 保存済選択範囲を削除された場合のハンドラ。範囲永続化API実行などの利用を想定
+};
 
-const RangyApp: React.FC = () => {
+export const RangyManualHighlightArea: React.FC<
+  RangyManualHighlightAreaProps
+> = ({ html, onError, onRangeSelect, onRangeDelete }) => {
   const [serializedRanges, setSerializedRanges] = useState<SavedRange[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [orderCounter, setOrderCounter] = useState<number>(1);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -68,115 +49,131 @@ const RangyApp: React.FC = () => {
   useEffect(() => {
     // Rangyの初期化
     if (typeof window !== "undefined") {
-      rangy.init();
-      console.log("Rangyライブラリが初期化されました");
+      try {
+        rangy.init();
+        console.log("Rangyライブラリが初期化されました");
+      } catch (err) {
+        const error = new Error(
+          `Rangy初期化エラー: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+        console.error(error.message);
+        onError?.(error);
+      }
     }
-  }, []);
+  }, [onError]);
 
   // serializedRangesが変更された時にハイライトを更新
   useEffect(() => {
     if (!contentRef.current) return;
 
-    // 既存のハイライトをすべて除去してDOM構造を完全にリセット
-    const allUnderlines = contentRef.current.querySelectorAll(
-      '[class*="rangy-underline"]'
-    );
-    allUnderlines.forEach((element) => {
-      const parent = element.parentNode;
-      if (parent) {
-        while (element.firstChild) {
-          parent.insertBefore(element.firstChild, element);
-        }
-        parent.removeChild(element);
-      }
-    });
-
-    // DOM正規化（隣接するテキストノードをマージして元の状態に戻す）
-    contentRef.current.normalize();
-
-    // 戦略: 文書の後方から前方に向かって適用（後ろの要素から適用すると前の位置が変わらない）
-    const sortedRanges = [...serializedRanges].sort((a, b) => {
-      // シリアライズデータから開始位置を抽出
-      const getStartPosition = (serialized: string) => {
-        try {
-          // "2/3:7,2/3:11" のような形式から開始位置を数値化
-          const parts = serialized.split(",");
-          if (parts.length > 0) {
-            const startPart = parts[0];
-            const pathAndOffset = startPart.split(":");
-            if (pathAndOffset.length === 2) {
-              const path = pathAndOffset[0].split("/").map(Number);
-              const offset = Number(pathAndOffset[1]);
-              // パス要素を重み付きで計算（より深い階層ほど大きな重み）
-              let position = 0;
-              for (let i = 0; i < path.length; i++) {
-                position += path[i] * Math.pow(1000, path.length - i - 1);
-              }
-              return position + offset;
-            }
+    try {
+      // 既存のハイライトをすべて除去してDOM構造を完全にリセット
+      const allUnderlines = contentRef.current.querySelectorAll(
+        '[class*="rangy-underline"]'
+      );
+      allUnderlines.forEach((element) => {
+        const parent = element.parentNode;
+        if (parent) {
+          while (element.firstChild) {
+            parent.insertBefore(element.firstChild, element);
           }
-        } catch (e) {
-          console.warn("位置解析エラー:", serialized, e);
+          parent.removeChild(element);
         }
-        return 0;
-      };
+      });
 
-      // 降順ソート（後ろの要素から適用）
-      return getStartPosition(b.serialized) - getStartPosition(a.serialized);
-    });
+      // DOM正規化（隣接するテキストノードをマージして元の状態に戻す）
+      contentRef.current.normalize();
 
-    console.log(
-      "適用順序（後方から前方）:",
-      sortedRanges.map((r) => ({
-        order: r.order,
-        text: r.text,
-        serialized: r.serialized,
-      }))
-    );
-
-    const messages: string[] = [];
-
-    // 後方の要素から順番に適用（前の要素の位置に影響しない）
-    sortedRanges.forEach((savedRange, index) => {
-      try {
-        const range = (rangy as any).deserializeRange(
-          savedRange.serialized,
-          contentRef.current
-        );
-        if (range) {
-          const applier = (rangy as any).createCssClassApplier(
-            `rangy-underline-${savedRange.id}`,
-            {
-              elementTagName: "span",
-              elementProperties: {
-                style: {
-                  borderBottom: "3px solid red",
-                  textDecoration: "none",
-                },
-              },
+      // 戦略: 文書の後方から前方に向かって適用（後ろの要素から適用すると前の位置が変わらない）
+      const sortedRanges = [...serializedRanges].sort((a, b) => {
+        // シリアライズデータから開始位置を抽出
+        const getStartPosition = (serialized: string) => {
+          try {
+            // "2/3:7,2/3:11" のような形式から開始位置を数値化
+            const parts = serialized.split(",");
+            if (parts.length > 0) {
+              const startPart = parts[0];
+              const pathAndOffset = startPart.split(":");
+              if (pathAndOffset.length === 2) {
+                const path = pathAndOffset[0].split("/").map(Number);
+                const offset = Number(pathAndOffset[1]);
+                // パス要素を重み付きで計算（より深い階層ほど大きな重み）
+                let position = 0;
+                for (let i = 0; i < path.length; i++) {
+                  position += path[i] * Math.pow(1000, path.length - i - 1);
+                }
+                return position + offset;
+              }
             }
-          );
-          applier.applyToRange(range);
-          console.log(
-            `適用成功 (${index + 1}/${sortedRanges.length}):`,
-            savedRange.text
-          );
-        } else {
-          const warnMessage = `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`;
-          console.warn(warnMessage, savedRange.serialized);
-          messages.push(warnMessage);
-        }
-      } catch (err) {
-        const warnMessage = `ハイライト適用エラー (順序: ${savedRange.order}, ID: ${savedRange.id}):`;
-        console.warn(warnMessage, err);
-        setErrorMessage(warnMessage);
-      }
-    });
+          } catch (e) {
+            console.warn("位置解析エラー:", serialized, e);
+          }
+          return 0;
+        };
 
-    if (messages.length > 0) {
-      setErrorMessage(messages.join("\n"));
+        // 降順ソート（後ろの要素から適用）
+        return getStartPosition(b.serialized) - getStartPosition(a.serialized);
+      });
+
+      console.log(
+        "適用順序（後方から前方）:",
+        sortedRanges.map((r) => ({
+          order: r.order,
+          text: r.text,
+          serialized: r.serialized,
+        }))
+      );
+
+      // 後方の要素から順番に適用（前の要素の位置に影響しない）
+      sortedRanges.forEach((savedRange, index) => {
+        try {
+          const range = (rangy as any).deserializeRange(
+            savedRange.serialized,
+            contentRef.current
+          );
+          if (range) {
+            const applier = (rangy as any).createCssClassApplier(
+              `rangy-underline-${savedRange.id}`,
+              {
+                elementTagName: "span",
+                elementProperties: {
+                  style: {
+                    borderBottom: "3px solid red",
+                    textDecoration: "none",
+                  },
+                },
+              }
+            );
+            applier.applyToRange(range);
+            console.log(
+              `適用成功 (${index + 1}/${sortedRanges.length}):`,
+              savedRange.text
+            );
+          } else {
+            console.warn(
+              `範囲の復元に失敗 (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
+              savedRange.serialized
+            );
+          }
+        } catch (err) {
+          console.warn(
+            `ハイライト適用エラー (順序: ${savedRange.order}, ID: ${savedRange.id}):`,
+            err
+          );
+        }
+      });
+    } catch (err) {
+      const error = new Error(
+        `ハイライト更新エラー: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+      console.error(error.message);
+      onError?.(error);
     }
-  }, [serializedRanges]);
+  }, [serializedRanges, onError]);
 
   // マウスアップ時の範囲選択処理（元のDOM状態でシリアライズ）
   // TODO 範囲選択が重なる場合に失敗する。設定済ハイライトの前方から新しくハイライトを設定し、それぞれが重なると、範囲設定エラーになる
@@ -197,8 +194,6 @@ const RangyApp: React.FC = () => {
 
         // 重要: 元のDOM構造（ハイライト適用前）でシリアライズを取得
         // まず一時的にすべてのハイライトを除去
-        const tempRemovedRanges = [...serializedRanges];
-
         // DOM構造をクリーンな状態に戻す
         if (contentRef.current) {
           const allUnderlines = contentRef.current.querySelectorAll(
@@ -227,7 +222,7 @@ const RangyApp: React.FC = () => {
           );
 
           if (serialized) {
-            // 新しい範囲を状態に追加
+            // 新しい範囲を作成
             const newRange: SavedRange = {
               id: Date.now(),
               order: orderCounter,
@@ -243,67 +238,60 @@ const RangyApp: React.FC = () => {
                 selectedText.length > 30 ? "..." : ""
               }"`
             );
+
+            // 親コンポーネントに通知
+            onRangeSelect?.(newRange);
           }
         }
 
         // 選択を解除
         selection.removeAllRanges();
       } catch (err) {
-        const errorMsg = `エラー: 範囲処理中にエラーが発生しました - ${
-          err instanceof Error ? err.message : String(err)
-        }`;
-        console.error(errorMsg);
-        setErrorMessage(errorMsg);
+        const error = new Error(
+          `範囲選択処理エラー: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+        console.error(error.message);
+        onError?.(error);
       }
     }, 10);
   };
 
-  // 下線をクリア
-  const clearUnderlines = (): void => {
-    if (contentRef.current) {
-      // 各範囲のクラス名で検索して削除
-      serializedRanges.forEach((savedRange) => {
-        const underlinedElements = contentRef.current!.querySelectorAll(
-          `.rangy-underline-${savedRange.id}`
-        );
-        underlinedElements.forEach((element) => {
-          const parent = element.parentNode;
-          if (parent) {
-            while (element.firstChild) {
-              parent.insertBefore(element.firstChild, element);
-            }
-            parent.removeChild(element);
-          }
-        });
-      });
-
-      // CSS属性セレクタで全ての下線要素を検索（より確実な方法）
-      const allUnderlines = contentRef.current.querySelectorAll(
-        '[class*="rangy-underline"]'
-      );
-      allUnderlines.forEach((element) => {
-        const parent = element.parentNode;
-        if (parent) {
-          while (element.firstChild) {
-            parent.insertBefore(element.firstChild, element);
-          }
-          parent.removeChild(element);
-        }
-      });
-    }
-  };
-
   // 特定の保存範囲を削除
   const handleDeleteRange = (id: number): void => {
-    setSerializedRanges((prev) => prev.filter((range) => range.id !== id));
-    console.log("範囲を削除しました");
+    try {
+      setSerializedRanges((prev) => prev.filter((range) => range.id !== id));
+      console.log("範囲を削除しました");
+
+      // 親コンポーネントに通知
+      onRangeDelete?.(id);
+    } catch (err) {
+      const error = new Error(
+        `範囲削除エラー: ${err instanceof Error ? err.message : String(err)}`
+      );
+      console.error(error.message);
+      onError?.(error);
+    }
   };
 
   // すべての保存範囲を削除
   const handleClearAll = (): void => {
-    setSerializedRanges([]);
-    setOrderCounter(1);
-    console.log("すべての範囲を削除しました");
+    try {
+      const deletedIds = serializedRanges.map((range) => range.id);
+      setSerializedRanges([]);
+      setOrderCounter(1);
+      console.log("すべての範囲を削除しました");
+
+      // 親コンポーネントに各削除を通知
+      deletedIds.forEach((id) => onRangeDelete?.(id));
+    } catch (err) {
+      const error = new Error(
+        `全範囲削除エラー: ${err instanceof Error ? err.message : String(err)}`
+      );
+      console.error(error.message);
+      onError?.(error);
+    }
   };
 
   // ダイアログを開く
@@ -317,76 +305,51 @@ const RangyApp: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 2 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Rangy Range Selection Demo
-      </Typography>
+    <>
+      {/* 親コンテナ（相対位置指定） */}
+      <Box sx={{ position: "relative" }}>
+        {/* サンプルテキスト表示エリア */}
+        <Box
+          ref={contentRef}
+          dangerouslySetInnerHTML={{ __html: html }}
+          onMouseUp={handleMouseUp}
+          sx={{
+            border: "1px solid #ccc",
+            borderRadius: 1,
+            p: 2,
+            minHeight: 200,
+            backgroundColor: "#fafafa",
+            userSelect: "text",
+            "& h2": { color: "#1976d2", mt: 0 },
+            "& blockquote": {
+              borderLeft: "4px solid #1976d2",
+              pl: 2,
+              ml: 0,
+              fontStyle: "italic",
+              backgroundColor: "#f0f0f0",
+            },
+          }}
+        />
 
-      {/* エラーメッセージ表示 */}
-      {errorMessage && (
-        <Box sx={{ mb: 2, p: 1, bgcolor: "#ffebee", borderRadius: 1 }}>
-          <Typography
-            variant="body2"
-            color="error"
-            onClick={() => setErrorMessage("")}
-            sx={{ cursor: "pointer" }}
-          >
-            {errorMessage} (クリックで閉じる)
-          </Typography>
-        </Box>
-      )}
-
-      {/* サンプルテキストエリア */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          サンプルテキスト（範囲選択すると自動で下線が設定されます）
-        </Typography>
-
-        {/* 親コンテナ（相対位置指定） */}
-        <Box sx={{ position: "relative" }}>
-          {/* サンプルテキスト表示エリア */}
-          <Box
-            ref={contentRef}
-            dangerouslySetInnerHTML={{ __html: SAMPLE_TEXT }}
-            onMouseUp={handleMouseUp}
-            sx={{
-              border: "1px solid #ccc",
-              borderRadius: 1,
-              p: 2,
-              minHeight: 200,
-              backgroundColor: "#fafafa",
-              userSelect: "text",
-              "& h2": { color: "#1976d2", mt: 0 },
-              "& blockquote": {
-                borderLeft: "4px solid #1976d2",
-                pl: 2,
-                ml: 0,
-                fontStyle: "italic",
-                backgroundColor: "#f0f0f0",
-              },
-            }}
-          />
-
-          {/* オーバーレイボタン（絶対位置指定） */}
-          <Button
-            variant="contained"
-            onClick={handleOpenDialog}
-            startIcon={<ListIcon />}
-            sx={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              zIndex: 10,
-              minWidth: "auto",
-              px: 2,
-              py: 1,
-              fontSize: "0.875rem",
-            }}
-          >
-            下線一覧 ({serializedRanges.length})
-          </Button>
-        </Box>
-      </Paper>
+        {/* オーバーレイボタン（絶対位置指定） */}
+        <Button
+          variant="contained"
+          onClick={handleOpenDialog}
+          startIcon={<ListIcon />}
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            zIndex: 10,
+            minWidth: "auto",
+            px: 2,
+            py: 1,
+            fontSize: "0.875rem",
+          }}
+        >
+          下線一覧 ({serializedRanges.length})
+        </Button>
+      </Box>
 
       {/* 下線一覧ダイアログ */}
       <Dialog
@@ -491,8 +454,6 @@ const RangyApp: React.FC = () => {
           <Button onClick={handleCloseDialog}>閉じる</Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </>
   );
 };
-
-export default RangyApp;
