@@ -73,6 +73,14 @@ const DemoApp: React.FC = () => {
         onError={handleError}
         onRangeSelect={handleRangeSelect}
         onRangeDelete={handleRangeDelete}
+        contentAreaSx={{
+          // カスタムスタイルの例
+          backgroundColor: "#f8f9fa",
+          border: "2px solid #dee2e6",
+          borderRadius: 2,
+          fontSize: "1.1rem",
+          lineHeight: 1.6,
+        }}
       />
     </Container>
   );

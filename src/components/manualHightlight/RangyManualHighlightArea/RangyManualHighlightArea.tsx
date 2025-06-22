@@ -36,11 +36,12 @@ type RangyManualHighlightAreaProps = {
   onError?: (error: Error) => void; // エラー発生時のハンドラ
   onRangeSelect?: (range: SavedRange) => void; // 範囲選択された場合のハンドラ。範囲永続化API実行などの利用を想定
   onRangeDelete?: (id: number) => void; // 保存済選択範囲を削除された場合のハンドラ。範囲永続化API実行などの利用を想定
+  contentAreaSx?: any; // MUIのSxProps型（any型で簡略化）
 };
 
 export const RangyManualHighlightArea: React.FC<
   RangyManualHighlightAreaProps
-> = ({ html, onError, onRangeSelect, onRangeDelete }) => {
+> = ({ html, onError, onRangeSelect, onRangeDelete, contentAreaSx }) => {
   const [serializedRanges, setSerializedRanges] = useState<SavedRange[]>([]);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [orderCounter, setOrderCounter] = useState<number>(1);
@@ -314,6 +315,7 @@ export const RangyManualHighlightArea: React.FC<
           dangerouslySetInnerHTML={{ __html: html }}
           onMouseUp={handleMouseUp}
           sx={{
+            // デフォルトスタイル
             border: "1px solid #ccc",
             borderRadius: 1,
             p: 2,
@@ -328,6 +330,8 @@ export const RangyManualHighlightArea: React.FC<
               fontStyle: "italic",
               backgroundColor: "#f0f0f0",
             },
+            // 外部から指定されたスタイルで上書き
+            ...contentAreaSx,
           }}
         />
 
