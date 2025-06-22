@@ -14,6 +14,8 @@ import {
   TableRow,
   Typography,
   IconButton,
+  SxProps,
+  Theme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
@@ -36,7 +38,7 @@ type RangyManualHighlightAreaProps = {
   onError?: (error: Error) => void; // エラー発生時のハンドラ
   onRangeSelect?: (range: SavedRange) => void; // 範囲選択された場合のハンドラ。範囲永続化API実行などの利用を想定
   onRangeDelete?: (id: number) => void; // 保存済選択範囲を削除された場合のハンドラ。範囲永続化API実行などの利用を想定
-  contentAreaSx?: any; // MUIのSxProps型（any型で簡略化）
+  contentAreaSx?: SxProps<Theme>; // MUIのSxProps型
 };
 
 export const RangyManualHighlightArea: React.FC<
@@ -315,21 +317,7 @@ export const RangyManualHighlightArea: React.FC<
           dangerouslySetInnerHTML={{ __html: html }}
           onMouseUp={handleMouseUp}
           sx={{
-            // デフォルトスタイル
-            border: "1px solid #ccc",
-            borderRadius: 1,
-            p: 2,
-            minHeight: 200,
-            backgroundColor: "#fafafa",
-            userSelect: "text",
-            "& h2": { color: "#1976d2", mt: 0 },
-            "& blockquote": {
-              borderLeft: "4px solid #1976d2",
-              pl: 2,
-              ml: 0,
-              fontStyle: "italic",
-              backgroundColor: "#f0f0f0",
-            },
+            // デフォルトスタイルなし
             // 外部から指定されたスタイルで上書き
             ...contentAreaSx,
           }}

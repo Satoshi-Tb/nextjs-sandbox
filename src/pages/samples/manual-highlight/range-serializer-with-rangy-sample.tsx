@@ -75,11 +75,20 @@ const DemoApp: React.FC = () => {
         onRangeDelete={handleRangeDelete}
         contentAreaSx={{
           // カスタムスタイルの例
-          backgroundColor: "#f8f9fa",
-          border: "2px solid #dee2e6",
-          borderRadius: 2,
-          fontSize: "1.1rem",
-          lineHeight: 1.6,
+          border: "1px solid #ccc",
+          borderRadius: 1,
+          p: 2,
+          minHeight: 200,
+          backgroundColor: "#fafafa",
+          userSelect: "text",
+          "& h2": { color: "#1976d2", mt: 0 },
+          "& blockquote": {
+            borderLeft: "4px solid #1976d2",
+            pl: 2,
+            ml: 0,
+            fontStyle: "italic",
+            backgroundColor: "#f0f0f0",
+          },
         }}
       />
     </Container>
