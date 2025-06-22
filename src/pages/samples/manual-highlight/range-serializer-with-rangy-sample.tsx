@@ -3,7 +3,7 @@ import { Container, Typography, Box } from "@mui/material";
 import {
   RangyManualHighlightArea,
   SavedRange,
-} from "@/components/manualHightlight/RangeSerializeWithRangySample";
+} from "@/components/manualHightlight/RangyManualHighlightArea/RangyManualHighlightArea";
 
 // サンプルテキスト（複数のHTML要素を含む）
 const SAMPLE_HTML = `
