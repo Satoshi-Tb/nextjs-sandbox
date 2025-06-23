@@ -20,6 +20,11 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ListIcon from "@mui/icons-material/List";
+import EditIcon from "@mui/icons-material/Edit";
+import AutoFixOffIcon from "@mui/icons-material/AutoFixOff";
+
+// アプリケーションモードの型定義
+export type AppMode = "line" | "eraser";
 
 // 保存された範囲の型定義
 export type SavedRange = {
@@ -36,17 +41,21 @@ export type SavedRange = {
 
 type CssHighlightAreaProps = {
   html: string; // ハイライト設定対象のHTMLドキュメント
+  mode?: AppMode; // アプリケーションモード（デフォルト: 'line'）
   onError?: (error: Error) => void; // エラー発生時のハンドラ
   onRangeSelect?: (range: SavedRange) => void; // 範囲選択された場合のハンドラ
   onRangeDelete?: (id: number) => void; // 保存済選択範囲を削除された場合のハンドラ
+  onModeChange?: (mode: AppMode) => void; // モード変更時のハンドラ
   contentAreaSx?: SxProps<Theme>; // MUIのSxProps型
 };
 
 export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
   html,
+  mode = "line",
   onError,
   onRangeSelect,
   onRangeDelete,
+  onModeChange,
   contentAreaSx,
 }) => {
   const [savedRanges, setSavedRanges] = useState<SavedRange[]>([]);
@@ -140,7 +149,33 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   };
 
-  // 保存された範囲からRangeオブジェクトを復元する関数
+  // 選択範囲と既存ハイライトの重複チェック
+  const findOverlappingRanges = (newRange: Range): SavedRange[] => {
+    const overlapping: SavedRange[] = [];
+
+    for (const savedRange of savedRanges) {
+      const existingRange = restoreRange(savedRange);
+      if (!existingRange) continue;
+
+      // 範囲の重複チェック
+      if (
+        newRange.compareBoundaryPoints(Range.END_TO_START, existingRange) <=
+          0 ||
+        newRange.compareBoundaryPoints(Range.START_TO_END, existingRange) >= 0
+      ) {
+        continue; // 重複なし
+      }
+
+      overlapping.push(savedRange);
+    }
+
+    return overlapping;
+  };
+
+  // モード切替ハンドラ
+  const handleModeChange = (newMode: AppMode): void => {
+    onModeChange?.(newMode);
+  };
   const restoreRange = (savedRange: SavedRange): Range | null => {
     if (!contentRef.current) return null;
 
@@ -218,38 +253,13 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
         if (!selectedText) return;
 
-        // 選択範囲の開始・終了位置を保存
-        const startPath = getXPath(range.startContainer, contentRef.current);
-        const endPath = getXPath(range.endContainer, contentRef.current);
-
-        if (!startPath || !endPath) {
-          console.warn("XPath取得に失敗しました");
-          return;
+        if (mode === "line") {
+          // ラインモード: ハイライト追加
+          handleLineMode(range, selectedText);
+        } else if (mode === "eraser") {
+          // 消しゴムモード: ハイライト削除
+          handleEraserMode(range);
         }
-
-        const newRange: SavedRange = {
-          id: Date.now(),
-          order: orderCounter,
-          startPath,
-          endPath,
-          startOffset: range.startOffset,
-          endOffset: range.endOffset,
-          text: selectedText,
-          timestamp: new Date().toLocaleString(),
-          range: range.cloneRange(),
-        };
-
-        setSavedRanges((prev) => [...prev, newRange]);
-        setOrderCounter((prev) => prev + 1);
-
-        console.log(
-          `範囲を保存しました: "${selectedText.substring(0, 30)}${
-            selectedText.length > 30 ? "..." : ""
-          }"`
-        );
-
-        // 親コンポーネントに通知
-        onRangeSelect?.(newRange);
 
         // 選択を解除
         selection.removeAllRanges();
@@ -263,6 +273,74 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
         onError?.(error);
       }
     }, 10);
+  };
+
+  // ラインモード処理
+  const handleLineMode = (range: Range, selectedText: string): void => {
+    if (!contentRef.current) return;
+    try {
+      // 選択範囲の開始・終了位置を保存
+      const startPath = getXPath(range.startContainer, contentRef.current);
+      const endPath = getXPath(range.endContainer, contentRef.current);
+
+      if (!startPath || !endPath) {
+        console.warn("XPath取得に失敗しました");
+        return;
+      }
+
+      const newRange: SavedRange = {
+        id: Date.now(),
+        order: orderCounter,
+        startPath,
+        endPath,
+        startOffset: range.startOffset,
+        endOffset: range.endOffset,
+        text: selectedText,
+        timestamp: new Date().toLocaleString(),
+        range: range.cloneRange(),
+      };
+
+      setSavedRanges((prev) => [...prev, newRange]);
+      setOrderCounter((prev) => prev + 1);
+
+      console.log(
+        `ラインモード: 範囲を保存しました: "${selectedText.substring(0, 30)}${
+          selectedText.length > 30 ? "..." : ""
+        }"`
+      );
+
+      // 親コンポーネントに通知
+      onRangeSelect?.(newRange);
+    } catch (err) {
+      console.error("ラインモード処理エラー:", err);
+    }
+  };
+
+  // 消しゴムモード処理
+  const handleEraserMode = (range: Range): void => {
+    try {
+      const overlappingRanges = findOverlappingRanges(range);
+
+      if (overlappingRanges.length === 0) {
+        console.log("消しゴムモード: 削除対象のハイライトがありません");
+        return;
+      }
+
+      // 重複する範囲を削除
+      const deletedIds = overlappingRanges.map((r) => r.id);
+      setSavedRanges((prev) =>
+        prev.filter((range) => !deletedIds.includes(range.id))
+      );
+
+      console.log(
+        `消しゴムモード: ${overlappingRanges.length}個のハイライトを削除しました`
+      );
+
+      // 親コンポーネントに削除通知
+      deletedIds.forEach((id) => onRangeDelete?.(id));
+    } catch (err) {
+      console.error("消しゴムモード処理エラー:", err);
+    }
   };
 
   // 特定の保存範囲を削除
@@ -342,7 +420,80 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
           }}
         />
 
-        {/* オーバーレイボタン */}
+        {/* モード切替ボタン群 */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            zIndex: 10,
+            display: "flex",
+            gap: 1,
+          }}
+        >
+          <Button
+            variant={mode === "line" ? "contained" : "outlined"}
+            onClick={() => handleModeChange("line")}
+            startIcon={<EditIcon />}
+            disabled={!isSupported}
+            size="small"
+            sx={{
+              minWidth: "auto",
+              px: 2,
+              py: 1,
+              fontSize: "0.75rem",
+              backgroundColor: mode === "line" ? "#1976d2" : "transparent",
+              color: mode === "line" ? "white" : "#1976d2",
+              "&:hover": {
+                backgroundColor: mode === "line" ? "#1565c0" : "#e3f2fd",
+              },
+            }}
+          >
+            ライン
+          </Button>
+          <Button
+            variant={mode === "eraser" ? "contained" : "outlined"}
+            onClick={() => handleModeChange("eraser")}
+            startIcon={<AutoFixOffIcon />}
+            disabled={!isSupported}
+            size="small"
+            sx={{
+              minWidth: "auto",
+              px: 2,
+              py: 1,
+              fontSize: "0.75rem",
+              backgroundColor: mode === "eraser" ? "#d32f2f" : "transparent",
+              color: mode === "eraser" ? "white" : "#d32f2f",
+              "&:hover": {
+                backgroundColor: mode === "eraser" ? "#c62828" : "#ffebee",
+              },
+            }}
+          >
+            消しゴム
+          </Button>
+        </Box>
+
+        {/* モード表示インジケーター */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 8,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            backgroundColor: mode === "line" ? "#e3f2fd" : "#ffebee",
+            color: mode === "line" ? "#1976d2" : "#d32f2f",
+            px: 2,
+            py: 0.5,
+            borderRadius: 1,
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            border: `1px solid ${mode === "line" ? "#1976d2" : "#d32f2f"}`,
+          }}
+        >
+          {mode === "line" ? "🖍️ ラインモード" : "🧹 消しゴムモード"}
+        </Box>
+        {/* 下線一覧ボタン */}
         <Button
           variant="contained"
           onClick={() => setDialogOpen(true)}

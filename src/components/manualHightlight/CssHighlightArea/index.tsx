@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Container, Typography, Box } from "@mui/material";
-import { CssHighlightArea, SavedRange } from "./CssHighlightArea";
+import { CssHighlightArea, SavedRange, AppMode } from "./CssHighlightArea";
 import Link from "next/link";
 
 // CssHighlightAreaコンポーネントのデモアプリ
@@ -28,11 +28,7 @@ const SAMPLE_HTML = `
 
 const DemoApp: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
-
-  const handleError = (error: Error): void => {
-    console.error("アプリケーションエラー:", error);
-    setErrorMessage(error.message);
-  };
+  const [currentMode, setCurrentMode] = useState<AppMode>("line");
 
   const handleRangeSelect = (range: SavedRange): void => {
     console.log("範囲が選択されました:", range);
@@ -42,6 +38,19 @@ const DemoApp: React.FC = () => {
   const handleRangeDelete = (id: number): void => {
     console.log("範囲が削除されました:", id);
     // 必要に応じて外部システムから削除など
+  };
+
+  const handleError = (error: Error): void => {
+    console.error("アプリケーションエラー:", error);
+    setErrorMessage(error.message);
+  };
+
+  const handleModeChange = (): void => {
+    if (currentMode === "line") {
+      setCurrentMode("eraser");
+    } else {
+      setCurrentMode("line");
+    }
   };
 
   return (
@@ -80,15 +89,61 @@ const DemoApp: React.FC = () => {
         </Box>
       )}
 
-      <Typography variant="h6" gutterBottom>
-        範囲選択でハイライト設定
-      </Typography>
+      {/* 操作説明セクション */}
+      <Box
+        sx={{
+          mb: 3,
+          p: 2,
+          bgcolor: "#f8f9fa",
+          borderRadius: 1,
+          border: "1px solid #dee2e6",
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          📝 操作方法
+        </Typography>
+        <Typography variant="body2" component="div">
+          <Box component="ul" sx={{ m: 0, pl: 3 }}>
+            <li>
+              <strong>ラインモード（🖍️）:</strong>{" "}
+              テキストを選択してハイライトを追加
+            </li>
+            <li>
+              <strong>消しゴムモード（🧹）:</strong>{" "}
+              ハイライト範囲を選択して削除
+            </li>
+            <li>
+              <strong>モード切替:</strong>{" "}
+              左上のボタンでライン/消しゴムを切り替え
+            </li>
+            <li>
+              <strong>一覧表示:</strong>{" "}
+              右上のボタンで設定済みハイライト一覧を表示
+            </li>
+          </Box>
+          <Box
+            sx={{
+              mt: 1,
+              p: 1,
+              bgcolor: currentMode === "line" ? "#e3f2fd" : "#ffebee",
+              borderRadius: 1,
+            }}
+          >
+            現在のモード:{" "}
+            <strong>
+              {currentMode === "line" ? "🖍️ ラインモード" : "🧹 消しゴムモード"}
+            </strong>
+          </Box>
+        </Typography>
+      </Box>
 
       <CssHighlightArea
         html={SAMPLE_HTML}
+        mode={currentMode}
         onError={handleError}
         onRangeSelect={handleRangeSelect}
         onRangeDelete={handleRangeDelete}
+        onModeChange={handleModeChange}
         contentAreaSx={{
           // カスタムスタイルの例
           border: "1px solid #ccc",
@@ -111,25 +166,28 @@ const DemoApp: React.FC = () => {
       {/* 技術説明 */}
       <Box sx={{ mt: 3, p: 2, bgcolor: "#e8f5e8", borderRadius: 1 }}>
         <Typography variant="h6" gutterBottom>
-          🚀 CSS Custom Highlight API の利点
+          🚀 新機能: ライン・消しゴムモード
         </Typography>
         <Typography variant="body2" component="div">
           <ul>
             <li>
-              <strong>高性能:</strong> DOM操作不要でハイライト表示
+              <strong>ライン機能:</strong> 従来通りテキスト選択でハイライト追加
             </li>
             <li>
-              <strong>非破壊的:</strong> 元のHTML構造を変更しない
+              <strong>消しゴム機能:</strong>{" "}
+              既存ハイライトと重複する範囲を選択して一括削除
             </li>
             <li>
-              <strong>ブラウザ最適化:</strong> ネイティブAPI による効率的な描画
+              <strong>モード切替:</strong>{" "}
+              リアルタイムでUIに反映される直感的な操作
             </li>
             <li>
-              <strong>CSSカスタマイズ:</strong> ::highlight()
-              擬似要素でスタイル制御
+              <strong>重複検出:</strong> Range.compareBoundaryPoints()
+              による正確な重複判定
             </li>
             <li>
-              <strong>重複対応:</strong> 重なり合うハイライトも正しく表示
+              <strong>一括削除:</strong>{" "}
+              複数のハイライトにまたがる選択で同時削除可能
             </li>
           </ul>
         </Typography>
