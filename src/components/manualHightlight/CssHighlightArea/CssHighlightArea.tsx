@@ -91,83 +91,49 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   }, [onError]);
 
-  // DOMノードのXPathを取得する関数
-  const getXPath = (node: Node): string => {
-    if (!node || node === contentRef.current) return "";
+  // DOMノードのXPathを取得する関数（相対パス形式）
+  const getXPath = (node: Node, root: Node = contentRef.current!): string => {
+    if (!node) throw new Error("node is null or undefined");
+    if (!root) throw new Error("root is null or undefined");
 
-    if (node.nodeType === Node.TEXT_NODE) {
-      const parent = node.parentNode;
-      if (!parent) return "";
-
-      const textNodes = Array.from(parent.childNodes).filter(
-        (child) => child.nodeType === Node.TEXT_NODE
+    const getPathSegment = (node: Node): string => {
+      if (!node.parentNode) throw new Error("parent node is null or undefined");
+      const siblings = Array.from(node.parentNode.childNodes).filter(
+        (n) =>
+          n.nodeType === node.nodeType &&
+          (n as Element).nodeName === (node as Element).nodeName
       );
-      const index = textNodes.indexOf(node as ChildNode);
-      return `${getXPath(parent)}/text()[${index + 1}]`;
-    }
-
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const element = node as Element;
-      const parent = element.parentNode;
-      if (!parent || parent === contentRef.current) {
-        return `/${element.tagName.toLowerCase()}`;
+      const index = siblings.indexOf(node as ChildNode) + 1;
+      if (node.nodeType === Node.TEXT_NODE) {
+        return "text()[" + index + "]";
+      } else {
+        return `${(node as Element).nodeName.toLowerCase()}[${index}]`;
       }
-
-      const siblings = Array.from(parent.children).filter(
-        (child) => child.tagName === element.tagName
-      );
-      const index = siblings.indexOf(element);
-      return `${getXPath(parent)}/${element.tagName.toLowerCase()}[${
-        index + 1
-      }]`;
+    };
+    const segments: string[] = [];
+    while (node && node !== root && node.nodeType !== Node.DOCUMENT_NODE) {
+      segments.unshift(getPathSegment(node));
+      node = node.parentNode!;
     }
-
-    return "";
+    return "./" + segments.join("/");
   };
 
-  // XPathからDOMノードを取得する関数
-  const getNodeFromXPath = (xpath: string): Node | null => {
-    if (!contentRef.current || !xpath) return null;
+  // XPathからDOMノードを取得する関数（document.evaluateを使用）
+  const getNodeFromXPath = (
+    xpath: string,
+    rootNode: Node = contentRef.current!
+  ): Node | null => {
+    if (xpath === "./") return rootNode;
 
     try {
-      // XPathを解析してノードを取得
-      const parts = xpath.split("/").filter((part) => part);
-      let currentNode: Node = contentRef.current;
-
-      for (const part of parts) {
-        if (part.startsWith("text()")) {
-          const match = part.match(/text\(\)\[(\d+)\]/);
-          if (match) {
-            const index = parseInt(match[1]) - 1;
-            const textNodes = Array.from(currentNode.childNodes).filter(
-              (child) => child.nodeType === Node.TEXT_NODE
-            );
-            if (textNodes[index]) {
-              currentNode = textNodes[index];
-            } else {
-              return null;
-            }
-          }
-        } else {
-          const match = part.match(/([^[]+)(?:\[(\d+)\])?/);
-          if (match) {
-            const tagName = match[1];
-            const index = match[2] ? parseInt(match[2]) - 1 : 0;
-            const children = Array.from(currentNode.childNodes).filter(
-              (child) =>
-                child.nodeType === Node.ELEMENT_NODE &&
-                (child as Element).tagName.toLowerCase() === tagName
-            );
-            if (children[index]) {
-              currentNode = children[index];
-            } else {
-              return null;
-            }
-          }
-        }
-      }
-
-      return currentNode;
+      const result = document.evaluate(
+        xpath,
+        rootNode,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      );
+      return result.singleNodeValue;
     } catch (err) {
       console.warn("XPath解析エラー:", xpath, err);
       return null;
@@ -176,9 +142,14 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
   // 保存された範囲からRangeオブジェクトを復元する関数
   const restoreRange = (savedRange: SavedRange): Range | null => {
+    if (!contentRef.current) return null;
+
     try {
-      const startNode = getNodeFromXPath(savedRange.startPath);
-      const endNode = getNodeFromXPath(savedRange.endPath);
+      const startNode = getNodeFromXPath(
+        savedRange.startPath,
+        contentRef.current
+      );
+      const endNode = getNodeFromXPath(savedRange.endPath, contentRef.current);
 
       if (!startNode || !endNode) {
         console.warn("ノード復元失敗:", savedRange);
@@ -238,6 +209,7 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
     setTimeout(() => {
       try {
+        if (!contentRef.current) return;
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) return;
 
@@ -247,8 +219,8 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
         if (!selectedText) return;
 
         // 選択範囲の開始・終了位置を保存
-        const startPath = getXPath(range.startContainer);
-        const endPath = getXPath(range.endContainer);
+        const startPath = getXPath(range.startContainer, contentRef.current);
+        const endPath = getXPath(range.endContainer, contentRef.current);
 
         if (!startPath || !endPath) {
           console.warn("XPath取得に失敗しました");
