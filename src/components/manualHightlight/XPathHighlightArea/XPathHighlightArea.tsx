@@ -53,19 +53,23 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
   const [orderCounter, setOrderCounter] = useState<number>(1);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const createXPathFromNode = (node: Node, root: Node): string => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      node = node.parentNode!;
-    }
+  const getXPathFromNode = (node: Node, root: Node): string => {
+    if (!node) throw new Error("node is null or undefined");
+    if (!root) throw new Error("root is null or undefined");
+
     const getPathSegment = (node: Node): string => {
-      if (!node.parentNode) return "";
+      if (!node.parentNode) throw new Error("parent node is null or undefined");
       const siblings = Array.from(node.parentNode.childNodes).filter(
         (n) =>
           n.nodeType === node.nodeType &&
           (n as Element).nodeName === (node as Element).nodeName
       );
-      const index = siblings.indexOf(node as unknown as ChildNode) + 1;
-      return `${(node as Element).nodeName.toLowerCase()}[${index}]`;
+      const index = siblings.indexOf(node as ChildNode) + 1;
+      if (node.nodeType === Node.TEXT_NODE) {
+        return "text()[" + index + "]";
+      } else {
+        return `${(node as Element).nodeName.toLowerCase()}[${index}]`;
+      }
     };
     const segments: string[] = [];
     while (node && node !== root && node.nodeType !== Node.DOCUMENT_NODE) {
@@ -75,16 +79,23 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
     return "./" + segments.join("/");
   };
 
-  const getNodeByXPath = (xpath: string): Node | null => {
-    if (!contentRef.current) return null;
+  const getNodeByXPath = (xpath: string, root: Node): Node => {
+    if (xpath === "./") return root;
     const evaluator = document.evaluate(
       xpath,
-      contentRef.current,
+      root,
       null,
       XPathResult.FIRST_ORDERED_NODE_TYPE,
       null
     );
-    return evaluator.singleNodeValue;
+
+    const node = evaluator.singleNodeValue;
+    if (!node)
+      throw new Error(
+        "Node that corresponds to the specified XPath does not exist. " + xpath
+      );
+
+    return node;
   };
 
   const applyHighlights = () => {
@@ -100,22 +111,25 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
     });
     container.normalize();
 
+    // TODO テキストの後ろから適用必要
     serializedRanges.forEach((saved) => {
       try {
-        const startNode = getNodeByXPath(saved.startXPath);
-        const endNode = getNodeByXPath(saved.endXPath);
-
-        if (!startNode || !endNode) return;
+        const startNode = getNodeByXPath(saved.startXPath, container);
+        const endNode = getNodeByXPath(saved.endXPath, container);
 
         const range = document.createRange();
-        range.setStart(startNode.childNodes[0] || startNode, saved.startOffset);
-        range.setEnd(endNode.childNodes[0] || endNode, saved.endOffset);
+        range.setStart(startNode, saved.startOffset);
+        range.setEnd(endNode, saved.endOffset);
 
+        console.log("XPath->range", { saved, range });
+
+        const frag = range.extractContents();
         const span = document.createElement("span");
         span.className = highlightClass;
         span.style.borderBottom = "3px solid red";
         span.style.textDecoration = "none";
-        range.surroundContents(span);
+        span.appendChild(frag);
+        range.insertNode(span);
       } catch (e) {
         console.warn("適用失敗", { e, saved });
       }
@@ -127,42 +141,44 @@ export const XPathHighlightArea: React.FC<XPathHighlightAreaProps> = ({
   }, [serializedRanges]);
 
   const handleMouseUp = () => {
-    setTimeout(() => {
-      try {
-        const sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) return;
-        const range = sel.getRangeAt(0);
-        const text = range.toString().trim();
-        if (!text || !contentRef.current?.contains(range.startContainer))
-          return;
+    try {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      const text = range.toString().trim();
+      console.log("handleMouseUp", { text, range });
+      if (
+        !text ||
+        range.collapsed ||
+        !contentRef.current ||
+        !contentRef.current.contains(range.commonAncestorContainer)
+      )
+        return;
 
-        const startXPath = createXPathFromNode(
-          range.startContainer,
-          contentRef.current
-        );
-        const endXPath = createXPathFromNode(
-          range.endContainer,
-          contentRef.current
-        );
+      const startXPath = getXPathFromNode(
+        range.startContainer,
+        contentRef.current
+      );
+      const endXPath = getXPathFromNode(range.endContainer, contentRef.current);
 
-        const newRange: SavedRange = {
-          id: Date.now(),
-          order: orderCounter,
-          startXPath,
-          startOffset: range.startOffset,
-          endXPath,
-          endOffset: range.endOffset,
-          text,
-          timestamp: new Date().toLocaleString(),
-        };
-        setSerializedRanges((prev) => [...prev, newRange]);
-        setOrderCounter((prev) => prev + 1);
-        onRangeSelect?.(newRange);
-        sel.removeAllRanges();
-      } catch (err) {
-        onError?.(err instanceof Error ? err : new Error(String(err)));
-      }
-    }, 10);
+      const newRange: SavedRange = {
+        id: Date.now(),
+        order: orderCounter,
+        startXPath,
+        startOffset: range.startOffset,
+        endXPath,
+        endOffset: range.endOffset,
+        text,
+        timestamp: new Date().toLocaleString(),
+      };
+      console.log("range->xpath", { range, newRange });
+      setSerializedRanges((prev) => [...prev, newRange]);
+      setOrderCounter((prev) => prev + 1);
+      onRangeSelect?.(newRange);
+      sel.removeAllRanges();
+    } catch (err) {
+      onError?.(err instanceof Error ? err : new Error(String(err)));
+    }
   };
 
   return (

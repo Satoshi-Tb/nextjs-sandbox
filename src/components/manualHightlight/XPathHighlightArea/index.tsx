@@ -37,8 +37,8 @@ const DemoApp: React.FC = () => {
   const handleRangeSelect = (range: SavedRange): void => {
     console.log("範囲が選択されました:", range);
     console.log("XPath情報:", {
-      開始位置: `${range.startXPath}[${range.startOffset}]`,
-      終了位置: `${range.endXPath}[${range.endOffset}]`,
+      開始位置: `${range.startXPath}:${range.startOffset}`,
+      終了位置: `${range.endXPath}:${range.endOffset}`,
       選択テキスト: range.text,
     });
     // 必要に応じて外部システムに保存など
