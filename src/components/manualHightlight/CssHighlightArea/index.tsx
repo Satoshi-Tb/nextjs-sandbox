@@ -3,7 +3,7 @@ import { Container, Typography, Box } from "@mui/material";
 import { CssHighlightArea, SavedRange } from "./CssHighlightArea";
 import Link from "next/link";
 
-// XPathHighlightAreaコンポーネントのデモアプリ
+// CssHighlightAreaコンポーネントのデモアプリ
 
 // サンプルテキスト（複数のHTML要素を含む）
 const SAMPLE_HTML = `
@@ -36,11 +36,6 @@ const DemoApp: React.FC = () => {
 
   const handleRangeSelect = (range: SavedRange): void => {
     console.log("範囲が選択されました:", range);
-    console.log("XPath情報:", {
-      開始位置: `${range.startXPath}:${range.startOffset}`,
-      終了位置: `${range.endXPath}:${range.endOffset}`,
-      選択テキスト: range.text,
-    });
     // 必要に応じて外部システムに保存など
   };
 
@@ -52,16 +47,24 @@ const DemoApp: React.FC = () => {
   return (
     <Container maxWidth="md" sx={{ py: 2 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        XPath Manual Highlight Area Demo
+        CSS Custom Highlight Area Demo
       </Typography>
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        ✨ ピュアなSelection API + XPath形式での永続化を使用
-        <br />
-        📍 Rangyライブラリは不要
-        <br />
-        🔄 重複範囲選択の自動検出・防止機能付き
-      </Typography>
+      {/* ブラウザ対応状況の説明 */}
+      <Box sx={{ mb: 3, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+        <Typography variant="h6" gutterBottom>
+          💡 CSS Custom Highlight API について
+        </Typography>
+        <Typography variant="body2" component="div">
+          この機能は以下のブラウザで利用可能です：
+          <ul>
+            <li>Chrome 105+ (2022年9月〜)</li>
+            <li>Firefox 113+ (2023年5月〜)</li>
+            <li>Safari 17.2+ (2023年12月〜)</li>
+          </ul>
+          古いブラウザでは警告メッセージが表示され、機能が無効化されます。
+        </Typography>
+      </Box>
 
       {/* エラーメッセージ表示 */}
       {errorMessage && (
@@ -105,28 +108,37 @@ const DemoApp: React.FC = () => {
         }}
       />
 
-      {/* 技術仕様の説明 */}
-      <Box sx={{ mt: 3, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+      {/* 技術説明 */}
+      <Box sx={{ mt: 3, p: 2, bgcolor: "#e8f5e8", borderRadius: 1 }}>
         <Typography variant="h6" gutterBottom>
-          技術仕様
+          🚀 CSS Custom Highlight API の利点
         </Typography>
         <Typography variant="body2" component="div">
-          <strong>選択処理:</strong> ピュアなSelection API / Range API
-          <br />
-          <strong>永続化:</strong> XPath形式（startXPath, endXPath +
-          オフセット）
-          <br />
-          <strong>重複防止:</strong> Range.isPointInRange() を使用した自動検出
-          <br />
-          <strong>適用順序:</strong> 文書後方→前方（DOM位置変化を回避）
-          <br />
-          <strong>正規化:</strong> Node.normalize() でテキストノード統合
-          <br />
+          <ul>
+            <li>
+              <strong>高性能:</strong> DOM操作不要でハイライト表示
+            </li>
+            <li>
+              <strong>非破壊的:</strong> 元のHTML構造を変更しない
+            </li>
+            <li>
+              <strong>ブラウザ最適化:</strong> ネイティブAPI による効率的な描画
+            </li>
+            <li>
+              <strong>CSSカスタマイズ:</strong> ::highlight()
+              擬似要素でスタイル制御
+            </li>
+            <li>
+              <strong>重複対応:</strong> 重なり合うハイライトも正しく表示
+            </li>
+          </ul>
         </Typography>
       </Box>
 
       {/* フッター */}
-      <Link href="/">TOP</Link>
+      <Box sx={{ mt: 3 }}>
+        <Link href="/">TOP</Link>
+      </Box>
     </Container>
   );
 };
