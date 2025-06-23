@@ -114,6 +114,11 @@ function Home() {
             RangeAPIを利用した手動ハイライトデモ。永続化はXPath形式
           </Link>
         </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-with-css">
+            CSS Highlight APIを利用した手動ハイライトデモ。永続化はXPath形式
+          </Link>
+        </li>
       </ul>
     </div>
   );
