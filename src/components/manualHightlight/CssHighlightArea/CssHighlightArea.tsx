@@ -149,7 +149,133 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   };
 
-  // 選択範囲と既存ハイライトの重複チェック
+  // Range同士の交差判定
+  const hasIntersection = (range1: Range, range2: Range): boolean => {
+    return (
+      range1.compareBoundaryPoints(Range.END_TO_START, range2) < 0 &&
+      range1.compareBoundaryPoints(Range.START_TO_END, range2) > 0
+    );
+  };
+
+  // 交差領域の計算
+  const calculateIntersection = (
+    range1: Range,
+    range2: Range
+  ): Range | null => {
+    if (!hasIntersection(range1, range2)) return null;
+
+    try {
+      const intersection = document.createRange();
+
+      // 開始位置：より後の位置を選択
+      if (range1.compareBoundaryPoints(Range.START_TO_START, range2) >= 0) {
+        intersection.setStart(range1.startContainer, range1.startOffset);
+      } else {
+        intersection.setStart(range2.startContainer, range2.startOffset);
+      }
+
+      // 終了位置：より前の位置を選択
+      if (range1.compareBoundaryPoints(Range.END_TO_END, range2) <= 0) {
+        intersection.setEnd(range1.endContainer, range1.endOffset);
+      } else {
+        intersection.setEnd(range2.endContainer, range2.endOffset);
+      }
+
+      return intersection;
+    } catch (err) {
+      console.warn("交差領域計算エラー:", err);
+      return null;
+    }
+  };
+
+  // Rangeを分割して部分削除
+  const splitRange = (originalRange: Range, removeRange: Range): Range[] => {
+    const intersection = calculateIntersection(originalRange, removeRange);
+    if (!intersection) {
+      // 交差がない場合は元の範囲をそのまま返す
+      return [originalRange];
+    }
+
+    const parts: Range[] = [];
+
+    try {
+      // 前半部分（交差領域より前）
+      if (
+        originalRange.compareBoundaryPoints(
+          Range.START_TO_START,
+          intersection
+        ) < 0
+      ) {
+        const beforePart = document.createRange();
+        beforePart.setStart(
+          originalRange.startContainer,
+          originalRange.startOffset
+        );
+        beforePart.setEnd(
+          intersection.startContainer,
+          intersection.startOffset
+        );
+
+        // 空でない範囲のみ追加
+        if (beforePart.toString().trim()) {
+          parts.push(beforePart);
+        }
+      }
+
+      // 後半部分（交差領域より後）
+      if (
+        originalRange.compareBoundaryPoints(Range.END_TO_END, intersection) > 0
+      ) {
+        const afterPart = document.createRange();
+        afterPart.setStart(intersection.endContainer, intersection.endOffset);
+        afterPart.setEnd(originalRange.endContainer, originalRange.endOffset);
+
+        // 空でない範囲のみ追加
+        if (afterPart.toString().trim()) {
+          parts.push(afterPart);
+        }
+      }
+
+      return parts;
+    } catch (err) {
+      console.warn("範囲分割エラー:", err);
+      return [originalRange]; // エラー時は元の範囲を保持
+    }
+  };
+
+  // RangeからSavedRangeを作成
+  const createSavedRangeFromRange = (
+    range: Range,
+    order: number
+  ): SavedRange | null => {
+    if (!contentRef.current) return null;
+    try {
+      const startPath = getXPath(range.startContainer, contentRef.current);
+      const endPath = getXPath(range.endContainer, contentRef.current);
+
+      if (!startPath || !endPath) {
+        console.warn("XPath取得に失敗しました");
+        return null;
+      }
+
+      return {
+        id: Date.now() + Math.random(), // 一意性を保証
+        order,
+        startPath,
+        endPath,
+        startOffset: range.startOffset,
+        endOffset: range.endOffset,
+        text: range.toString(),
+        timestamp: new Date().toLocaleString(),
+        range: range.cloneRange(),
+      };
+    } catch (err) {
+      console.warn("SavedRange作成エラー:", err);
+      return null;
+    }
+  };
+
+  // 選択範囲と既存ハイライトの重複チェック（従来版：完全削除用）
   const findOverlappingRanges = (newRange: Range): SavedRange[] => {
     const overlapping: SavedRange[] = [];
 
@@ -158,15 +284,9 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
       if (!existingRange) continue;
 
       // 範囲の重複チェック
-      if (
-        newRange.compareBoundaryPoints(Range.END_TO_START, existingRange) >=
-          0 ||
-        newRange.compareBoundaryPoints(Range.START_TO_END, existingRange) <= 0
-      ) {
-        continue; // 重複なし
+      if (hasIntersection(newRange, existingRange)) {
+        overlapping.push(savedRange);
       }
-
-      overlapping.push(savedRange);
     }
 
     return overlapping;
@@ -244,7 +364,6 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
     setTimeout(() => {
       try {
-        if (!contentRef.current) return;
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) return;
 
@@ -316,28 +435,71 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   };
 
-  // 消しゴムモード処理
-  const handleEraserMode = (range: Range): void => {
+  // 消しゴムモード処理（部分削除版）
+  const handleEraserMode = (eraseRange: Range): void => {
     try {
-      const overlappingRanges = findOverlappingRanges(range);
+      const overlappingRanges = findOverlappingRanges(eraseRange);
 
       if (overlappingRanges.length === 0) {
         console.log("消しゴムモード: 削除対象のハイライトがありません");
         return;
       }
 
-      // 重複する範囲を削除
-      const deletedIds = overlappingRanges.map((r) => r.id);
-      setSavedRanges((prev) =>
-        prev.filter((range) => !deletedIds.includes(range.id))
+      console.log(
+        `消しゴムモード: ${overlappingRanges.length}個のハイライトを部分削除処理中...`
       );
+
+      // 処理対象を除外したベースとなる範囲リスト
+      const remainingRanges = savedRanges.filter(
+        (range) =>
+          !overlappingRanges.some((overlapping) => overlapping.id === range.id)
+      );
+
+      // 分割処理で新しく作成される範囲
+      const newSplitRanges: SavedRange[] = [];
+      let newOrderCounter = Math.max(...savedRanges.map((r) => r.order), 0) + 1;
+
+      // 各重複範囲を分割処理
+      for (const overlappingRange of overlappingRanges) {
+        const existingRange = restoreRange(overlappingRange);
+        if (!existingRange) {
+          console.warn("範囲復元に失敗:", overlappingRange);
+          continue;
+        }
+
+        // 範囲を分割
+        const splitParts = splitRange(existingRange, eraseRange);
+
+        console.log(
+          `範囲分割: "${overlappingRange.text}" → ${splitParts.length}個の部分に分割`
+        );
+
+        // 分割された各部分をSavedRangeに変換
+        for (const part of splitParts) {
+          const newSavedRange = createSavedRangeFromRange(
+            part,
+            newOrderCounter++
+          );
+          if (newSavedRange) {
+            newSplitRanges.push(newSavedRange);
+            console.log(`新しい分割範囲: "${newSavedRange.text}"`);
+          }
+        }
+
+        // 元の範囲の削除を親コンポーネントに通知
+        onRangeDelete?.(overlappingRange.id);
+      }
+
+      // 状態を更新：残存範囲 + 新しい分割範囲
+      setSavedRanges([...remainingRanges, ...newSplitRanges]);
+      setOrderCounter(newOrderCounter);
 
       console.log(
-        `消しゴムモード: ${overlappingRanges.length}個のハイライトを削除しました`
+        `消しゴムモード完了: ${overlappingRanges.length}個削除, ${newSplitRanges.length}個の新範囲追加`
       );
 
-      // 親コンポーネントに削除通知
-      deletedIds.forEach((id) => onRangeDelete?.(id));
+      // 新しく追加された範囲を親コンポーネントに通知
+      newSplitRanges.forEach((range) => onRangeSelect?.(range));
     } catch (err) {
       console.error("消しゴムモード処理エラー:", err);
     }

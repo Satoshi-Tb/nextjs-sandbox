@@ -109,8 +109,8 @@ const DemoApp: React.FC = () => {
               テキストを選択してハイライトを追加
             </li>
             <li>
-              <strong>消しゴムモード（🧹）:</strong>{" "}
-              ハイライト範囲を選択して削除
+              <strong>消しゴムモード（🧹）:</strong> ハイライト範囲を選択して
+              <strong>部分削除</strong>
             </li>
             <li>
               <strong>モード切替:</strong>{" "}
@@ -120,6 +120,32 @@ const DemoApp: React.FC = () => {
               <strong>一覧表示:</strong>{" "}
               右上のボタンで設定済みハイライト一覧を表示
             </li>
+          </Box>
+          <Box
+            sx={{
+              mt: 2,
+              p: 1.5,
+              bgcolor: "#fff3cd",
+              borderRadius: 1,
+              border: "1px solid #ffc107",
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: "bold", color: "#856404" }}
+            >
+              🎯 消しゴム機能の特徴
+            </Typography>
+            <Typography
+              variant="body2"
+              component="div"
+              sx={{ mt: 0.5, color: "#856404" }}
+            >
+              • 選択した範囲の<strong>部分のみ</strong>を削除
+              <br />
+              • ハイライト全体ではなく、重複箇所だけを消去
+              <br />• 残った部分は自動的に新しいハイライトとして保持
+            </Typography>
           </Box>
           <Box
             sx={{
@@ -166,31 +192,50 @@ const DemoApp: React.FC = () => {
       {/* 技術説明 */}
       <Box sx={{ mt: 3, p: 2, bgcolor: "#e8f5e8", borderRadius: 1 }}>
         <Typography variant="h6" gutterBottom>
-          🚀 新機能: ライン・消しゴムモード
+          🚀 高度な消しゴム機能：Range分割方式
         </Typography>
         <Typography variant="body2" component="div">
           <ul>
             <li>
-              <strong>ライン機能:</strong> 従来通りテキスト選択でハイライト追加
+              <strong>部分削除:</strong>{" "}
+              選択範囲とハイライトの交差部分のみを正確に削除
             </li>
             <li>
-              <strong>消しゴム機能:</strong>{" "}
-              既存ハイライトと重複する範囲を選択して一括削除
+              <strong>Range分割:</strong> `Range.compareBoundaryPoints()`
+              による高精度位置計算
             </li>
             <li>
-              <strong>モード切替:</strong>{" "}
-              リアルタイムでUIに反映される直感的な操作
+              <strong>自動分割:</strong>{" "}
+              削除後の残存部分を新しいハイライトとして自動保存
             </li>
             <li>
-              <strong>重複検出:</strong> Range.compareBoundaryPoints()
-              による正確な重複判定
+              <strong>交差検出:</strong> 複雑なHTML構造でも正確な重複判定
             </li>
             <li>
-              <strong>一括削除:</strong>{" "}
-              複数のハイライトにまたがる選択で同時削除可能
+              <strong>非破壊的:</strong> 元のDOM構造を変更せずにハイライト操作
             </li>
           </ul>
         </Typography>
+        <Box
+          sx={{
+            mt: 2,
+            p: 1.5,
+            bgcolor: "#d4edda",
+            borderRadius: 1,
+            border: "1px solid #c3e6cb",
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{ fontFamily: "monospace", color: "#155724" }}
+          >
+            例: &ldquo;科学技術の発展&rdquo; にハイライト → &ldquo;技術&rdquo;
+            を消しゴム選択
+            <br />
+            結果: &ldquo;科学&rdquo; と &ldquo;の発展&rdquo;
+            の2つのハイライトに自動分割
+          </Typography>
+        </Box>
       </Box>
 
       {/* フッター */}
