@@ -26,22 +26,31 @@ import AutoFixOffIcon from "@mui/icons-material/AutoFixOff";
 // アプリケーションモードの型定義
 export type AppMode = "line" | "eraser";
 
-// 保存された範囲の型定義
+// 内部管理用の範囲データ（Rangeベース）
+interface InternalSavedRange {
+  id: number;
+  order: number;
+  range: Range; // メイン管理対象
+  text: string;
+  timestamp: string;
+}
+
+// 外部API用の範囲データ（永続化対応）
 export type SavedRange = {
   id: number;
   order: number;
-  startPath: string;
-  endPath: string;
+  startPath: string; // 永続化用XPath
+  endPath: string; // 永続化用XPath
   startOffset: number;
   endOffset: number;
   text: string;
   timestamp: string;
-  range?: Range; // 復元されたRangeオブジェクト
 };
 
 type CssHighlightAreaProps = {
   html: string; // ハイライト設定対象のHTMLドキュメント
   mode?: AppMode; // アプリケーションモード（デフォルト: 'line'）
+  initialRanges?: SavedRange[]; // 初期化時の範囲データ（永続化からの復元用）
   onError?: (error: Error) => void; // エラー発生時のハンドラ
   onRangeSelect?: (range: SavedRange) => void; // 範囲選択された場合のハンドラ
   onRangeDelete?: (id: number) => void; // 保存済選択範囲を削除された場合のハンドラ
@@ -52,13 +61,14 @@ type CssHighlightAreaProps = {
 export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
   html,
   mode = "line",
+  initialRanges = [],
   onError,
   onRangeSelect,
   onRangeDelete,
   onModeChange,
   contentAreaSx,
 }) => {
-  const [savedRanges, setSavedRanges] = useState<SavedRange[]>([]);
+  const [savedRanges, setSavedRanges] = useState<InternalSavedRange[]>([]);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [orderCounter, setOrderCounter] = useState<number>(1);
   const [isSupported, setIsSupported] = useState<boolean>(false);
@@ -100,7 +110,62 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   }, [onError]);
 
-  // DOMノードのXPathを取得する関数（相対パス形式）
+  // 内部形式から外部形式への変換（永続化用）
+  const toExternalFormat = (internal: InternalSavedRange): SavedRange => {
+
+    const startPath = getXPath(
+      internal.range.startContainer,
+      contentRef.current!
+    );
+    const endPath = getXPath(internal.range.endContainer, contentRef.current!);
+
+    return {
+      id: internal.id,
+      order: internal.order,
+      startPath: startPath || "",
+      endPath: endPath || "",
+      startOffset: internal.range.startOffset,
+      endOffset: internal.range.endOffset,
+      text: internal.text,
+      timestamp: internal.timestamp,
+    };
+  };
+
+  // 外部形式から内部形式への変換（復元用）
+  const toInternalFormat = (
+    external: SavedRange
+  ): InternalSavedRange | null => {
+    if (!contentRef.current) return null;
+
+    try {
+      const startNode = getNodeFromXPath(
+        external.startPath,
+        contentRef.current
+      );
+      const endNode = getNodeFromXPath(external.endPath, contentRef.current);
+
+      if (!startNode || !endNode) {
+        console.warn("ノード復元失敗:", external);
+        return null;
+      }
+
+      const range = document.createRange();
+      range.setStart(startNode, external.startOffset);
+      range.setEnd(endNode, external.endOffset);
+
+      return {
+        id: external.id,
+        order: external.order,
+        range: range.cloneRange(),
+        text: external.text,
+        timestamp: external.timestamp,
+      };
+    } catch (err) {
+      console.warn("内部形式変換エラー:", external, err);
+      return null;
+    }
+  };
+
   const getXPath = (node: Node, root: Node = contentRef.current!): string => {
     if (!node) throw new Error("node is null or undefined");
     if (!root) throw new Error("root is null or undefined");
@@ -132,7 +197,7 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     xpath: string,
     rootNode: Node = contentRef.current!
   ): Node | null => {
-    if (xpath === "./") return rootNode;
+    if (!rootNode || !xpath) return null;
 
     try {
       const result = document.evaluate(
@@ -151,10 +216,15 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
   // Range同士の交差判定
   const hasIntersection = (range1: Range, range2: Range): boolean => {
-    return (
-      range1.compareBoundaryPoints(Range.END_TO_START, range2) < 0 &&
-      range1.compareBoundaryPoints(Range.START_TO_END, range2) > 0
-    );
+    try {
+      return !(
+        range1.compareBoundaryPoints(Range.END_TO_START, range2) >= 0 ||
+        range1.compareBoundaryPoints(Range.START_TO_END, range2) <= 0
+      );
+    } catch (err) {
+      console.warn("交差判定エラー:", err);
+      return false;
+    }
   };
 
   // 交差領域の計算
@@ -243,48 +313,26 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   };
 
-  // RangeからSavedRangeを作成
-  const createSavedRangeFromRange = (
+  // InternalSavedRangeを作成
+  const createInternalSavedRange = (
     range: Range,
     order: number
-  ): SavedRange | null => {
-    if (!contentRef.current) return null;
-    try {
-      const startPath = getXPath(range.startContainer, contentRef.current);
-      const endPath = getXPath(range.endContainer, contentRef.current);
-
-      if (!startPath || !endPath) {
-        console.warn("XPath取得に失敗しました");
-        return null;
-      }
-
-      return {
-        id: Date.now() + Math.random(), // 一意性を保証
-        order,
-        startPath,
-        endPath,
-        startOffset: range.startOffset,
-        endOffset: range.endOffset,
-        text: range.toString(),
-        timestamp: new Date().toLocaleString(),
-        range: range.cloneRange(),
-      };
-    } catch (err) {
-      console.warn("SavedRange作成エラー:", err);
-      return null;
-    }
+  ): InternalSavedRange => {
+    return {
+      id: Date.now() + Math.random(), // 一意性を保証
+      order,
+      range: range.cloneRange(), // Rangeを保護
+      text: range.toString(),
+      timestamp: new Date().toLocaleString(),
+    };
   };
 
-  // 選択範囲と既存ハイライトの重複チェック（従来版：完全削除用）
-  const findOverlappingRanges = (newRange: Range): SavedRange[] => {
-    const overlapping: SavedRange[] = [];
+  // 選択範囲と既存ハイライトの重複チェック
+  const findOverlappingRanges = (newRange: Range): InternalSavedRange[] => {
+    const overlapping: InternalSavedRange[] = [];
 
     for (const savedRange of savedRanges) {
-      const existingRange = restoreRange(savedRange);
-      if (!existingRange) continue;
-
-      // 範囲の重複チェック
-      if (hasIntersection(newRange, existingRange)) {
+      if (hasIntersection(newRange, savedRange.range)) {
         overlapping.push(savedRange);
       }
     }
@@ -322,7 +370,42 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
     }
   };
 
-  // CSS Custom Highlight APIでハイライトを更新
+  // 初期化時の範囲データ復元
+  useEffect(() => {
+    if (!isSupported || !contentRef.current || initialRanges.length === 0)
+      return;
+
+    try {
+      console.log("初期範囲データを復元中...", initialRanges.length);
+
+      const restoredRanges: InternalSavedRange[] = [];
+      let maxOrder = 0;
+
+      for (const externalRange of initialRanges) {
+        const internalRange = toInternalFormat(externalRange);
+        if (internalRange) {
+          restoredRanges.push(internalRange);
+          maxOrder = Math.max(maxOrder, internalRange.order);
+        } else {
+          console.warn("範囲復元に失敗:", externalRange);
+        }
+      }
+
+      if (restoredRanges.length > 0) {
+        setSavedRanges(restoredRanges);
+        setOrderCounter(maxOrder + 1);
+        console.log(`${restoredRanges.length}個の範囲を復元しました`);
+      }
+    } catch (err) {
+      const error = new Error(
+        `初期データ復元エラー: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+      console.error(error.message);
+      onError?.(error);
+    }
+  }, [initialRanges, isSupported, onError]);
   useEffect(() => {
     if (!isSupported || !contentRef.current) return;
 
@@ -332,14 +415,9 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
       // 新しいハイライトを適用
       if (savedRanges.length > 0) {
-        const ranges: Range[] = [];
-
-        for (const savedRange of savedRanges) {
-          const range = restoreRange(savedRange);
-          if (range) {
-            ranges.push(range);
-          }
-        }
+        const ranges: Range[] = savedRanges.map(
+          (savedRange) => savedRange.range
+        );
 
         if (ranges.length > 0) {
           const highlight = new Highlight(...ranges);
@@ -396,28 +474,8 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
   // ラインモード処理
   const handleLineMode = (range: Range, selectedText: string): void => {
-    if (!contentRef.current) return;
     try {
-      // 選択範囲の開始・終了位置を保存
-      const startPath = getXPath(range.startContainer, contentRef.current);
-      const endPath = getXPath(range.endContainer, contentRef.current);
-
-      if (!startPath || !endPath) {
-        console.warn("XPath取得に失敗しました");
-        return;
-      }
-
-      const newRange: SavedRange = {
-        id: Date.now(),
-        order: orderCounter,
-        startPath,
-        endPath,
-        startOffset: range.startOffset,
-        endOffset: range.endOffset,
-        text: selectedText,
-        timestamp: new Date().toLocaleString(),
-        range: range.cloneRange(),
-      };
+      const newRange = createInternalSavedRange(range, orderCounter);
 
       setSavedRanges((prev) => [...prev, newRange]);
       setOrderCounter((prev) => prev + 1);
@@ -428,8 +486,9 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
         }"`
       );
 
-      // 親コンポーネントに通知
-      onRangeSelect?.(newRange);
+      // 親コンポーネントに外部形式で通知
+      const externalFormat = toExternalFormat(newRange);
+      onRangeSelect?.(externalFormat);
     } catch (err) {
       console.error("ラインモード処理エラー:", err);
     }
@@ -456,38 +515,31 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
       );
 
       // 分割処理で新しく作成される範囲
-      const newSplitRanges: SavedRange[] = [];
+      const newSplitRanges: InternalSavedRange[] = [];
       let newOrderCounter = Math.max(...savedRanges.map((r) => r.order), 0) + 1;
 
       // 各重複範囲を分割処理
       for (const overlappingRange of overlappingRanges) {
-        const existingRange = restoreRange(overlappingRange);
-        if (!existingRange) {
-          console.warn("範囲復元に失敗:", overlappingRange);
-          continue;
-        }
-
         // 範囲を分割
-        const splitParts = splitRange(existingRange, eraseRange);
+        const splitParts = splitRange(overlappingRange.range, eraseRange);
 
         console.log(
           `範囲分割: "${overlappingRange.text}" → ${splitParts.length}個の部分に分割`
         );
 
-        // 分割された各部分をSavedRangeに変換
+        // 分割された各部分をInternalSavedRangeに変換
         for (const part of splitParts) {
-          const newSavedRange = createSavedRangeFromRange(
+          const newSavedRange = createInternalSavedRange(
             part,
             newOrderCounter++
           );
-          if (newSavedRange) {
-            newSplitRanges.push(newSavedRange);
-            console.log(`新しい分割範囲: "${newSavedRange.text}"`);
-          }
+          newSplitRanges.push(newSavedRange);
+          console.log(`新しい分割範囲: "${newSavedRange.text}"`);
         }
 
-        // 元の範囲の削除を親コンポーネントに通知
-        onRangeDelete?.(overlappingRange.id);
+        // 元の範囲の削除を親コンポーネントに通知（外部形式で）
+        const externalFormat = toExternalFormat(overlappingRange);
+        onRangeDelete?.(externalFormat.id);
       }
 
       // 状態を更新：残存範囲 + 新しい分割範囲
@@ -498,18 +550,35 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
         `消しゴムモード完了: ${overlappingRanges.length}個削除, ${newSplitRanges.length}個の新範囲追加`
       );
 
-      // 新しく追加された範囲を親コンポーネントに通知
-      newSplitRanges.forEach((range) => onRangeSelect?.(range));
+      // 新しく追加された範囲を親コンポーネントに通知（外部形式で）
+      newSplitRanges.forEach((range) => {
+        const externalFormat = toExternalFormat(range);
+        onRangeSelect?.(externalFormat);
+      });
     } catch (err) {
       console.error("消しゴムモード処理エラー:", err);
+      const error = new Error(
+        `消しゴムモード処理エラー: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+      onError?.(error);
     }
   };
 
   // 特定の保存範囲を削除
   const handleDeleteRange = (id: number): void => {
     try {
+      const targetRange = savedRanges.find((range) => range.id === id);
+      if (!targetRange) {
+        console.warn("削除対象の範囲が見つかりません:", id);
+        return;
+      }
+
       setSavedRanges((prev) => prev.filter((range) => range.id !== id));
       console.log("範囲を削除しました");
+
+      // 親コンポーネントに通知
       onRangeDelete?.(id);
     } catch (err) {
       const error = new Error(
@@ -527,6 +596,8 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
       setSavedRanges([]);
       setOrderCounter(1);
       console.log("すべての範囲を削除しました");
+
+      // 親コンポーネントに各削除を通知
       deletedIds.forEach((id) => onRangeDelete?.(id));
     } catch (err) {
       const error = new Error(
@@ -727,49 +798,52 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {savedRanges.map((range) => (
-                    <TableRow key={range.id} hover>
-                      <TableCell>{range.order}</TableCell>
-                      <TableCell sx={{ maxWidth: 200 }}>
-                        <Typography variant="body2" title={range.text}>
-                          {range.text.length > 50
-                            ? `${range.text.substring(0, 50)}...`
-                            : range.text}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 150 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}
-                        >
-                          {`${range.startPath}[${range.startOffset}]`}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 150 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}
-                        >
-                          {`${range.endPath}[${range.endOffset}]`}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {range.timestamp}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          color="error"
-                          onClick={() => handleDeleteRange(range.id)}
-                          size="small"
-                          title="削除"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {savedRanges.map((range) => {
+                    const external = toExternalFormat(range);
+                    return (
+                      <TableRow key={range.id} hover>
+                        <TableCell>{range.order}</TableCell>
+                        <TableCell sx={{ maxWidth: 200 }}>
+                          <Typography variant="body2" title={range.text}>
+                            {range.text.length > 50
+                              ? `${range.text.substring(0, 50)}...`
+                              : range.text}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ maxWidth: 150 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}
+                          >
+                            {`${external.startPath}[${external.startOffset}]`}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ maxWidth: 150 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}
+                          >
+                            {`${external.endPath}[${external.endOffset}]`}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {range.timestamp}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDeleteRange(range.id)}
+                            size="small"
+                            title="削除"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>

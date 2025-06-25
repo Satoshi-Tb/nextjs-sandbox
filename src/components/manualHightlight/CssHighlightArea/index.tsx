@@ -29,15 +29,30 @@ const SAMPLE_HTML = `
 const DemoApp: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [currentMode, setCurrentMode] = useState<AppMode>("line");
+  const [persistedRanges, setPersistedRanges] = useState<SavedRange[]>([]);
 
   const handleRangeSelect = (range: SavedRange): void => {
     console.log("範囲が選択されました:", range);
-    // 必要に応じて外部システムに保存など
+    // 永続化処理のシミュレーション
+    setPersistedRanges((prev) => {
+      const exists = prev.find((r) => r.id === range.id);
+      if (exists) {
+        return prev; // 既に存在する場合は追加しない
+      }
+      const updated = [...prev, range];
+      console.log("永続化データ更新:", updated.length, "件");
+      return updated;
+    });
   };
 
   const handleRangeDelete = (id: number): void => {
     console.log("範囲が削除されました:", id);
-    // 必要に応じて外部システムから削除など
+    // 永続化データからも削除
+    setPersistedRanges((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      console.log("永続化データ更新:", updated.length, "件");
+      return updated;
+    });
   };
 
   const handleError = (error: Error): void => {
@@ -75,7 +90,36 @@ const DemoApp: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* エラーメッセージ表示 */}
+      {/* 永続化状態表示 */}
+      <Box
+        sx={{
+          mb: 2,
+          p: 2,
+          bgcolor: "#e3f2fd",
+          borderRadius: 1,
+          border: "1px solid #2196f3",
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          💾 永続化シミュレーション
+        </Typography>
+        <Typography variant="body2">
+          <strong>保存済み範囲:</strong> {persistedRanges.length}件
+          {persistedRanges.length > 0 && (
+            <Box component="span" sx={{ ml: 1 }}>
+              - 最新: &ldqt;
+              {persistedRanges[persistedRanges.length - 1]?.text.substring(
+                0,
+                20
+              )}
+              ...&ldqt;
+            </Box>
+          )}
+        </Typography>
+        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+          このデモでは、部品が内部でRangeオブジェクトを管理し、永続化イベント時にのみXPath形式で外部に通知する仕組みを確認できます。
+        </Typography>
+      </Box>
       {errorMessage && (
         <Box sx={{ mb: 2, p: 1, bgcolor: "#ffebee", borderRadius: 1 }}>
           <Typography
@@ -89,7 +133,7 @@ const DemoApp: React.FC = () => {
         </Box>
       )}
 
-      {/* 操作説明セクション */}
+      {/* エラーメッセージ表示 */}
       <Box
         sx={{
           mb: 3,
@@ -166,6 +210,7 @@ const DemoApp: React.FC = () => {
       <CssHighlightArea
         html={SAMPLE_HTML}
         mode={currentMode}
+        initialRanges={persistedRanges}
         onError={handleError}
         onRangeSelect={handleRangeSelect}
         onRangeDelete={handleRangeDelete}
@@ -192,27 +237,28 @@ const DemoApp: React.FC = () => {
       {/* 技術説明 */}
       <Box sx={{ mt: 3, p: 2, bgcolor: "#e8f5e8", borderRadius: 1 }}>
         <Typography variant="h6" gutterBottom>
-          🚀 高度な消しゴム機能：Range分割方式
+          🚀 新アーキテクチャ：Range管理 + 永続化分離
         </Typography>
         <Typography variant="body2" component="div">
           <ul>
             <li>
-              <strong>部分削除:</strong>{" "}
-              選択範囲とハイライトの交差部分のみを正確に削除
+              <strong>内部Range管理:</strong>{" "}
+              部品内でRangeオブジェクトを直接保持・操作
             </li>
             <li>
-              <strong>Range分割:</strong> `Range.compareBoundaryPoints()`
-              による高精度位置計算
+              <strong>高速処理:</strong>{" "}
+              XPath変換処理を削減し、大幅なパフォーマンス向上
             </li>
             <li>
-              <strong>自動分割:</strong>{" "}
-              削除後の残存部分を新しいハイライトとして自動保存
+              <strong>永続化分離:</strong> 外部API呼び出し時のみXPath形式に変換
             </li>
             <li>
-              <strong>交差検出:</strong> 複雑なHTML構造でも正確な重複判定
+              <strong>初期復元:</strong>{" "}
+              `initialRanges`プロパティで永続化データから復元
             </li>
             <li>
-              <strong>非破壊的:</strong> 元のDOM構造を変更せずにハイライト操作
+              <strong>イベント駆動:</strong>{" "}
+              `onRangeSelect`/`onRangeDelete`で外部システム連携
             </li>
           </ul>
         </Typography>
@@ -229,11 +275,9 @@ const DemoApp: React.FC = () => {
             variant="caption"
             sx={{ fontFamily: "monospace", color: "#155724" }}
           >
-            例: &ldquo;科学技術の発展&rdquo; にハイライト → &ldquo;技術&rdquo;
-            を消しゴム選択
+            アーキテクチャ: [部品内部: Range管理] ↔ [外部API: XPath永続化]
             <br />
-            結果: &ldquo;科学&rdquo; と &ldquo;の発展&rdquo;
-            の2つのハイライトに自動分割
+            利用者は永続化処理のみに集中でき、部品は高速Range操作に専念
           </Typography>
         </Box>
       </Box>
