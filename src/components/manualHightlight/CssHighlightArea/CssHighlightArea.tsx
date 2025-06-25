@@ -159,9 +159,9 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
       // 範囲の重複チェック
       if (
-        newRange.compareBoundaryPoints(Range.END_TO_START, existingRange) <=
+        newRange.compareBoundaryPoints(Range.END_TO_START, existingRange) >=
           0 ||
-        newRange.compareBoundaryPoints(Range.START_TO_END, existingRange) >= 0
+        newRange.compareBoundaryPoints(Range.START_TO_END, existingRange) <= 0
       ) {
         continue; // 重複なし
       }
