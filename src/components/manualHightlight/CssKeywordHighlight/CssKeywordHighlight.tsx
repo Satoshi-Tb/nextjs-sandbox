@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   TextField,
@@ -35,15 +35,20 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
   keywords,
   sampleText,
 }) => {
+  const highlightRef = useRef<HTMLDivElement>(null);
+
   // ハイライトを適用する関数
   const applyHighlights = useCallback(() => {
+    if (!highlightRef.current) return;
+    console.log("ハイライト適用", { keywords });
+
     // 既存のハイライトをクリア
     CSS.highlights.clear();
 
     keywords.forEach((item) => {
       const ranges: Range[] = [];
       const walker = document.createTreeWalker(
-        document.body,
+        highlightRef.current!,
         NodeFilter.SHOW_TEXT,
         null
       );
@@ -110,6 +115,7 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}
+        ref={highlightRef}
       >
         {sampleText}
       </Typography>
