@@ -8,60 +8,35 @@ import {
   CardContent,
   List,
   ListItem,
+  ListItemText,
   ListItemSecondaryAction,
   IconButton,
   Chip,
   Grid,
   Paper,
   Divider,
-  Alert,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
+
 interface KeywordHighlight {
   id: string;
   keyword: string;
   color: string;
 }
 
-interface HighlightSupport {
-  supported: boolean;
-  message: string;
+interface HighlightAreaProps {
+  keywords: KeywordHighlight[];
+  sampleText: string;
 }
 
-const KeywordHighlighterApp: React.FC = () => {
-  const [keywords, setKeywords] = useState<KeywordHighlight[]>([]);
-  const [newKeyword, setNewKeyword] = useState("");
-  const [newColor, setNewColor] = useState("#ffff00");
-  const [sampleText, setSampleText] = useState(`
-これはサンプルテキストです。このテキストでキーワードハイライト機能をテストできます。
-React、JavaScript、TypeScriptなどの技術キーワードを検索してみてください。
-CSS Custom Highlight APIを使用することで、DOM構造を変更せずにハイライトを実現できます。
-この技術により、パフォーマンスが向上し、より柔軟なハイライト機能を提供できます。
-  `);
-  const [highlightSupport, setHighlightSupport] = useState<HighlightSupport>({
-    supported: false,
-    message: "",
-  });
-
-  // CSS Custom Highlight APIサポート確認
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const supported = "CSS" in window && "highlights" in CSS;
-      setHighlightSupport({
-        supported,
-        message: supported
-          ? "CSS Custom Highlight APIがサポートされています"
-          : "CSS Custom Highlight APIはサポートされていません。最新のChrome、Edge、Firefoxをご利用ください。",
-      });
-    }
-  }, []);
-
+const HighlightArea: React.FC<HighlightAreaProps> = ({
+  keywords,
+  sampleText,
+}) => {
   // ハイライトを適用する関数
   const applyHighlights = useCallback(() => {
-    if (!highlightSupport.supported || typeof window === "undefined") return;
-
     // 既存のハイライトをクリア
     CSS.highlights.clear();
 
@@ -93,7 +68,64 @@ CSS Custom Highlight APIを使用することで、DOM構造を変更せずに�
         CSS.highlights.set(item.id, highlight);
       }
     });
-  }, [keywords, highlightSupport.supported]);
+  }, [keywords]);
+
+  // キーワードが変更されたときにハイライトを更新
+  useEffect(() => {
+    if (keywords.length > 0) {
+      // DOM更新後にハイライトを適用
+      const timer = setTimeout(applyHighlights, 100);
+      return () => clearTimeout(timer);
+    } else {
+      // キーワードがない場合はハイライトをクリア
+      CSS.highlights.clear();
+    }
+  }, [keywords, applyHighlights]);
+
+  // CSSスタイルを動的に追加
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = keywords
+      .map(
+        (item) => `::highlight(${item.id}) { background-color: ${item.color}; }`
+      )
+      .join("\n");
+
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [keywords]);
+
+  return (
+    <Paper sx={{ p: 3, backgroundColor: "#fafafa" }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        ハイライト表示エリア
+      </Typography>
+      <Typography
+        component="div"
+        sx={{
+          lineHeight: 1.8,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+        }}
+      >
+        {sampleText}
+      </Typography>
+    </Paper>
+  );
+};
+
+const KeywordHighlighterApp: React.FC = () => {
+  const [keywords, setKeywords] = useState<KeywordHighlight[]>([]);
+  const [newKeyword, setNewKeyword] = useState("");
+  const [newColor, setNewColor] = useState("#ffff00");
+  const [sampleText, setSampleText] =
+    useState(`これはサンプルテキストです。このテキストでキーワードハイライト機能をテストできます。
+React、JavaScript、TypeScriptなどの技術キーワードを検索してみてください。
+CSS Custom Highlight APIを使用することで、DOM構造を変更せずにハイライトを実現できます。
+この技術により、パフォーマンスが向上し、より柔軟なハイライト機能を提供できます。`);
 
   // キーワード追加
   const addKeyword = () => {
@@ -114,42 +146,8 @@ CSS Custom Highlight APIを使用することで、DOM構造を変更せずに�
     setKeywords((prev) => prev.filter((item) => item.id !== id));
 
     // ハイライトを削除
-    if (highlightSupport.supported && typeof window !== "undefined") {
-      CSS.highlights.delete(id);
-    }
+    CSS.highlights.delete(id);
   };
-
-  // キーワードが変更されたときにハイライトを更新
-  useEffect(() => {
-    if (keywords.length > 0) {
-      // DOM更新後にハイライトを適用
-      const timer = setTimeout(applyHighlights, 100);
-      return () => clearTimeout(timer);
-    } else {
-      // キーワードがない場合はハイライトをクリア
-      if (highlightSupport.supported && typeof window !== "undefined") {
-        CSS.highlights.clear();
-      }
-    }
-  }, [keywords, applyHighlights, highlightSupport.supported]);
-
-  // CSSスタイルを動的に追加
-  useEffect(() => {
-    if (!highlightSupport.supported) return;
-
-    const style = document.createElement("style");
-    style.textContent = keywords
-      .map(
-        (item) => `::highlight(${item.id}) { background-color: ${item.color}; }`
-      )
-      .join("\n");
-
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, [keywords, highlightSupport.supported]);
 
   const predefinedColors = [
     "#ffff00",
@@ -171,13 +169,6 @@ CSS Custom Highlight APIを使用することで、DOM構造を変更せずに�
       >
         キーワードハイライトアプリ
       </Typography>
-
-      <Alert
-        severity={highlightSupport.supported ? "success" : "warning"}
-        sx={{ mb: 3 }}
-      >
-        {highlightSupport.message}
-      </Alert>
 
       <Grid container spacing={3}>
         {/* キーワード追加セクション */}
@@ -233,7 +224,7 @@ CSS Custom Highlight APIを使用することで、DOM構造を変更せずに�
                 <Button
                   variant="contained"
                   onClick={addKeyword}
-                  disabled={!newKeyword.trim() || !highlightSupport.supported}
+                  disabled={!newKeyword.trim()}
                   startIcon={<SearchIcon />}
                   fullWidth
                 >
@@ -312,23 +303,10 @@ CSS Custom Highlight APIを使用することで、DOM構造を変更せずに�
                 label="テキスト内容を編集できます"
                 value={sampleText}
                 onChange={(e) => setSampleText(e.target.value)}
+                sx={{ mb: 2 }}
               />
 
-              <Paper sx={{ p: 3, mt: 2, backgroundColor: "#fafafa" }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  ハイライト表示エリア
-                </Typography>
-                <Typography
-                  component="div"
-                  sx={{
-                    lineHeight: 1.8,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {sampleText}
-                </Typography>
-              </Paper>
+              <HighlightArea keywords={keywords} sampleText={sampleText} />
             </CardContent>
           </Card>
         </Grid>
