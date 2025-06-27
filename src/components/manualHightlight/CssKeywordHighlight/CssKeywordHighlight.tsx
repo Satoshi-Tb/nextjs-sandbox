@@ -1,0 +1,363 @@
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  ListItemSecondaryAction,
+  IconButton,
+  Chip,
+  Grid,
+  Paper,
+  Divider,
+  Alert,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
+interface KeywordHighlight {
+  id: string;
+  keyword: string;
+  color: string;
+}
+
+interface HighlightSupport {
+  supported: boolean;
+  message: string;
+}
+
+const KeywordHighlighterApp: React.FC = () => {
+  const [keywords, setKeywords] = useState<KeywordHighlight[]>([]);
+  const [newKeyword, setNewKeyword] = useState("");
+  const [newColor, setNewColor] = useState("#ffff00");
+  const [sampleText, setSampleText] = useState(`
+これはサンプルテキストです。このテキストでキーワードハイライト機能をテストできます。
+React、JavaScript、TypeScriptなどの技術キーワードを検索してみてください。
+CSS Custom Highlight APIを使用することで、DOM構造を変更せずにハイライトを実現できます。
+この技術により、パフォーマンスが向上し、より柔軟なハイライト機能を提供できます。
+  `);
+  const [highlightSupport, setHighlightSupport] = useState<HighlightSupport>({
+    supported: false,
+    message: "",
+  });
+
+  // CSS Custom Highlight APIサポート確認
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const supported = "CSS" in window && "highlights" in CSS;
+      setHighlightSupport({
+        supported,
+        message: supported
+          ? "CSS Custom Highlight APIがサポートされています"
+          : "CSS Custom Highlight APIはサポートされていません。最新のChrome、Edge、Firefoxをご利用ください。",
+      });
+    }
+  }, []);
+
+  // ハイライトを適用する関数
+  const applyHighlights = useCallback(() => {
+    if (!highlightSupport.supported || typeof window === "undefined") return;
+
+    // 既存のハイライトをクリア
+    CSS.highlights.clear();
+
+    keywords.forEach((item) => {
+      const ranges: Range[] = [];
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null
+      );
+
+      let node: Text | null;
+      while ((node = walker.nextNode() as Text)) {
+        const text = node.textContent;
+        if (!text) continue;
+
+        const regex = new RegExp(item.keyword, "gi");
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          const range = new Range();
+          range.setStart(node, match.index);
+          range.setEnd(node, match.index + match[0].length);
+          ranges.push(range);
+        }
+      }
+
+      if (ranges.length > 0) {
+        const highlight = new Highlight(...ranges);
+        CSS.highlights.set(item.id, highlight);
+      }
+    });
+  }, [keywords, highlightSupport.supported]);
+
+  // キーワード追加
+  const addKeyword = () => {
+    if (!newKeyword.trim()) return;
+
+    const newItem: KeywordHighlight = {
+      id: `highlight-${Date.now()}`,
+      keyword: newKeyword.trim(),
+      color: newColor,
+    };
+
+    setKeywords((prev) => [...prev, newItem]);
+    setNewKeyword("");
+  };
+
+  // キーワード削除
+  const removeKeyword = (id: string) => {
+    setKeywords((prev) => prev.filter((item) => item.id !== id));
+
+    // ハイライトを削除
+    if (highlightSupport.supported && typeof window !== "undefined") {
+      CSS.highlights.delete(id);
+    }
+  };
+
+  // キーワードが変更されたときにハイライトを更新
+  useEffect(() => {
+    if (keywords.length > 0) {
+      // DOM更新後にハイライトを適用
+      const timer = setTimeout(applyHighlights, 100);
+      return () => clearTimeout(timer);
+    } else {
+      // キーワードがない場合はハイライトをクリア
+      if (highlightSupport.supported && typeof window !== "undefined") {
+        CSS.highlights.clear();
+      }
+    }
+  }, [keywords, applyHighlights, highlightSupport.supported]);
+
+  // CSSスタイルを動的に追加
+  useEffect(() => {
+    if (!highlightSupport.supported) return;
+
+    const style = document.createElement("style");
+    style.textContent = keywords
+      .map(
+        (item) => `::highlight(${item.id}) { background-color: ${item.color}; }`
+      )
+      .join("\n");
+
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [keywords, highlightSupport.supported]);
+
+  const predefinedColors = [
+    "#ffff00",
+    "#00ff00",
+    "#ff00ff",
+    "#00ffff",
+    "#ffa500",
+    "#ff69b4",
+    "#90ee90",
+    "#dda0dd",
+  ];
+
+  return (
+    <Box sx={{ maxWidth: 1200, mx: "auto", p: 3 }}>
+      <Typography
+        variant="h4"
+        component="h1"
+        sx={{ mb: 3, textAlign: "center" }}
+      >
+        キーワードハイライトアプリ
+      </Typography>
+
+      <Alert
+        severity={highlightSupport.supported ? "success" : "warning"}
+        sx={{ mb: 3 }}
+      >
+        {highlightSupport.message}
+      </Alert>
+
+      <Grid container spacing={3}>
+        {/* キーワード追加セクション */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                <AddIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+                キーワード追加
+              </Typography>
+
+              <Box sx={{ mb: 2 }}>
+                <TextField
+                  fullWidth
+                  label="検索キーワード"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addKeyword()}
+                  sx={{ mb: 2 }}
+                />
+
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  ハイライト色
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                  {predefinedColors.map((color) => (
+                    <Box
+                      key={color}
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        backgroundColor: color,
+                        border:
+                          newColor === color
+                            ? "3px solid #333"
+                            : "1px solid #ccc",
+                        borderRadius: 1,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setNewColor(color)}
+                    />
+                  ))}
+                </Box>
+
+                <TextField
+                  type="color"
+                  label="カスタム色"
+                  value={newColor}
+                  onChange={(e) => setNewColor(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+
+                <Button
+                  variant="contained"
+                  onClick={addKeyword}
+                  disabled={!newKeyword.trim() || !highlightSupport.supported}
+                  startIcon={<SearchIcon />}
+                  fullWidth
+                >
+                  キーワードを追加
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* キーワード一覧セクション */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                登録済みキーワード ({keywords.length})
+              </Typography>
+
+              {keywords.length === 0 ? (
+                <Typography color="text.secondary">
+                  登録されたキーワードはありません
+                </Typography>
+              ) : (
+                <List>
+                  {keywords.map((item) => (
+                    <ListItem key={item.id} divider>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mr: 2 }}
+                      >
+                        <Box
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            backgroundColor: item.color,
+                            border: "1px solid #ccc",
+                            borderRadius: 1,
+                            mr: 1,
+                          }}
+                        />
+                        <Chip
+                          label={item.keyword}
+                          size="small"
+                          sx={{ backgroundColor: item.color }}
+                        />
+                      </Box>
+                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          onClick={() => removeKeyword(item.id)}
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* サンプルテキストセクション */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                テスト用ドキュメント
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              <TextField
+                multiline
+                rows={8}
+                fullWidth
+                label="テキスト内容を編集できます"
+                value={sampleText}
+                onChange={(e) => setSampleText(e.target.value)}
+              />
+
+              <Paper sx={{ p: 3, mt: 2, backgroundColor: "#fafafa" }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  ハイライト表示エリア
+                </Typography>
+                <Typography
+                  component="div"
+                  sx={{
+                    lineHeight: 1.8,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {sampleText}
+                </Typography>
+              </Paper>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* 使用方法 */}
+      <Card sx={{ mt: 3 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            使用方法
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            1.
+            上部のフォームでキーワードと色を選択し、「キーワードを追加」ボタンをクリック
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            2. 登録されたキーワードがテキスト内で自動的にハイライト表示されます
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            3. 不要なキーワードは一覧から削除ボタンで削除可能
+          </Typography>
+          <Typography variant="body2">
+            4. CSS Custom Highlight
+            APIを使用しているため、DOM構造に影響を与えずにハイライトを実現
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+};
+
+export default KeywordHighlighterApp;

@@ -119,6 +119,11 @@ function Home() {
             CSS Highlight APIを利用した手動ハイライトデモ。永続化はXPath形式
           </Link>
         </li>
+        <li>
+          <Link href="/samples/manual-highlight/keyword-highlight-sample">
+            CSS Highlight APIを利用したキーワードハイライトデモ。
+          </Link>
+        </li>
       </ul>
     </div>
   );
