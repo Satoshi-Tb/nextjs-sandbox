@@ -36,11 +36,17 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
   sampleText,
 }) => {
   const highlightRef = useRef<HTMLDivElement>(null);
+  const componentIdRef = useRef<string>();
+
+  // コンポーネント固有のIDを初回のみ生成
+  if (!componentIdRef.current) {
+    componentIdRef.current = Math.random().toString(36).substring(2, 11);
+  }
+  const componentId = componentIdRef.current;
 
   // ハイライトを適用する関数
   const applyHighlights = useCallback(() => {
     if (!highlightRef.current) return;
-    console.log("ハイライト適用", { keywords });
 
     // 既存のハイライトをクリア
     CSS.highlights.clear();
@@ -70,10 +76,11 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
 
       if (ranges.length > 0) {
         const highlight = new Highlight(...ranges);
-        CSS.highlights.set(item.id, highlight);
+        const highlightName = `highlight-${componentId}-${item.id}`;
+        CSS.highlights.set(highlightName, highlight);
       }
     });
-  }, [keywords]);
+  }, [keywords, componentId]);
 
   // キーワードが変更されたときにハイライトを更新
   useEffect(() => {
@@ -92,16 +99,22 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
     const style = document.createElement("style");
     style.textContent = keywords
       .map(
-        (item) => `::highlight(${item.id}) { background-color: ${item.color}; }`
+        (item) =>
+          `::highlight(highlight-${componentId}-${item.id}) { background-color: ${item.color}; }`
       )
       .join("\n");
 
     document.head.appendChild(style);
 
     return () => {
+      // スタイルを削除
       document.head.removeChild(style);
+      // このコンポーネントのハイライトを削除
+      keywords.forEach((item) => {
+        CSS.highlights.delete(`highlight-${componentId}-${item.id}`);
+      });
     };
-  }, [keywords]);
+  }, [keywords, componentId]);
 
   return (
     <Paper sx={{ p: 3, backgroundColor: "#fafafa" }}>
@@ -109,13 +122,13 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
         ハイライト表示エリア
       </Typography>
       <Typography
+        ref={highlightRef}
         component="div"
         sx={{
           lineHeight: 1.8,
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
         }}
-        ref={highlightRef}
       >
         {sampleText}
       </Typography>
@@ -150,9 +163,7 @@ CSS Custom Highlight APIを使用することで、DOM構造を変更せずに�
   // キーワード削除
   const removeKeyword = (id: string) => {
     setKeywords((prev) => prev.filter((item) => item.id !== id));
-
-    // ハイライトを削除
-    CSS.highlights.delete(id);
+    // 注意: ハイライトの削除はHighlightAreaコンポーネント内で処理される
   };
 
   const predefinedColors = [
