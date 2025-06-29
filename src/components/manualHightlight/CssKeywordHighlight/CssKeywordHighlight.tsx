@@ -37,6 +37,7 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
 }) => {
   const highlightRef = useRef<HTMLDivElement>(null);
   const componentIdRef = useRef<string>();
+  const registeredHighlights = useRef<Set<string>>(new Set());
 
   // コンポーネント固有のIDを初回のみ生成
   if (!componentIdRef.current) {
@@ -48,8 +49,11 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
   const applyHighlights = useCallback(() => {
     if (!highlightRef.current) return;
 
-    // 既存のハイライトをクリア
-    CSS.highlights.clear();
+    // 前回登録したハイライトを削除
+    registeredHighlights.current.forEach((name) => {
+      CSS.highlights.delete(name);
+    });
+    registeredHighlights.current.clear();
 
     keywords.forEach((item) => {
       const ranges: Range[] = [];
@@ -78,6 +82,7 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
         const highlight = new Highlight(...ranges);
         const highlightName = `highlight-${componentId}-${item.id}`;
         CSS.highlights.set(highlightName, highlight);
+        registeredHighlights.current.add(highlightName);
       }
     });
   }, [keywords, componentId]);
@@ -108,11 +113,14 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
 
     return () => {
       // スタイルを削除
-      document.head.removeChild(style);
-      // このコンポーネントのハイライトを削除
-      keywords.forEach((item) => {
-        CSS.highlights.delete(`highlight-${componentId}-${item.id}`);
+      if (style.parentNode) {
+        document.head.removeChild(style);
+      }
+      // 登録済みハイライトをすべて削除
+      registeredHighlights.current.forEach((name) => {
+        CSS.highlights.delete(name);
       });
+      registeredHighlights.current.clear();
     };
   }, [keywords, componentId]);
 
