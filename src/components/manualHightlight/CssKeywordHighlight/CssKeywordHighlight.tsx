@@ -46,7 +46,7 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
   const componentId = componentIdRef.current;
 
   // ハイライトを適用する関数
-  const applyHighlights = useCallback(() => {
+  const applyHighlights = () => {
     if (!highlightRef.current) return;
 
     // 前回登録したハイライトを削除
@@ -85,12 +85,12 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
         registeredHighlights.current.add(highlightName);
       }
     });
-  }, [keywords, componentId]);
+  };
 
   // キーワードが変更されたときにハイライトを更新
   useEffect(() => {
     applyHighlights();
-  }, [keywords, applyHighlights]);
+  }, [keywords]);
 
   // CSSスタイルを動的に追加
   useEffect(() => {
