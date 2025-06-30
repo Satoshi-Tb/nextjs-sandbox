@@ -89,14 +89,7 @@ const HighlightArea: React.FC<HighlightAreaProps> = ({
 
   // キーワードが変更されたときにハイライトを更新
   useEffect(() => {
-    if (keywords.length > 0) {
-      // DOM更新後にハイライトを適用
-      const timer = setTimeout(applyHighlights, 100);
-      return () => clearTimeout(timer);
-    } else {
-      // キーワードがない場合はハイライトをクリア
-      CSS.highlights.clear();
-    }
+    applyHighlights();
   }, [keywords, applyHighlights]);
 
   // CSSスタイルを動的に追加
