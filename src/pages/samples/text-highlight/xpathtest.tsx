@@ -26,15 +26,13 @@ const Home: React.FC = () => {
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
         if (range.collapsed) {
-          setSelectedRange(null);
           return;
         }
 
-        // 選択範囲がサンプルコンテンツ内にあるかチェック
+        // commonAncestorContainerを使ってサンプルコンテンツ内かチェック
         if (
           contentRef.current &&
-          (contentRef.current.contains(range.startContainer) ||
-            contentRef.current.contains(range.endContainer))
+          contentRef.current.contains(range.commonAncestorContainer)
         ) {
           try {
             const startXPath = isRelativePath
@@ -57,6 +55,7 @@ const Home: React.FC = () => {
             console.error(err);
           }
         }
+        // サンプルコンテンツエリア外の選択は何も処理しない
       }
     };
 
@@ -373,32 +372,33 @@ const Home: React.FC = () => {
           color: #666;
         }
 
-        .xpath-output {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .xpath-output code {
+        .xpath-display {
           background: #e9ecef;
           padding: 4px 8px;
           border-radius: 4px;
           font-family: monospace;
-          flex: 1;
+          display: block;
           word-break: break-all;
+          margin-top: 4px;
         }
 
-        .copy-btn {
+        .copy-section {
+          margin-top: 15px;
+          text-align: center;
+        }
+
+        .copy-all-btn {
           background: #007bff;
           color: white;
           border: none;
-          padding: 4px 8px;
+          padding: 10px 20px;
           border-radius: 4px;
           cursor: pointer;
-          font-size: 12px;
+          font-size: 14px;
+          font-weight: bold;
         }
 
-        .copy-btn:hover {
+        .copy-all-btn:hover {
           background: #0056b3;
         }
 
