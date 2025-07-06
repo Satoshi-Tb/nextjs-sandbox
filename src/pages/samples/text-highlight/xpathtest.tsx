@@ -35,12 +35,14 @@ const Home: React.FC = () => {
           contentRef.current.contains(range.commonAncestorContainer)
         ) {
           try {
-            const startXPath = isRelativePath
-              ? getXPathTo(range.startContainer, contentRef.current)
-              : getXPath(range.startContainer);
-            const endXPath = isRelativePath
-              ? getXPathTo(range.endContainer, contentRef.current)
-              : getXPath(range.endContainer);
+            const startXPath = getXPath(
+              range.startContainer,
+              isRelativePath ? contentRef.current : undefined
+            );
+            const endXPath = getXPath(
+              range.endContainer,
+              isRelativePath ? contentRef.current : undefined
+            );
 
             setSelectedRange({
               startXPath,
@@ -543,49 +545,42 @@ function getXPath(node: Node, root?: Node): string {
     return "/";
   }
 
-  if (node === root) {
-    return "";
+  // rootが指定されている場合（相対パス）
+  if (root) {
+    if (node === root) {
+      return ".";
+    }
+
+    if (!root.contains(node)) {
+      // rootの外にある場合は絶対パスにフォールバック
+      return getXPath(node);
+    }
+
+    // rootからの相対パスを構築
+    const pathSegments: string[] = [];
+    let current = node;
+
+    while (current && current !== root) {
+      const segment = getNodeXPath(current);
+      if (segment) {
+        pathSegments.unshift(segment);
+      }
+      current = current.parentNode;
+    }
+
+    return pathSegments.length > 0 ? "./" + pathSegments.join("/") : ".";
   }
 
+  // rootが指定されていない場合（絶対パス）
   const parent = node.parentNode;
   if (!parent) {
     return "";
   }
 
-  if (parent === root) {
-    return "/" + getNodeXPath(node);
-  }
-
-  const parentXPath = getXPath(parent, root);
+  const parentXPath = getXPath(parent);
   const nodeXPath = getNodeXPath(node);
 
   return parentXPath + "/" + nodeXPath;
-}
-
-function getXPathTo(node: Node, root?: Node): string {
-  if (!node || !root) return getXPath(node);
-
-  if (node === root) {
-    return ".";
-  }
-
-  if (!root.contains(node)) {
-    return getXPath(node);
-  }
-
-  // rootからの相対パスを構築
-  const pathSegments: string[] = [];
-  let current = node;
-
-  while (current && current !== root) {
-    const segment = getNodeXPath(current);
-    if (segment) {
-      pathSegments.unshift(segment);
-    }
-    current = current.parentNode;
-  }
-
-  return pathSegments.length > 0 ? "./" + pathSegments.join("/") : ".";
 }
 
 function getNodeXPath(node: Node): string {
