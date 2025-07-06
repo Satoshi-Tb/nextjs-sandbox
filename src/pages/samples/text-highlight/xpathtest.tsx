@@ -21,7 +21,7 @@ const Home: React.FC = () => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleSelection = () => {
+    const handleMouseUp = () => {
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -30,32 +30,39 @@ const Home: React.FC = () => {
           return;
         }
 
-        try {
-          const startXPath = isRelativePath
-            ? getXPathTo(range.startContainer, contentRef.current)
-            : getXPath(range.startContainer);
-          const endXPath = isRelativePath
-            ? getXPathTo(range.endContainer, contentRef.current)
-            : getXPath(range.endContainer);
+        // 選択範囲がサンプルコンテンツ内にあるかチェック
+        if (
+          contentRef.current &&
+          (contentRef.current.contains(range.startContainer) ||
+            contentRef.current.contains(range.endContainer))
+        ) {
+          try {
+            const startXPath = isRelativePath
+              ? getXPathTo(range.startContainer, contentRef.current)
+              : getXPath(range.startContainer);
+            const endXPath = isRelativePath
+              ? getXPathTo(range.endContainer, contentRef.current)
+              : getXPath(range.endContainer);
 
-          setSelectedRange({
-            startXPath,
-            endXPath,
-            startOffset: range.startOffset,
-            endOffset: range.endOffset,
-            text: range.toString(),
-          });
-          setError("");
-        } catch (err) {
-          setError("選択範囲の処理中にエラーが発生しました");
-          console.error(err);
+            setSelectedRange({
+              startXPath,
+              endXPath,
+              startOffset: range.startOffset,
+              endOffset: range.endOffset,
+              text: range.toString(),
+            });
+            setError("");
+          } catch (err) {
+            setError("選択範囲の処理中にエラーが発生しました");
+            console.error(err);
+          }
         }
       }
     };
 
-    document.addEventListener("selectionchange", handleSelection);
+    document.addEventListener("mouseup", handleMouseUp);
     return () => {
-      document.removeEventListener("selectionchange", handleSelection);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isRelativePath]);
 
@@ -63,15 +70,10 @@ const Home: React.FC = () => {
     if (!xpathInput) return;
 
     try {
-      const startNode = evaluateXPath(
-        xpathInput,
-        isRelativePath ? contentRef.current : document
-      );
+      const contextNode = isRelativePath ? contentRef.current : document;
+      const startNode = evaluateXPath(xpathInput, contextNode);
       const endNode = endXpathInput
-        ? evaluateXPath(
-            endXpathInput,
-            isRelativePath ? contentRef.current : document
-          )
+        ? evaluateXPath(endXpathInput, contextNode)
         : startNode;
 
       if (!startNode || !endNode) {
@@ -527,6 +529,7 @@ const Home: React.FC = () => {
 
 export default Home;
 
+// utils/xpath.ts
 /**
  * XPath生成のためのユーティリティ関数
  * Based on https://github.com/tilgovi/simple-xpath-position/blob/master/src/xpath.js
@@ -549,7 +552,7 @@ function getXPath(node: Node, root?: Node): string {
   }
 
   if (parent === root) {
-    return getNodeXPath(node);
+    return "/" + getNodeXPath(node);
   }
 
   const parentXPath = getXPath(parent, root);
@@ -569,8 +572,19 @@ function getXPathTo(node: Node, root?: Node): string {
     return getXPath(node);
   }
 
-  const path = getXPath(node, root);
-  return path ? "." + path : ".";
+  // rootからの相対パスを構築
+  const pathSegments: string[] = [];
+  let current = node;
+
+  while (current && current !== root) {
+    const segment = getNodeXPath(current);
+    if (segment) {
+      pathSegments.unshift(segment);
+    }
+    current = current.parentNode;
+  }
+
+  return pathSegments.length > 0 ? "./" + pathSegments.join("/") : ".";
 }
 
 function getNodeXPath(node: Node): string {
