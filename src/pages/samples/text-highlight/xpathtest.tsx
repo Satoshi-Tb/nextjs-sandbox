@@ -146,6 +146,37 @@ const Home: React.FC = () => {
       <main className="main">
         <h1 className="title">Range ⇄ XPath Converter</h1>
 
+        <div className="sample-content" ref={contentRef}>
+          <h2>サンプルコンテンツ</h2>
+          <p>
+            これは<strong>サンプル</strong>のテキストです。この文章を選択して、
+            XPathがどのように生成されるかを確認できます。
+          </p>
+          <div className="nested-content">
+            <p>
+              ネストされた要素内の<em>テキスト</em>も選択できます。
+              <span className="highlight">ハイライト</span>
+              された部分も含まれます。
+            </p>
+            <ul>
+              <li>リスト項目1</li>
+              <li>
+                リスト項目2 with <a href="#">リンク</a>
+              </li>
+              <li>リスト項目3</li>
+            </ul>
+          </div>
+          <blockquote>
+            <p>
+              引用ブロック内のテキストも選択可能です。
+              複数の段落にまたがる選択も可能です。
+            </p>
+            <p>
+              2つめの段落です。XPathは正確に開始位置と終了位置を 特定できます。
+            </p>
+          </blockquote>
+        </div>
+
         <div className="controls">
           <label className="checkbox-label">
             <input
@@ -196,7 +227,7 @@ const Home: React.FC = () => {
             </div>
           ) : (
             <p className="placeholder">
-              下のサンプルテキストから文字列を選択してください
+              上のサンプルテキストから文字列を選択してください
             </p>
           )}
         </div>
@@ -252,37 +283,6 @@ const Home: React.FC = () => {
               選択範囲を復元
             </button>
           </div>
-        </div>
-
-        <div className="sample-content" ref={contentRef}>
-          <h2>サンプルコンテンツ</h2>
-          <p>
-            これは<strong>サンプル</strong>のテキストです。この文章を選択して、
-            XPathがどのように生成されるかを確認できます。
-          </p>
-          <div className="nested-content">
-            <p>
-              ネストされた要素内の<em>テキスト</em>も選択できます。
-              <span className="highlight">ハイライト</span>
-              された部分も含まれます。
-            </p>
-            <ul>
-              <li>リスト項目1</li>
-              <li>
-                リスト項目2 with <a href="#">リンク</a>
-              </li>
-              <li>リスト項目3</li>
-            </ul>
-          </div>
-          <blockquote>
-            <p>
-              引用ブロック内のテキストも選択可能です。
-              複数の段落にまたがる選択も可能です。
-            </p>
-            <p>
-              2つめの段落です。XPathは正確に開始位置と終了位置を 特定できます。
-            </p>
-          </blockquote>
         </div>
       </main>
 
