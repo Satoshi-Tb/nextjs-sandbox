@@ -125,12 +125,13 @@ const Home: React.FC = () => {
     setError("");
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      // 簡単なフィードバック
-      const originalText = text.substring(0, 20) + "...";
-      console.log("クリップボードにコピーしました:", originalText);
-    });
+  const copyAllToInputs = () => {
+    if (!selectedRange) return;
+
+    setXpathInput(selectedRange.startXPath);
+    setOffsetInput(selectedRange.startOffset.toString());
+    setEndXpathInput(selectedRange.endXPath);
+    setEndOffsetInput(selectedRange.endOffset.toString());
   };
 
   return (
@@ -168,15 +169,9 @@ const Home: React.FC = () => {
             <div className="range-info">
               <div className="info-item">
                 <label>開始XPath:</label>
-                <div className="xpath-output">
-                  <code>{selectedRange.startXPath}</code>
-                  <button
-                    onClick={() => copyToClipboard(selectedRange.startXPath)}
-                    className="copy-btn"
-                  >
-                    コピー
-                  </button>
-                </div>
+                <code className="xpath-display">
+                  {selectedRange.startXPath}
+                </code>
               </div>
               <div className="info-item">
                 <label>開始オフセット:</label>
@@ -184,15 +179,7 @@ const Home: React.FC = () => {
               </div>
               <div className="info-item">
                 <label>終了XPath:</label>
-                <div className="xpath-output">
-                  <code>{selectedRange.endXPath}</code>
-                  <button
-                    onClick={() => copyToClipboard(selectedRange.endXPath)}
-                    className="copy-btn"
-                  >
-                    コピー
-                  </button>
-                </div>
+                <code className="xpath-display">{selectedRange.endXPath}</code>
               </div>
               <div className="info-item">
                 <label>終了オフセット:</label>
@@ -201,6 +188,11 @@ const Home: React.FC = () => {
               <div className="info-item">
                 <label>選択テキスト:</label>
                 <div className="selected-text">"{selectedRange.text}"</div>
+              </div>
+              <div className="copy-section">
+                <button onClick={copyAllToInputs} className="copy-all-btn">
+                  XPath入力欄にコピー
+                </button>
               </div>
             </div>
           ) : (
@@ -466,6 +458,15 @@ const Home: React.FC = () => {
 
         .restore-btn:hover {
           background: #218838;
+        }
+
+        .sample-xpath {
+          background: #e9ecef;
+          padding: 6px 10px;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 14px;
+          color: #495057;
         }
 
         .sample-content {
