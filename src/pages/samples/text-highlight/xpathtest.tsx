@@ -37,11 +37,11 @@ const Home: React.FC = () => {
           try {
             const startXPath = getXPath(
               range.startContainer,
-              isRelativePath ? contentRef.current : undefined
+              isRelativePath ? contentRef.current || undefined : undefined
             );
             const endXPath = getXPath(
               range.endContainer,
-              isRelativePath ? contentRef.current : undefined
+              isRelativePath ? contentRef.current || undefined : undefined
             );
 
             setSelectedRange({
@@ -219,7 +219,7 @@ const Home: React.FC = () => {
               </div>
               <div className="info-item">
                 <label>選択テキスト:</label>
-                <div className="selected-text">"{selectedRange.text}"</div>
+                <div className="selected-text">{selectedRange.text}</div>
               </div>
               <div className="copy-section">
                 <button onClick={copyAllToInputs} className="copy-all-btn">
@@ -541,46 +541,41 @@ export default Home;
 function getXPath(node: Node, root?: Node): string {
   if (!node) return "";
 
-  if (node.nodeType === Node.DOCUMENT_NODE) {
-    return "/";
+  // rootが未指定の場合はdocumentをrootとする
+  const actualRoot = root || node.ownerDocument || document;
+
+  if (node === actualRoot) {
+    // rootノード自身の場合
+    return actualRoot.nodeType === Node.DOCUMENT_NODE ? "/" : ".";
   }
 
-  // rootが指定されている場合（相対パス）
-  if (root) {
-    if (node === root) {
-      return ".";
-    }
-
-    if (!root.contains(node)) {
-      // rootの外にある場合は絶対パスにフォールバック
-      return getXPath(node);
-    }
-
-    // rootからの相対パスを構築
-    const pathSegments: string[] = [];
-    let current = node;
-
-    while (current && current !== root) {
-      const segment = getNodeXPath(current);
-      if (segment) {
-        pathSegments.unshift(segment);
-      }
-      current = current.parentNode;
-    }
-
-    return pathSegments.length > 0 ? "./" + pathSegments.join("/") : ".";
+  if (!actualRoot.contains(node)) {
+    // nodeがroot内に存在しない場合はエラー
+    throw new Error("Node is not contained within the specified root");
   }
 
-  // rootが指定されていない場合（絶対パス）
-  const parent = node.parentNode;
-  if (!parent) {
-    return "";
+  // パスセグメントを収集
+  const pathSegments: string[] = [];
+  let current = node;
+
+  while (current && current !== actualRoot) {
+    const segment = getNodeXPath(current);
+    if (segment) {
+      pathSegments.unshift(segment);
+    }
+    current = current.parentNode;
   }
 
-  const parentXPath = getXPath(parent);
-  const nodeXPath = getNodeXPath(node);
+  if (pathSegments.length === 0) {
+    return actualRoot.nodeType === Node.DOCUMENT_NODE ? "/" : ".";
+  }
 
-  return parentXPath + "/" + nodeXPath;
+  // Documentルートの場合は絶対パス、そうでなければ相対パス
+  if (actualRoot.nodeType === Node.DOCUMENT_NODE) {
+    return "/" + pathSegments.join("/");
+  } else {
+    return "./" + pathSegments.join("/");
+  }
 }
 
 function getNodeXPath(node: Node): string {
