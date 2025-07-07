@@ -536,12 +536,21 @@ export default Home;
 /**
  * XPath生成のためのユーティリティ関数
  * Based on https://github.com/tilgovi/simple-xpath-position/blob/master/src/xpath.js
+ *
+ *
+ * /     ← Documentルート（妥当）
+ * /html ← html要素への絶対パス
+ * ./div ← 相対パス
+ * ""    ← 無効（どのノードも特定できない。エラーケース含む）
  */
-
 function getXPath(node: Node, root?: Node): string {
-  if (!node) return "";
+  if (!node) {
+    console.error("node 指定なし");
+    return "";
+  }
 
   // rootが未指定の場合はdocumentをrootとする
+  // iframeや外部ドキュメントから取得したノードの場合を考慮して、ownerDocumentをチェック
   const actualRoot = root || node.ownerDocument || document;
 
   if (node === actualRoot) {
@@ -550,8 +559,8 @@ function getXPath(node: Node, root?: Node): string {
   }
 
   if (!actualRoot.contains(node)) {
-    // nodeがroot内に存在しない場合はエラー
-    throw new Error("Node is not contained within the specified root");
+    console.error("nodeがroot内に存在しない");
+    return "";
   }
 
   // パスセグメントを収集
