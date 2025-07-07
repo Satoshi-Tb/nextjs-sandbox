@@ -556,7 +556,7 @@ function getXPath(node: Node, root?: Node): string {
 
   // パスセグメントを収集
   const pathSegments: string[] = [];
-  let current = node;
+  let current: Node | null = node;
 
   while (current && current !== actualRoot) {
     const segment = getNodeXPath(current);
@@ -589,7 +589,7 @@ function getNodeXPath(node: Node): string {
     if (textSiblings.length === 1) {
       return "text()";
     }
-    const index = textSiblings.indexOf(node) + 1;
+    const index = textSiblings.indexOf(node as ChildNode) + 1;
     return `text()[${index}]`;
   }
 
@@ -606,7 +606,7 @@ function getNodeXPath(node: Node): string {
       return tagName;
     }
 
-    const index = elementSiblings.indexOf(node) + 1;
+    const index = elementSiblings.indexOf(node as ChildNode) + 1;
     return `${tagName}[${index}]`;
   }
 
@@ -620,6 +620,6 @@ function getNodeXPath(node: Node): string {
     return nodeName;
   }
 
-  const index = sameSiblings.indexOf(node) + 1;
+  const index = sameSiblings.indexOf(node as ChildNode) + 1;
   return `${nodeName}[${index}]`;
 }
