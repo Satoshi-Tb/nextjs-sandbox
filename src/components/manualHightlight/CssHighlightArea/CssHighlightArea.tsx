@@ -112,7 +112,6 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
 
   // 内部形式から外部形式への変換（永続化用）
   const toExternalFormat = (internal: InternalSavedRange): SavedRange => {
-
     const startPath = getXPath(
       internal.range.startContainer,
       contentRef.current!
@@ -343,31 +342,6 @@ export const CssHighlightArea: React.FC<CssHighlightAreaProps> = ({
   // モード切替ハンドラ
   const handleModeChange = (newMode: AppMode): void => {
     onModeChange?.(newMode);
-  };
-  const restoreRange = (savedRange: SavedRange): Range | null => {
-    if (!contentRef.current) return null;
-
-    try {
-      const startNode = getNodeFromXPath(
-        savedRange.startPath,
-        contentRef.current
-      );
-      const endNode = getNodeFromXPath(savedRange.endPath, contentRef.current);
-
-      if (!startNode || !endNode) {
-        console.warn("ノード復元失敗:", savedRange);
-        return null;
-      }
-
-      const range = document.createRange();
-      range.setStart(startNode, savedRange.startOffset);
-      range.setEnd(endNode, savedRange.endOffset);
-
-      return range;
-    } catch (err) {
-      console.warn("範囲復元エラー:", savedRange, err);
-      return null;
-    }
   };
 
   // 初期化時の範囲データ復元
