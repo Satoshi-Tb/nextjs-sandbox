@@ -186,8 +186,8 @@ const highlightKeywords = (
       node.name,
       node.attribs,
       domToReact(
-        node.children.map((child) =>
-          highlightKeywords(child, remainingKeywords)
+        node.children.map(
+          (child) => highlightKeywords(child, remainingKeywords) as DOMNode
         )
       )
     );
