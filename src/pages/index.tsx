@@ -70,7 +70,72 @@ function Home() {
         </li>
 
         <li>
-          <Link href="/samples/basic">render test</Link>
+          <Link href="/samples/basic/render-test1">render test</Link>
+        </li>
+        <li>
+          <Link href="/samples/basic/render-test2">
+            fetch＆effect組み合わせのサンプル
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/basic/render-test4">
+            why-did-you-renderを使ったレンダリングのサンプル
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/simple-highlight">
+            simple-highlight
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/multicolor-highlight">
+            multicolor-highlight
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/rangy-highlight-sample">
+            rangy-highlight-sample
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-sample">
+            manual-highlight-sample(Range利用, 選択位置情報のみ保存)
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-sample2">
+            manual-highlight-sample(Path形式による永続化その１)
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-sample3">
+            manual-highlight-sample(Path形式による永続化その２)
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/range-serializer-sample">
+            range-serializer-sample
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-with-rangy">
+            Rangyを利用した手動ハイライトデモ
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-with-xpath">
+            RangeAPIを利用した手動ハイライトデモ。永続化はXPath形式
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/manual-highlight-with-css">
+            CSS Highlight APIを利用した手動ハイライトデモ。永続化はXPath形式
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/manual-highlight/keyword-highlight-sample">
+            CSS Highlight APIを利用したキーワードハイライトデモ。
+          </Link>
         </li>
       </ul>
     </div>
