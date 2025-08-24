@@ -42,7 +42,7 @@ export const DynamicColumnGrid = () => {
         width: "100%",
       }}
     >
-      <Stack sx={{ height: 800, width: "50%", m: "10px" }} spacing={2}>
+      <Stack sx={{ height: 500, width: "50%", m: "10px" }} spacing={2}>
         <Stack direction="row" spacing={2} sx={{ width: "100%" }}>
           {/* データセットセレクト */}
           <FormControl sx={{ m: 1, width: 150 }} size="small">
@@ -72,6 +72,17 @@ export const DynamicColumnGrid = () => {
             }}
           >
             フィルター解除
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              const rowCount = gridApiRef.current?.getRowsCount();
+              if (rowCount !== undefined) {
+                gridApiRef.current?.scrollToIndexes({ rowIndex: rowCount - 1 });
+              }
+            }}
+          >
+            スクロール位置を最後尾に移動
           </Button>
         </Stack>
         {error && (

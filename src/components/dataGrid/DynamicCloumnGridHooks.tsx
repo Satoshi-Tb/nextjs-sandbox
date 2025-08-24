@@ -30,7 +30,13 @@ import {
   useGridApiRef,
   ValueOptions,
 } from "@mui/x-data-grid";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useGetListWithColumnDefs } from "../swr/grid/useDynamicColumnData";
 import { useRouter } from "next/router";
 import envConfig from "@/utils/envConfig";
@@ -596,6 +602,54 @@ export const useDynamicColumnGridHooks = () => {
 
     return errorFields;
   };
+
+  // TODO スクロール位置の操作。これはエラーになる
+  // //スクロール表示箇所初期化
+  // useEffect(() => {
+  //   if (gridApiRef.current) {
+  //     console.log("スクロール位置を最後尾に初期化");
+  //     const rowCount = gridApiRef.current.getRowsCount();
+  //     gridApiRef.current.scrollToIndexes({ rowIndex: rowCount - 1 });
+  //   }
+  // }, [rowData]);
+
+  // TODO スクロール位置の操作。エラーにならないがうまく動作しない。あと、unsbscribeも必要なはず
+  // // 初期スクロール（行確定を待つ）
+  // useEffect(() => {
+  //   if (!gridApiRef.current || !rowData?.length) return;
+
+  //   const off = gridApiRef.current.subscribeEvent("rowsSet", () => {
+  //     console.log("スクロール位置を最後尾に初期化");
+  //     const count = gridApiRef.current.getRowsCount();
+  //     if (count > 0) {
+  //       gridApiRef.current!.scrollToIndexes({ rowIndex: count - 1 });
+  //     }
+  //     off();
+  //   });
+
+  //   return () => {
+  //     try {
+  //       off();
+  //     } catch {}
+  //   };
+  // }, [rowData]);
+
+  // TODO スクロール位置の操作。useLayoutEffect + requestAnimationFrame
+  useLayoutEffect(() => {
+    if (!gridApiRef.current) return;
+    if (!rowData?.length) return;
+
+    const id = requestAnimationFrame(() => {
+      if (!gridApiRef.current) return;
+      console.log("スクロール位置を最後尾に初期化");
+      const count = gridApiRef.current.getRowsCount();
+      if (count > 0) {
+        gridApiRef.current.scrollToIndexes({ rowIndex: count - 1 });
+      }
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [rowData]);
 
   return {
     gridApiRef,
