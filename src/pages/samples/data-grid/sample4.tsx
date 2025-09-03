@@ -1,3 +1,3 @@
-import { GridSampleForIME as sample } from "@/components/dataGrid/GridSampleForIME";
+import sample from "@/components/dataGrid/GridSampleForIME";
 
 export default sample;
