@@ -39,6 +39,9 @@ function Home() {
           </Link>
         </li>
         <li>
+          <Link href="/samples/popup/popup-test1">dialog close test</Link>
+        </li>
+        <li>
           <Link href="/samples/popup/parent">popup</Link>
         </li>
         <li>
@@ -54,7 +57,9 @@ function Home() {
             data grid with dynamic row definition
           </Link>
         </li>
-
+        <li>
+          <Link href="/samples/data-grid/sample4">IME問題テストグリッド</Link>
+        </li>
         <li>
           <Link href="/samples/grid/sample1">grid</Link>
         </li>
@@ -79,6 +84,11 @@ function Home() {
         </li>
         <li>
           <Link href="/samples/basic/render-test4">
+            why-did-you-renderを使ったレンダリングのサンプル
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/basic/render-test3">
             why-did-you-renderを使ったレンダリングのサンプル
           </Link>
         </li>
