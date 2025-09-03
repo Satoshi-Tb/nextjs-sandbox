@@ -4,8 +4,9 @@ import {
   GridColDef,
   GridRenderEditCellParams,
   useGridApiContext,
-  GridRowId,
   GridCellParams,
+  GridRowId,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 import { TextField, Box, Typography } from "@mui/material";
 
@@ -18,8 +19,7 @@ interface CustomTextEditCellProps extends GridRenderEditCellParams {
 }
 
 // カスタムテキストセルエディターコンポーネント
-const CustomTextEditCell: React.FC<CustomTextEditCellProps> = (props) => {
-  //function CustomTextEditCell(props: CustomTextEditCellProps) {
+function CustomTextEditCell(props: CustomTextEditCellProps) {
   const { id, value, field, initialInput } = props;
   const [valueState, setValueState] = useState<string>(() => {
     // 初期入力がある場合は初期入力を使用、なければ既存値を使用
@@ -76,7 +76,7 @@ const CustomTextEditCell: React.FC<CustomTextEditCellProps> = (props) => {
       }}
     />
   );
-};
+}
 
 // データ行の型定義
 interface RowData {
@@ -137,6 +137,8 @@ export default function CustomDataGrid() {
   const [rows, setRows] = useState<RowData[]>(initialRows);
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [pendingInput, setPendingInput] = useState<string | null>(null);
+
+  const apiRef = useGridApiRef();
 
   // カスタムエディターを動的に生成（初期入力を考慮）
   const createCustomEditCell = (field: string) => {
@@ -226,7 +228,10 @@ export default function CustomDataGrid() {
 
       // カスタム編集モードを開始
       setTimeout(() => {
-        params.api.startCellEditMode({ id: params.id, field: params.field });
+        apiRef.current.startCellEditMode({
+          id: params.id,
+          field: params.field,
+        });
       }, 0);
     }
   };
@@ -297,6 +302,7 @@ export default function CustomDataGrid() {
               borderBottom: "2px solid #e0e0e0",
             },
           }}
+          apiRef={apiRef}
         />
       </Box>
 
