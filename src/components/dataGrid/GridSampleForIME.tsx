@@ -6,7 +6,6 @@ import {
   useGridApiContext,
   GridCellParams,
   GridRowId,
-  useGridApiRef,
 } from "@mui/x-data-grid";
 import { TextField, Box, Typography } from "@mui/material";
 
@@ -138,8 +137,6 @@ export default function CustomDataGrid() {
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
   const [pendingInput, setPendingInput] = useState<string | null>(null);
 
-  const apiRef = useGridApiRef();
-
   // カスタムエディターを動的に生成（初期入力を考慮）
   const createCustomEditCell = (field: string) => {
     const RenderEditCell = (params: GridRenderEditCellParams) => {
@@ -208,31 +205,17 @@ export default function CustomDataGrid() {
     params: GridCellParams,
     event: React.KeyboardEvent
   ) => {
-    // 選択されたセルがあり、編集可能な列で、通常の文字入力の場合
     if (
-      selectedCell &&
-      selectedCell.id === params.id &&
-      selectedCell.field === params.field &&
       params.field !== "id" &&
       event.key.length === 1 &&
       !event.ctrlKey &&
       !event.altKey &&
       !event.metaKey
     ) {
-      // デフォルトの編集開始を防止
-      event.preventDefault();
-      event.stopPropagation();
-
-      // 入力文字を保存
+      // 編集開始は DataGrid のデフォルト挙動に任せ、
+      // カスタムエディター側で先頭入力だけ引き継ぐ。
+      setSelectedCell({ id: params.id, field: params.field });
       setPendingInput(event.key);
-
-      // カスタム編集モードを開始
-      setTimeout(() => {
-        apiRef.current.startCellEditMode({
-          id: params.id,
-          field: params.field,
-        });
-      }, 0);
     }
   };
 
@@ -302,7 +285,6 @@ export default function CustomDataGrid() {
               borderBottom: "2px solid #e0e0e0",
             },
           }}
-          apiRef={apiRef}
         />
       </Box>
 
