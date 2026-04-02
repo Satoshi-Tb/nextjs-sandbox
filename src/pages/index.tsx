@@ -61,6 +61,11 @@ function Home() {
           <Link href="/samples/data-grid/sample4">IME問題テストグリッド</Link>
         </li>
         <li>
+          <Link href="/samples/data-grid/sample5">
+            data grid multiline recipe sample
+          </Link>
+        </li>
+        <li>
           <Link href="/samples/grid/sample1">grid</Link>
         </li>
 
