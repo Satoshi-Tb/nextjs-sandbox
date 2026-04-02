@@ -66,6 +66,16 @@ function Home() {
           </Link>
         </li>
         <li>
+          <Link href="/samples/data-grid/sample6">
+            data grid multiline recipe IME対策案1
+          </Link>
+        </li>
+        <li>
+          <Link href="/samples/data-grid/sample7">
+            data grid multiline recipe IME対策案2
+          </Link>
+        </li>
+        <li>
           <Link href="/samples/grid/sample1">grid</Link>
         </li>
 

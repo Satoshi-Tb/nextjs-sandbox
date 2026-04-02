@@ -2,6 +2,8 @@ import * as React from "react";
 import {
   DataGrid,
   GridCellEditStopReasons,
+  GridCellModes,
+  GridCellParams,
   GridColDef,
   GridColTypeDef,
   GridRenderCellParams,
@@ -24,6 +26,29 @@ function hasKeyboardModifiers(
   }
 > {
   return "ctrlKey" in event && "metaKey" in event;
+}
+
+function isPrintableKeyDown(event: React.KeyboardEvent) {
+  return (
+    event.key.length === 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  );
+}
+
+function shouldBlockPrintableEditStart(
+  params: GridCellParams,
+  event: MuiEvent<React.KeyboardEvent>
+) {
+  return (
+    // 既知不具合は「view mode のまま printable key で編集開始する」経路で起きる。
+    // 案1ではこの経路自体を止め、明示的な編集開始操作に寄せる。
+    params.field === "bio" &&
+    params.isEditable &&
+    params.cellMode === GridCellModes.View &&
+    isPrintableKeyDown(event)
+  );
 }
 
 function EditTextarea(props: GridRenderEditCellParams<any, string>) {
@@ -162,7 +187,7 @@ function createRows(): GridRowModel[] {
   return rows;
 }
 
-export default function GridRecipeMultilineEditing() {
+export default function GridRecipeMultilineEditingImeProposal1() {
   const [rows, setRows] = React.useState<GridRowModel[]>(() => createRows());
 
   const processRowUpdate = React.useCallback((newRow: GridRowModel) => {
@@ -172,10 +197,27 @@ export default function GridRecipeMultilineEditing() {
     return newRow;
   }, []);
 
+  const handleCellKeyDown = React.useCallback(
+    (params: GridCellParams, event: MuiEvent<React.KeyboardEvent>) => {
+      if (!shouldBlockPrintableEditStart(params, event)) {
+        return;
+      }
+
+      // DataGrid のデフォルト編集開始を抑止し、IME 未確定文字の前に
+      // ASCII キーが initialValue として混入するのを避ける。
+      event.defaultMuiPrevented = true;
+    },
+    []
+  );
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Data Grid Multiline Editing
+        Data Grid Multiline Editing: IME対策案1
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        printable key による自動編集開始を止め、Enter / F2 /
+        ダブルクリックでのみ編集開始します。
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Bio column is editable as multiline text. Save with Ctrl+Enter or
@@ -187,6 +229,7 @@ export default function GridRecipeMultilineEditing() {
           columns={columns}
           rowHeight={100}
           processRowUpdate={processRowUpdate}
+          onCellKeyDown={handleCellKeyDown}
           onCellEditStop={(params, event) => {
             if (params.reason !== GridCellEditStopReasons.enterKeyDown) {
               return;

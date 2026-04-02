@@ -2,6 +2,8 @@ import * as React from "react";
 import {
   DataGrid,
   GridCellEditStopReasons,
+  GridCellModes,
+  GridCellParams,
   GridColDef,
   GridColTypeDef,
   GridRenderCellParams,
@@ -24,6 +26,43 @@ function hasKeyboardModifiers(
   }
 > {
   return "ctrlKey" in event && "metaKey" in event;
+}
+
+function isPrintableKeyDown(event: React.KeyboardEvent) {
+  return (
+    event.key.length === 1 &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  );
+}
+
+function isImeLikeKeyDown(event: MuiEvent<React.KeyboardEvent>) {
+  const nativeEvent = event.nativeEvent as KeyboardEvent & {
+    isComposing?: boolean;
+  };
+
+  return (
+    // ブラウザ差異を吸収するため、IME 中によく観測されるシグナルを重ねて見る。
+    event.which === 229 ||
+    nativeEvent.isComposing === true ||
+    nativeEvent.keyCode === 229
+  );
+}
+
+function shouldBlockImePrintableEditStart(
+  params: GridCellParams,
+  event: MuiEvent<React.KeyboardEvent>
+) {
+  return (
+    // 案2では半角直接入力の UX は残しつつ、IME 疑い入力のときだけ
+    // printable key 起点の編集開始を抑止する。
+    params.field === "bio" &&
+    params.isEditable &&
+    params.cellMode === GridCellModes.View &&
+    isPrintableKeyDown(event) &&
+    isImeLikeKeyDown(event)
+  );
 }
 
 function EditTextarea(props: GridRenderEditCellParams<any, string>) {
@@ -162,7 +201,7 @@ function createRows(): GridRowModel[] {
   return rows;
 }
 
-export default function GridRecipeMultilineEditing() {
+export default function GridRecipeMultilineEditingImeProposal2() {
   const [rows, setRows] = React.useState<GridRowModel[]>(() => createRows());
 
   const processRowUpdate = React.useCallback((newRow: GridRowModel) => {
@@ -172,10 +211,27 @@ export default function GridRecipeMultilineEditing() {
     return newRow;
   }, []);
 
+  const handleCellKeyDown = React.useCallback(
+    (params: GridCellParams, event: MuiEvent<React.KeyboardEvent>) => {
+      if (!shouldBlockImePrintableEditStart(params, event)) {
+        return;
+      }
+
+      // IME 開始直後だけ DataGrid の自動編集開始を止めることで、
+      // initialValue への ASCII 混入を局所的に回避する。
+      event.defaultMuiPrevented = true;
+    },
+    []
+  );
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        Data Grid Multiline Editing
+        Data Grid Multiline Editing: IME対策案2
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        IME 疑い入力のときだけ printable key
+        起点の自動編集開始を止め、半角直接入力は既存挙動を残します。
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Bio column is editable as multiline text. Save with Ctrl+Enter or
@@ -187,6 +243,7 @@ export default function GridRecipeMultilineEditing() {
           columns={columns}
           rowHeight={100}
           processRowUpdate={processRowUpdate}
+          onCellKeyDown={handleCellKeyDown}
           onCellEditStop={(params, event) => {
             if (params.reason !== GridCellEditStopReasons.enterKeyDown) {
               return;
