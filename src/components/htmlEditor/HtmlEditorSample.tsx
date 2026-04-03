@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type { editor } from "monaco-editor";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -13,46 +14,27 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-const initialHtml = `<section>
-  <h1>HTML Editor Sample</h1>
-  <p>
-    これは <strong>Monaco Editor</strong> で編集した HTML を
-    <em>右側プレビュー</em> に反映するサンプルです。
-  </p>
-
-  <h2>ポイント</h2>
-  <ul>
-    <li>見出しや段落の編集</li>
-    <li><a href="https://nextjs.org/" target="_blank" rel="noreferrer">リンク表示</a></li>
-    <li>表や引用の見た目確認</li>
-  </ul>
-
-  <blockquote>
-    小さく始めて、必要な機能だけを足していく。
-  </blockquote>
-
-  <table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-      <tr>
-        <th>項目</th>
-        <th>内容</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Editor</td>
-        <td><code>Monaco Editor</code></td>
-      </tr>
-      <tr>
-        <td>Preview</td>
-        <td><code>dangerouslySetInnerHTML</code></td>
-      </tr>
-    </tbody>
-  </table>
-</section>`;
+const initialHtml = `<section><h1>HTML Editor Sample</h1><p>これは <strong>Monaco Editor</strong> で編集した HTML を<em>右側プレビュー</em>に反映するサンプルです。</p><h2>ポイント</h2><ul><li>見出しや段落の編集</li><li><a href="https://nextjs.org/" target="_blank" rel="noreferrer">リンク表示</a></li><li>表や引用の見た目確認</li></ul><figure><img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80" alt="Laptop and code editor" style="max-width:100%;height:auto;border-radius:12px;" /><figcaption>プレビュー確認用のサンプル画像です。</figcaption></figure><blockquote>小さく始めて、必要な機能だけを足していく。</blockquote><table border="1" cellpadding="8" cellspacing="0"><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody><tr><td>Editor</td><td><code>Monaco Editor</code></td></tr><tr><td>Preview</td><td><code>dangerouslySetInnerHTML</code></td></tr></tbody></table></section>`;
 
 export function HtmlEditorSample() {
   const [html, setHtml] = useState(initialHtml);
+  const [isFormatting, setIsFormatting] = useState(false);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  const handleFormat = async () => {
+    const editorInstance = editorRef.current;
+    if (!editorInstance) {
+      return;
+    }
+
+    setIsFormatting(true);
+    try {
+      await editorInstance.getAction("editor.action.formatDocument").run();
+      setHtml(editorInstance.getValue());
+    } finally {
+      setIsFormatting(false);
+    }
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 3 }}>
@@ -74,6 +56,15 @@ export function HtmlEditorSample() {
           <Typography variant="body2" color="text.secondary">
             {html.length} chars
           </Typography>
+          <Button
+            type="button"
+            onClick={handleFormat}
+            variant="contained"
+            size="small"
+            disabled={isFormatting}
+          >
+            Format HTML
+          </Button>
           <Button
             type="button"
             onClick={() => setHtml(initialHtml)}
@@ -125,6 +116,9 @@ export function HtmlEditorSample() {
             language="html"
             theme="vs"
             value={html}
+            onMount={(editorInstance) => {
+              editorRef.current = editorInstance;
+            }}
             onChange={(value) => setHtml(value ?? "")}
             options={{
               minimap: { enabled: false },
