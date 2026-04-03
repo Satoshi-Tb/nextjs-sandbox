@@ -1,9 +1,16 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
-  loading: () => <div>Loading editor...</div>,
+  loading: () => (
+    <Box sx={{ p: 2 }}>
+      <Typography variant="body2" color="text.secondary">
+        Loading editor...
+      </Typography>
+    </Box>
+  ),
 });
 
 const initialHtml = `<section>
@@ -48,76 +55,70 @@ export function HtmlEditorSample() {
   const [html, setHtml] = useState(initialHtml);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        padding: "24px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "16px",
-        }}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 3 }}>
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        alignItems={{ xs: "flex-start", md: "center" }}
+        justifyContent="space-between"
+        spacing={2}
       >
-        <div>
-          <h1 style={{ margin: 0, fontSize: "24px" }}>HTML Editor Sample</h1>
-          <p style={{ margin: "4px 0 0", color: "#555" }}>
+        <Box>
+          <Typography variant="h4" component="h1">
+            HTML Editor Sample
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             左で HTML を編集し、右で描画結果を確認します。
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ color: "#555", fontSize: "14px" }}>
+          </Typography>
+        </Box>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Typography variant="body2" color="text.secondary">
             {html.length} chars
-          </span>
-          <button
+          </Typography>
+          <Button
             type="button"
             onClick={() => setHtml(initialHtml)}
-            style={{
-              border: "1px solid #ccc",
-              background: "#fff",
-              borderRadius: "6px",
-              padding: "8px 12px",
-              cursor: "pointer",
-            }}
+            variant="outlined"
+            size="small"
           >
             Reset
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Stack>
+      </Stack>
 
-      <div
-        style={{
+      <Box
+        sx={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-          gap: "16px",
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            md: "repeat(2, minmax(0, 1fr))",
+          },
+          gap: 2,
           minHeight: "70vh",
         }}
       >
-        <section
-          style={{
-            border: "1px solid #d9d9d9",
-            borderRadius: "8px",
+        <Paper
+          elevation={0}
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
             overflow: "hidden",
-            background: "#fff",
+            backgroundColor: "background.paper",
           }}
         >
-          <div
-            style={{
-              padding: "10px 12px",
-              borderBottom: "1px solid #e5e5e5",
-              color: "#222",
-              fontSize: "14px",
-              fontWeight: 600,
-              background: "#fafafa",
+          <Box
+            sx={{
+              px: 1.5,
+              py: 1.25,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              bgcolor: "grey.50",
             }}
           >
-            Editor
-          </div>
+            <Typography variant="subtitle2" fontWeight={700}>
+              Editor
+            </Typography>
+          </Box>
           <MonacoEditor
             height="calc(70vh - 45px)"
             defaultLanguage="html"
@@ -132,39 +133,45 @@ export function HtmlEditorSample() {
               automaticLayout: true,
             }}
           />
-        </section>
+        </Paper>
 
-        <section
-          style={{
-            border: "1px solid #d9d9d9",
-            borderRadius: "8px",
+        <Paper
+          elevation={0}
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
             overflow: "hidden",
-            background: "#fff",
+            backgroundColor: "background.paper",
           }}
         >
-          <div
-            style={{
-              padding: "10px 12px",
-              borderBottom: "1px solid #e5e5e5",
-              color: "#222",
-              fontSize: "14px",
-              fontWeight: 600,
-              background: "#fafafa",
+          <Box
+            sx={{
+              px: 1.5,
+              py: 1.25,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              bgcolor: "grey.50",
             }}
           >
-            Preview
-          </div>
-          <div
-            style={{
-              padding: "20px",
+            <Typography variant="subtitle2" fontWeight={700}>
+              Preview
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              p: 2.5,
               minHeight: "calc(70vh - 45px)",
               overflow: "auto",
+              "& h1, & h2, & h3": { mt: 0 },
+              "& table": { borderCollapse: "collapse" },
+              "& th, & td": { borderColor: "#bdbdbd" },
             }}
             dangerouslySetInnerHTML={{ __html: html }}
           />
-        </section>
-      </div>
-    </div>
+        </Paper>
+      </Box>
+    </Box>
   );
 }
 
