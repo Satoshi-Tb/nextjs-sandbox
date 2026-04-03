@@ -21,6 +21,9 @@ function Home() {
           <Link href="/samples/rich-editor">rich-editor</Link>
         </li>
         <li>
+          <Link href="/samples/html-editor">html-editor</Link>
+        </li>
+        <li>
           <Link href="/samples/text-highlight">text-highlight & marker</Link>
         </li>
         <li>
