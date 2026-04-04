@@ -23,13 +23,16 @@ export function HtmlEditorSample() {
 
   const handleFormat = async () => {
     const editorInstance = editorRef.current;
-    if (!editorInstance) {
+    const formatAction = editorInstance?.getAction(
+      "editor.action.formatDocument",
+    );
+    if (!editorInstance || !formatAction) {
       return;
     }
 
     setIsFormatting(true);
     try {
-      await editorInstance.getAction("editor.action.formatDocument").run();
+      await formatAction.run();
       setHtml(editorInstance.getValue());
     } finally {
       setIsFormatting(false);
@@ -116,8 +119,21 @@ export function HtmlEditorSample() {
             language="html"
             theme="vs"
             value={html}
-            onMount={(editorInstance) => {
+            onMount={(editorInstance, monaco) => {
               editorRef.current = editorInstance;
+              monaco.languages.html.htmlDefaults.setOptions({
+                format: {
+                  tabSize: 2,
+                  insertSpaces: true,
+                  wrapLineLength: 80,
+                  preserveNewLines: true,
+                  maxPreserveNewLines: 1,
+                  indentInnerHtml: true,
+                  wrapAttributes: "force-aligned",
+                  wrapAttributesIndentSize: 2,
+                  endWithNewline: true,
+                },
+              });
             }}
             onChange={(value) => setHtml(value ?? "")}
             options={{
@@ -125,6 +141,8 @@ export function HtmlEditorSample() {
               fontSize: 14,
               wordWrap: "on",
               automaticLayout: true,
+              tabSize: 2,
+              insertSpaces: true,
             }}
           />
         </Paper>
